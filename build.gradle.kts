@@ -119,6 +119,10 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
+            <h3>0.13.8 - Preserve composer input on command palette actions</h3>
+            <ul>
+                <li>Fixed composer input being cleared when opening the slash command palette or executing a palette item such as switching models (issue #32)</li>
+            </ul>
             <h3>0.13.7 - Dynamic model list &amp; input-mode fixes</h3>
             <ul>
                 <li>Model list is now derived from the Claude CLI control response so available models always match the CLI</li>
