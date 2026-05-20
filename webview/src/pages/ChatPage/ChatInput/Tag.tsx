@@ -15,7 +15,7 @@ export function Tag(props: Props) {
             type={type}
             className={`
                 inline-flex items-center gap-1 px-1 py-[2px] rounded
-                text-[11px] font-medium transition-colors
+                text-[0.8461rem] font-medium transition-colors
                 ${disabled
                     ? 'text-zinc-500 cursor-default'
                     : 'text-zinc-400 cursor-pointer hover:bg-white/[7%]'

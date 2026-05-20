@@ -28,11 +28,11 @@ export function ContextWindowTag(props: Props) {
           {...attrs}
         >
           <p>{remaining}% of context remaining until auto-compact.</p>
-          <p className="text-zinc-400 mt-1 text-[10px]">
+          <p className="text-zinc-400 mt-1 text-[0.7692rem]">
             {totalTokens.toLocaleString()} tokens used
           </p>
           {isClickable && (
-            <p className="text-zinc-300 mt-1 text-[10px]">Click to compact now.</p>
+            <p className="text-zinc-300 mt-1 text-[0.7692rem]">Click to compact now.</p>
           )}
         </div>
       )}

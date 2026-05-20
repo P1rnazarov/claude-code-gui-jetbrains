@@ -33,7 +33,7 @@ export function GrepRenderer(props: RendererProps) {
     return (
         <ToolWrapper message={props.message}>
             <ToolHeader name={name} className="mb-2.5">
-                <div className="text-white/80 text-[12px] line-clamp-2 break-all">
+                <div className="text-white/80 text-[0.9230rem] line-clamp-2 break-all">
                     "{pattern}"{` `}
                     {toolUse.input && 'path' in toolUse.input && `(in ${toolUse.input.path})`}
                     {toolUse.input && 'glob' in toolUse.input && `(glob: ${toolUse.input.glob})`}
@@ -43,7 +43,7 @@ export function GrepRenderer(props: RendererProps) {
             {toolResult?.content && (
                 <div
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className={`text-white/50 text-[11px] -mt-1 cursor-pointer hover:underline whitespace-pre-wrap ${isExpanded ? '' : 'max-h-[20px] overflow-hidden'}`}>
+                    className={`text-white/50 text-[0.8461rem] -mt-1 cursor-pointer hover:underline whitespace-pre-wrap ${isExpanded ? '' : 'max-h-[20px] overflow-hidden'}`}>
                     {toolResult.content}
                 </div>
             )}

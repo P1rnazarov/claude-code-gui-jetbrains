@@ -58,7 +58,7 @@ export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ messag
         <div className="flex items-start gap-2">
           <div className="min-w-0">
             <MessageBox>
-              <div className="text-white/80 text-[13px] leading-relaxed whitespace-pre-wrap break-words">
+              <div className="text-white/80 text-[1rem] leading-relaxed whitespace-pre-wrap break-words">
                 <span className="text-white/50">{'/'}</span>{parsedContent.commandName}
                 {parsedContent.text && (
                   <span className="text-white/50">{' '}{parsedContent.text}</span>
@@ -78,7 +78,7 @@ export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ messag
       <div className="flex items-start gap-2">
         <div className="min-w-0">
           <MessageBox>
-            <div className="text-white/80 text-[13px] leading-[1.5] whitespace-pre-wrap break-words">
+            <div className="text-white/80 text-[1rem] leading-[1.5] whitespace-pre-wrap break-words">
               {parsedContent.text}
             </div>
           </MessageBox>

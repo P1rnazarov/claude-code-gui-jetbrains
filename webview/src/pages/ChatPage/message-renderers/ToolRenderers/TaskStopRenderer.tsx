@@ -23,7 +23,7 @@ export function TaskStopRenderer(props: RendererProps) {
     return (
         <ToolWrapper message={props.message}>
             <ToolHeader name="TaskStop" inProgress={!props.toolResult} className="mb-2.5">
-                <div className="text-white/60 truncate text-[12px]">task: "{taskId}"</div>
+                <div className="text-white/60 truncate text-[0.9230rem]">task: "{taskId}"</div>
             </ToolHeader>
 
             {props.toolResult && resultText && (

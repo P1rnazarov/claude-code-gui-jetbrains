@@ -76,13 +76,13 @@ export function TaskOutputRenderer(props: RendererProps) {
     return (
         <ToolWrapper message={props.message}>
             <ToolHeader name="TaskOutput" inProgress={!props.toolResult} className="mb-2.5">
-                <div className="text-white/60 truncate text-[12px]">task: "{description}"</div>
+                <div className="text-white/60 truncate text-[0.9230rem]">task: "{description}"</div>
             </ToolHeader>
 
             {props.toolResult && output && (
                 <Container>
                     {hasMeta && (
-                        <div className="flex items-start p-2 gap-4 text-[11px] font-mono">
+                        <div className="flex items-start p-2 gap-4 text-[0.8461rem] font-mono">
                             {taskType && (
                                 <div>
                                     <span className="text-white/40">type </span>

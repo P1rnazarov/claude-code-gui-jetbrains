@@ -60,7 +60,7 @@ export const ContextPills: React.FC<ContextPillsProps> = ({ context }) => {
           onClick={() => handleOpenFile(ctx.path)}
         >
           {isFolder(ctx) ? <FolderIcon /> : <FileIcon />}
-          <span className="text-[11px] text-zinc-300 truncate max-w-[160px]">
+          <span className="text-[0.8461rem] text-zinc-300 truncate max-w-[160px]">
             {getDisplayName(ctx)}
           </span>
         </div>

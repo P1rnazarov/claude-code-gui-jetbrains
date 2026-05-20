@@ -8,7 +8,7 @@ export function SectionLabel(props: {
   const { className = '', children } = props;
 
   return (
-    <div className={cn(`text-[12px] font-bold text-zinc-400 uppercase tracking-widest mb-3`, className)}>
+    <div className={cn(`text-[0.9230rem] font-bold text-zinc-400 uppercase tracking-widest mb-3`, className)}>
       {children}
     </div>
   );

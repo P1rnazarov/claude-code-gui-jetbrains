@@ -45,7 +45,7 @@ export function ConnectionLostBanner() {
 
   return (
     <div className="w-full z-20 border-t border-b border-yellow-800 bg-yellow-900/40 px-4 py-1.5 flex items-center">
-      <span className="text-yellow-200 text-[11px]">
+      <span className="text-yellow-200 text-[0.8461rem]">
         {message}
       </span>
     </div>

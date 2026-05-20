@@ -41,7 +41,7 @@ export const EmptyState = () => {
       </div>
       <div className="flex-1 flex flex-col items-center justify-center gap-5 pt-14">
         <img src={clawdSvg} alt="Clawd" width={46} />
-        <p className="text-zinc-300 text-[13px] text-center max-w-[18rem] leading-[1.7]">{hint}</p>
+        <p className="text-zinc-300 text-[1rem] text-center max-w-[18rem] leading-[1.7]">{hint}</p>
       </div>
     </div>
   );

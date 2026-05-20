@@ -19,7 +19,7 @@ export const UsageSection = (props: Props) => {
             <SectionLabel className="flex items-center justify-between">
                 <div>Usage</div>
 
-                <div className="flex items-center gap-2 text-[11px] text-zinc-500 normal-case font-[400] hover:text-white transition-all">
+                <div className="flex items-center gap-2 text-[0.8461rem] text-zinc-500 normal-case font-[400] hover:text-white transition-all">
                     {lastUpdated && <span>Updated {formatRelativeTime(lastUpdated)}</span>}
                     <button
                         onClick={refresh}

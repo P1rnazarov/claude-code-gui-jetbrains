@@ -47,7 +47,7 @@ export function GlobRenderer(props: RendererProps) {
     return (
         <ToolWrapper message={props.message}>
             <ToolHeader name={name}>
-                <div className="text-white/80 text-[11px] line-clamp-2 font-mono">
+                <div className="text-white/80 text-[0.8461rem] line-clamp-2 font-mono">
                     pattern: "{pattern}"
                 </div>
             </ToolHeader>
@@ -55,14 +55,14 @@ export function GlobRenderer(props: RendererProps) {
             {numFiles > 0 ? (
                 <>
                     <div
-                        className="text-white/50 text-[12px] mt-0.5 cursor-pointer hover:text-white/70 select-none"
+                        className="text-white/50 text-[0.9230rem] mt-0.5 cursor-pointer hover:text-white/70 select-none"
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
                         Found {numFiles} {numFiles === 1 ? 'file' : 'files'}
                     </div>
 
                     {isExpanded && (
-                        <div className="mt-1 ml-0.5 text-[12px] font-mono">
+                        <div className="mt-1 ml-0.5 text-[0.9230rem] font-mono">
                             {filenames.map((filename) => (
                                 <div
                                     key={filename}
@@ -76,7 +76,7 @@ export function GlobRenderer(props: RendererProps) {
                     )}
                 </>
             ) : (
-                <div className="text-white/50 text-[11px] whitespace-pre-wrap">
+                <div className="text-white/50 text-[0.8461rem] whitespace-pre-wrap">
                     {content}
                 </div>
             )}

@@ -10,7 +10,7 @@ const SwitchModelValue = () => {
   const info = sessionModel ? models.find((m) => m.value === sessionModel) : null;
   const text = info?.displayName ?? (sessionModel ?? 'Default');
   return (
-    <span className="text-[11px] text-zinc-400 whitespace-nowrap">
+    <span className="text-[0.8461rem] text-zinc-400 whitespace-nowrap">
       {text}
     </span>
   );

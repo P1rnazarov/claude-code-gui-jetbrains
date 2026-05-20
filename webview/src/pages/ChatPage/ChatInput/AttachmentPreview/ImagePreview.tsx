@@ -25,11 +25,11 @@ export function ImagePreview(props: Props) {
         <button
           type="button"
           onClick={() => onRemove(attachment.id)}
-          className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full bg-zinc-700 hover:bg-red-500 text-zinc-300 text-[10px] transition-colors opacity-0 group-hover:opacity-100"
+          className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full bg-zinc-700 hover:bg-red-500 text-zinc-300 text-[0.7692rem] transition-colors opacity-0 group-hover:opacity-100"
         >
           ×
         </button>
-        <div className="text-[10px] text-zinc-500 truncate max-w-[64px] mt-0.5 text-center">
+        <div className="text-[0.7692rem] text-zinc-500 truncate max-w-[64px] mt-0.5 text-center">
           {attachment.displayLabel}
         </div>
       </div>

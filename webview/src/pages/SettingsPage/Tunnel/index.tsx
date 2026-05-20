@@ -84,7 +84,7 @@ export function TunnelSettings() {
         {tunnelEnabled && tunnelUrl && (
           <div className="py-4 border-b border-zinc-800">
             <div className="flex items-center gap-2 mb-4">
-              <span className="font-mono text-[11px] text-zinc-300 flex-1 truncate">{tunnelUrl}</span>
+              <span className="font-mono text-[0.8461rem] text-zinc-300 flex-1 truncate">{tunnelUrl}</span>
               <button onClick={handleCopy} className="flex-shrink-0">
                 {copied
                   ? <ClipboardDocumentCheckIcon className="w-3 h-3 text-green-400" />

@@ -93,7 +93,7 @@ export const AskUserQuestionInputPanel = (props: Props) => {
           />
           {questionText && (
             <div className="mt-4">
-              <p className="text-zinc-200 text-[13px]">{questionText}</p>
+              <p className="text-zinc-200 text-[1rem]">{questionText}</p>
             </div>
           )}
         </div>

@@ -140,7 +140,7 @@ export function ProjectSelectorPage() {
               <div className="mt-0.5">
                 <MarqueeText
                   text={project.path}
-                  className="text-[10px] text-zinc-500 group-hover:text-zinc-400"
+                  className="text-[0.7692rem] text-zinc-500 group-hover:text-zinc-400"
                 />
               </div>
             </button>

@@ -59,8 +59,8 @@ export function AppearanceSettings() {
         >
           <input
             type="number"
-            min="10"
-            max="20"
+            min="8"
+            max="32"
             value={isFontSizeNotSet ? '' : (rawFontSize ?? 13)}
             placeholder={isFontSizeNotSet ? 'Not set' : undefined}
             onChange={(e) => {

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { SettingsState, DEFAULT_SETTINGS } from '@/types/settings';
+import { SettingsState, DEFAULT_SETTINGS, SettingKey } from '@/types/settings';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { useWorkingDir } from '@/contexts/WorkingDirContext';
 
@@ -105,6 +105,14 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       loadScopeSettings(scope);
     }
   }, [isConnected, scope, loadScopeSettings]);
+
+  // Apply font size to root element so rem-based sizes scale globally
+  useEffect(() => {
+    const fontSize = settings[SettingKey.FONT_SIZE];
+    if (typeof fontSize === 'number' && Number.isFinite(fontSize)) {
+      document.documentElement.style.fontSize = `${fontSize}px`;
+    }
+  }, [settings]);
 
   // Subscribe to external settings changes from backend
   useEffect(() => {

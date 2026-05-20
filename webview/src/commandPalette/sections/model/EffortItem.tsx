@@ -9,7 +9,7 @@ const EffortDots = () => {
 
   return (
     <span className="text-zinc-400 flex items-center gap-1">
-      <span className="text-[16px] font-bold tracking-tighter pb-[1px] flex">
+      <span className="text-[1.2307rem] font-bold tracking-tighter pb-[1px] flex">
         {Array.from({ length: def.totalDots }, (_, i) => (
           <span
             key={i}
@@ -19,7 +19,7 @@ const EffortDots = () => {
           </span>
         ))}
       </span>
-      <span className="text-[11px]">{def.label}</span>
+      <span className="text-[0.8461rem]">{def.label}</span>
     </span>
   );
 };

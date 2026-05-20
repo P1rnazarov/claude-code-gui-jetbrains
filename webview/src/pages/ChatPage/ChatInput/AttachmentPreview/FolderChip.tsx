@@ -13,13 +13,13 @@ export function FolderChip(props: Props) {
       <svg className="w-3.5 h-3.5 text-zinc-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
       </svg>
-      <span className="text-[11px] text-zinc-300 truncate max-w-[120px]">
+      <span className="text-[0.8461rem] text-zinc-300 truncate max-w-[120px]">
         {attachment.displayLabel}
       </span>
       <button
         type="button"
         onClick={() => onRemove(attachment.id)}
-        className="w-3.5 h-3.5 flex items-center justify-center rounded-full text-zinc-500 hover:text-red-400 text-[10px] shrink-0"
+        className="w-3.5 h-3.5 flex items-center justify-center rounded-full text-zinc-500 hover:text-red-400 text-[0.7692rem] shrink-0"
       >
         ×
       </button>

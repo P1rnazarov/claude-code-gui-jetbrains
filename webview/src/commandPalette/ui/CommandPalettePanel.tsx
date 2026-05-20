@@ -94,7 +94,7 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
         />
       ))}
 
-      <div className="text-[11px] flex items-center justify-between px-3 pt-2 pb-3 -mt-2.5">
+      <div className="text-[0.8461rem] flex items-center justify-between px-3 pt-2 pb-3 -mt-2.5">
         <div className="flex items-center gap-3">
           <a className="text-zinc-500 underline hover:text-zinc-300" href="https://github.com/anthropics/claude-code/issues" target="_blank">
             Report a problem

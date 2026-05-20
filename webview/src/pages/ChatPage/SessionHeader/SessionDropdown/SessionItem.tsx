@@ -61,7 +61,7 @@ export function SessionItem(props: Props) {
           </svg>
         </span>
       ) : session.updatedAt ? (
-        <span className="flex-shrink-0 text-[11px] text-zinc-500">
+        <span className="flex-shrink-0 text-[0.8461rem] text-zinc-500">
           {getRelativeTime(session.updatedAt)}
         </span>
       ) : null}

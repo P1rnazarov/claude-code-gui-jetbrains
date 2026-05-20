@@ -19,9 +19,9 @@ export function WriteRenderer(props: RendererProps) {
     return (
         <ToolWrapper message={props.message}>
             <ToolHeader name="Write" inProgress={!props.toolResult && lineCount <= 0} className="mb-1">
-                <div className={cn("text-white/80 text-[11px] font-mono", filePath && "cursor-pointer hover:underline")} onClick={filePath ? () => getAdapter().openFile(filePath) : undefined}>{fileName}</div>
+                <div className={cn("text-white/80 text-[0.8461rem] font-mono", filePath && "cursor-pointer hover:underline")} onClick={filePath ? () => getAdapter().openFile(filePath) : undefined}>{fileName}</div>
             </ToolHeader>
-            <div className="text-white/50 text-[11px]">{lineCount} lines</div>
+            <div className="text-white/50 text-[0.8461rem]">{lineCount} lines</div>
         </ToolWrapper>
     );
 }

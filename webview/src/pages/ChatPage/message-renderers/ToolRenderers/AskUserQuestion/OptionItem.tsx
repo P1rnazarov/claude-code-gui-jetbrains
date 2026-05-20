@@ -49,10 +49,10 @@ export function OptionItem(props: {
                         )}
                     </div>
                 )}
-                <span className="text-white/90 text-[13px]">{label}</span>
+                <span className="text-white/90 text-[1rem]">{label}</span>
             </div>
             {description && (
-                <div className="text-white/50 text-[11px] mt-0.5 ml-5">{description}</div>
+                <div className="text-white/50 text-[0.8461rem] mt-0.5 ml-5">{description}</div>
             )}
         </div>
     );

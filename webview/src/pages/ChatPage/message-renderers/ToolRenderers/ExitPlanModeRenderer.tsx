@@ -41,7 +41,7 @@ export function ExitPlanModeRenderer(props: RendererProps) {
             )}
 
             {statusText && (
-                <div className="text-[12px] text-white/50">{statusText}</div>
+                <div className="text-[0.9230rem] text-white/50">{statusText}</div>
             )}
 
             {isError && feedbackContent && (

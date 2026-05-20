@@ -6,8 +6,8 @@ interface InfoRowProps {
 export function InfoRow({ label, value }: InfoRowProps) {
   return (
     <div className="flex items-center justify-between mb-3">
-      <span className="text-[12px] text-zinc-400">{label}</span>
-      <span className="text-[12px] text-zinc-200">{value ?? '—'}</span>
+      <span className="text-[0.9230rem] text-zinc-400">{label}</span>
+      <span className="text-[0.9230rem] text-zinc-200">{value ?? '—'}</span>
     </div>
   );
 }

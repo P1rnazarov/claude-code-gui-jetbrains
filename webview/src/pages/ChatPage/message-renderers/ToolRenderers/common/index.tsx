@@ -18,7 +18,7 @@ export const ToolWrapper = (props: {
         <div className={cn(`group pt-2 pb-4 pl-6 pr-3`, groupClassName)}>
             <div className="flex items-start gap-3">
                 {/* Bullet indicator */}
-                <span className="text-zinc-500 mt-[3px] text-[9px]">●</span>
+                <span className="text-zinc-500 mt-[3px] text-[0.6923rem]">●</span>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
@@ -56,8 +56,8 @@ export const ToolHeader = (props: {
     const {name, description = '', className = '', children} = props;
 
     return (
-        <div className={cn(`flex items-start gap-1.5 text-[13px]`, className)}>
-            <div className="text-white text-[13px] font-semibold">
+        <div className={cn(`flex items-start gap-1.5 text-[1rem]`, className)}>
+            <div className="text-white text-[1rem] font-semibold">
                 <span className="">{name}</span>
             </div>
 
@@ -68,7 +68,7 @@ export const ToolHeader = (props: {
 
 export const Container = ({children, className = ''}: { children?: ReactNode; className?: string;}) => {
     return (
-        <div className={`bg-zinc-800/40 border border-white/15 rounded text-[11px] font-mono ${className}`}>
+        <div className={`bg-zinc-800/40 border border-white/15 rounded text-[0.8461rem] font-mono ${className}`}>
             {children}
         </div>
     )

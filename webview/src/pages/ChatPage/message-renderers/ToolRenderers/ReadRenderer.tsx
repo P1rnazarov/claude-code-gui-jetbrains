@@ -23,7 +23,7 @@ export function ReadRenderer(props: RendererProps) {
         <ToolWrapper message={props.message} groupClassName="pb-2.5">
             <ToolHeader name={name}>
                 <div
-                    className={cn("text-white/80 text-[12px] font-mono", path && "cursor-pointer hover:underline")}
+                    className={cn("text-white/80 text-[0.9230rem] font-mono", path && "cursor-pointer hover:underline")}
                     onClick={path ? () => getAdapter().openFile(path) : undefined}
                 >{fileName}</div>
             </ToolHeader>

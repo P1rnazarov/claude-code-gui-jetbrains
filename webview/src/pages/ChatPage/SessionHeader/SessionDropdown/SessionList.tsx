@@ -19,7 +19,7 @@ export function SessionList(props: Props) {
 
         return (
           <div key={groupKey}>
-            <div className="px-2 py-1.5 text-[11px] text-zinc-500">
+            <div className="px-2 py-1.5 text-[0.8461rem] text-zinc-500">
               {GROUP_LABELS[groupKey]}
             </div>
             {sessionsInGroup.map((session) => (

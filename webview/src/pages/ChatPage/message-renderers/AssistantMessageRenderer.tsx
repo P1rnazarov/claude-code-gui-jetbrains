@@ -37,7 +37,7 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
                   <StreamingMessage
                       content={content}
                       isStreaming={message.isStreaming ?? false}
-                      className="text-zinc-200 text-[13px] leading-relaxed"
+                      className="text-zinc-200 text-[1rem] leading-relaxed"
                       message={message}
                   />
               ) : (
@@ -48,7 +48,7 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
                               key={`${message.uuid}-thinking-${index}`}
                               thinking={(block as ThinkingBlockDto).thinking}
                               isStreaming={message.isStreaming ?? false}
-                              className="text-zinc-200 text-[13px] leading-relaxed"
+                              className="text-zinc-200 text-[1rem] leading-relaxed"
                               message={message}
                           />
                       );
@@ -59,7 +59,7 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
                               key={`${message.uuid}-text-${index}`}
                               content={block.text}
                               isStreaming={message.isStreaming ?? false}
-                              className="text-zinc-200 text-[13px] leading-relaxed"
+                              className="text-zinc-200 text-[1rem] leading-relaxed"
                               message={message}
                           />
                       );

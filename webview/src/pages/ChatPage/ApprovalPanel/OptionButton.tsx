@@ -33,8 +33,8 @@ export function OptionButton(props: Props) {
                     : 'text-zinc-300 hover:text-zinc-200 hover:bg-sky-300/30'
             }`}
         >
-            <span className="text-[13px] text-zinc-500">{option.key}</span>
-            <span className="text-[13px]">{option.label}</span>
+            <span className="text-[1rem] text-zinc-500">{option.key}</span>
+            <span className="text-[1rem]">{option.label}</span>
         </button>
     );
 }

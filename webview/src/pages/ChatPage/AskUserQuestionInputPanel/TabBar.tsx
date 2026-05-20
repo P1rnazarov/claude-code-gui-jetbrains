@@ -15,7 +15,7 @@ export const TabBar = (props: Props) => {
         <button
           key={idx}
           onClick={() => onTabClick(idx)}
-          className={`p-1 text-[12px] font-medium whitespace-nowrap border-b-2 transition-colors ${
+          className={`p-1 text-[0.9230rem] font-medium whitespace-nowrap border-b-2 transition-colors ${
             idx === currentIndex
               ? 'text-zinc-200 border-blue-500'
               : 'text-zinc-500 border-transparent hover:text-zinc-400'

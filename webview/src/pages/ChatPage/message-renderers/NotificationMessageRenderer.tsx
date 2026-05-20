@@ -11,7 +11,7 @@ export const NotificationMessageRenderer: React.FC<NotificationMessageRendererPr
 
   return (
     <div className="flex justify-center py-2">
-      <span className="text-[11px] text-zinc-500 italic">{text}</span>
+      <span className="text-[0.8461rem] text-zinc-500 italic">{text}</span>
     </div>
   );
 };

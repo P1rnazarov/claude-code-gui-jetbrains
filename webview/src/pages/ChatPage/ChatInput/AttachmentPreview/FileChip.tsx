@@ -14,13 +14,13 @@ export function FileChip(props: Props) {
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <polyline points="14 2 14 8 20 8" />
       </svg>
-      <span className="text-[11px] text-zinc-300 truncate max-w-[120px]">
+      <span className="text-[0.8461rem] text-zinc-300 truncate max-w-[120px]">
         {attachment.displayLabel}
       </span>
       <button
         type="button"
         onClick={() => onRemove(attachment.id)}
-        className="w-3.5 h-3.5 flex items-center justify-center rounded-full text-zinc-500 hover:text-red-400 text-[10px] shrink-0"
+        className="w-3.5 h-3.5 flex items-center justify-center rounded-full text-zinc-500 hover:text-red-400 text-[0.7692rem] shrink-0"
       >
         ×
       </button>

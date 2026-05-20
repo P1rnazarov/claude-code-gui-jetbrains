@@ -31,7 +31,7 @@ export function TodoWriteRenderer(props: RendererProps) {
         <ToolWrapper message={props.message} onClick={() => console.log(props.toolUse, todos)}>
             <ToolHeader name="Update Todos" className="mb-[12px]" />
 
-            <div className="text-[12px] font-mono flex flex-col gap-[8px]">
+            <div className="text-[0.9230rem] font-mono flex flex-col gap-[8px]">
                 {todos.map((todo, i) => {
                     const isChecked = todo.status === 'completed';
 
