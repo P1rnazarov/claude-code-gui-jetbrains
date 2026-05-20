@@ -73,15 +73,19 @@ function execFileAsync(cmd: string, args: string[], opts: { timeout: number }): 
   });
 }
 
-function shellInvocation(command: string): { shell: string; args: string[] } {
+export function shellInvocation(command: string): { shell: string; args: string[] } {
   if (process.platform === 'win32') {
     return {
       shell: process.env.ComSpec || 'cmd.exe',
       args: ['/c', command],
     };
   }
+  const userShell = process.env.SHELL || '/bin/sh';
+  // fish does not support the `-i` flag; fall back to a POSIX-compatible shell
+  const isFish = /\/fish$/.test(userShell);
+  const shell = isFish ? '/bin/sh' : userShell;
   return {
-    shell: process.env.SHELL || '/bin/sh',
+    shell,
     args: ['-l', '-i', '-c', command],
   };
 }
