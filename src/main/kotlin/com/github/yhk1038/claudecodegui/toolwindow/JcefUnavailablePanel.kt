@@ -2,8 +2,7 @@ package com.github.yhk1038.claudecodegui.toolwindow
 
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.ui.HyperlinkLabel
 import java.awt.BorderLayout
@@ -87,8 +86,10 @@ class JcefUnavailablePanel : JPanel(BorderLayout()) {
             return
         }
         val dataContext = DataManager.getInstance().getDataContext(this)
-        val event = AnActionEvent.createFromAnAction(action, null, ActionPlaces.UNKNOWN, dataContext)
-        action.actionPerformed(event)
+        // Use ActionUtil.invokeAction so we don't have to build the event ourselves
+        // (the manual factory is scheduled for removal) and so we don't violate the
+        // override-only contract of AnAction.
+        ActionUtil.invokeAction(action, dataContext, "JcefUnavailablePanel", null, null)
     }
 
     companion object {

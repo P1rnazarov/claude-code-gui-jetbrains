@@ -119,11 +119,16 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
+            <h3>0.13.11 - Future-proof JCEF runtime install action</h3>
+            <ul>
+                <li>Replaced deprecated and override-only IntelliJ Platform API usage in the JCEF fallback flow with <code>ActionUtil.invokeAction</code> so the "Install JCEF Runtime" button keeps working on future IDE versions</li>
+                <li>Added IntelliJ IDEA 2024.3.7 to the local Plugin Verifier matrix to catch similar deprecations before release</li>
+            </ul>
             <h3>0.13.10 - Android Studio compatibility</h3>
             <ul>
                 <li>Added graceful fallback when JCEF is not available in the current JetBrains Runtime (issue #34, mainly affects Android Studio)</li>
-                <li>Show a guidance panel and a sticky notification with a one-click "Switch Runtime" action to help users switch to a JCEF-enabled JBR</li>
-                <li>Declared <code>com.intellij.modules.jcef</code> as an optional plugin dependency</li>
+                <li>Show a guidance panel and a sticky notification with a one-click "Install JCEF Runtime" action that opens the IDE's "Choose Boot Java Runtime for the IDE…" dialog</li>
+                <li>Declared <code>com.intellij.modules.jcef</code> as an optional plugin dependency so future Android Studio versions that bundle JCEF light up automatically</li>
             </ul>
             <h3>0.13.9 - Russian language option</h3>
             <ul>
@@ -198,6 +203,9 @@ intellijPlatform {
         ides {
             // Match our platformVersion (2024.2) for regression baseline
             ide("IC", "2024.2.6")
+            // 2024.3 caught deprecated/override-only API usage in Marketplace verifier;
+            // pin it locally so the same checks run on every release.
+            ide("IC", "2024.3.7")
             // Android Studio Ladybug (2024.2.2) — primary target of issue #34
             ide("AI", "2024.2.2.13")
         }
