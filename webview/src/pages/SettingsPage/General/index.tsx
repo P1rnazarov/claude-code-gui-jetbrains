@@ -1,4 +1,5 @@
-import { SettingSection, SettingRow, ToggleSwitch } from '../common';
+import { SettingSection, SettingRow } from '../common';
+import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { ROUTE_META, Route } from '@/router/routes';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 
@@ -68,7 +69,7 @@ export function GeneralSettings() {
         >
           <ToggleSwitch
             checked={useCtrlEnterToSend}
-            onChange={() => updateSetting('useCtrlEnterToSend', !useCtrlEnterToSend)}
+            onChange={(checked) => updateSetting('useCtrlEnterToSend', checked)}
             ariaLabel="Use Ctrl Enter To Send"
           />
         </SettingRow>

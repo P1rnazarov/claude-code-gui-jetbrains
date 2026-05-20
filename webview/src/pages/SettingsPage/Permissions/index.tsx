@@ -1,4 +1,5 @@
 import { SettingSection, SettingRow } from '../common';
+import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { type InputMode, INPUT_MODES, getAvailableModes, CLI_FLAG_TO_INPUT_MODE, INPUT_MODE_TO_CLI_FLAG } from '@/types/chatInput';
 import type { PermissionsConfig } from '@/types/claude-settings';
@@ -49,30 +50,23 @@ export function PermissionsSettings() {
           {isBypassNotSet ? (
             <div className="flex items-center gap-2">
               <span className="text-xs text-zinc-500 italic">Not set (use global)</span>
-              <button
-                onClick={() => savePermissionsKey('disableBypassPermissionsMode', 'disable')}
-                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors bg-zinc-600 opacity-50"
-              >
-                <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1" />
-              </button>
+              <ToggleSwitch
+                checked={false}
+                onChange={() => savePermissionsKey('disableBypassPermissionsMode', 'disable')}
+                ariaLabel="Disable Bypass Mode"
+              />
             </div>
           ) : (
-            <button
-              onClick={() => {
-                if (bypassDisabled) {
-                  return deletePermissionsKey('disableBypassPermissionsMode');
-                } else {
+            <ToggleSwitch
+              checked={bypassDisabled}
+              onChange={(checked) => {
+                if (checked) {
                   return savePermissionsKey('disableBypassPermissionsMode', 'disable');
                 }
+                return deletePermissionsKey('disableBypassPermissionsMode');
               }}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                bypassDisabled ? 'bg-blue-500' : 'bg-zinc-600'
-              }`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                bypassDisabled ? 'translate-x-6' : 'translate-x-1'
-              }`} />
-            </button>
+              ariaLabel="Disable Bypass Mode"
+            />
           )}
         </SettingRow>
       </SettingSection>
