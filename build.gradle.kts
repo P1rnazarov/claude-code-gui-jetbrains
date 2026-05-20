@@ -119,6 +119,11 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
+            <h3>0.14.2 - Chat widgets for new Task tools and TaskOutput tail copy</h3>
+            <ul>
+                <li>Added dedicated chat widgets for the new <code>TaskCreate</code> / <code>TaskGet</code> / <code>TaskList</code> / <code>TaskUpdate</code> tools, which previously rendered as the generic 'unknown' placeholder after Claude Code CLI replaced TodoWrite with these split-out tools.</li>
+                <li>Click the <code>TaskOutput</code> widget header to copy a <code>tail -f &lt;output-file&gt;</code> command to your clipboard, so you can follow a backgrounded bash task in your own terminal.</li>
+            </ul>
             <h3>0.14.1 - Theme system and usage panel fixes</h3>
             <ul>
                 <li>Added a full light/dark theme system with semantic color tokens, so the chat UI, dropdowns, and settings panels follow your IDE theme consistently.</li>
