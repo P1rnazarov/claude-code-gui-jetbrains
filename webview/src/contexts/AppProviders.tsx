@@ -148,11 +148,11 @@ function SessionLoader({ children }: { children: ReactNode }) {
  * 5. CliConfigProvider - CLI config (control_response) cache (depends on Bridge + WorkingDir)
  * 6. SettingsProvider - IDE settings (terminal, theme, etc.) (depends on Bridge)
  * 7. ClaudeSettingsProvider - Claude Code settings (~/.claude/settings.json) (depends on Bridge)
- * 7. SessionProvider - Session management (depends on Bridge + WorkingDir + Settings)
- * 8. ChatStreamProvider - Chat state + Streaming + Diffs + Tools (depends on Bridge + Session)
- * 9. CommandPaletteProvider - Slash command manager (depends on ChatStream + Session)
- * 10. ThemeProvider - Theme management (depends on Settings)
- * 11. SessionLoader - Reactive session management (depends on Session + ChatStream + Api)
+ * 8. SessionProvider - Session management (depends on Bridge + WorkingDir + Settings)
+ * 9. ChatStreamProvider - Chat state + Streaming + Diffs + Tools (depends on Bridge + Session)
+ * 10. CommandPaletteProvider - Slash command manager (depends on ChatStream + Session)
+ * 11. ThemeProvider - Theme management (depends on Settings)
+ * 12. SessionLoader - Reactive session management (depends on Session + ChatStream + Api)
  */
 export function AppProviders({ children }: AppProvidersProps) {
   return (

@@ -1,5 +1,8 @@
-import {ToolUseBlockDto} from "@/dto";
-import {Container, LabelValue, RendererProps, ToolHeader, ToolWrapper} from "./common";
+import { useState } from 'react';
+import { ToolUseBlockDto } from '@/dto';
+import { Container, LabelValue, RendererProps, ToolHeader, ToolWrapper } from './common';
+import { useWorkingDir } from '@/contexts/WorkingDirContext';
+import { useBridgeContext } from '@/contexts/BridgeContext';
 
 class TaskOutputToolUseDto extends ToolUseBlockDto {
     declare input: {
@@ -50,6 +53,11 @@ export function TaskOutputRenderer(props: RendererProps) {
     const toolUse = props.toolUse as unknown as TaskOutputToolUseDto;
     const taskId = toolUse.input?.task_id ?? '';
 
+    const { workingDirectory } = useWorkingDir();
+    const { send } = useBridgeContext();
+
+    const [copied, setCopied] = useState(false);
+
     const toolResult = props.toolResult as {
         message?: { content?: Array<{ content?: string | Array<{ type?: string; content?: string }> }> }
     } | undefined;
@@ -73,10 +81,49 @@ export function TaskOutputRenderer(props: RendererProps) {
         ? `${taskId} — ${taskStatus}`
         : taskId;
 
+    const handleCopy = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!taskId) return;
+
+        let command: string;
+        if (workingDirectory) {
+            try {
+                const res = await send('FIND_BG_TASK_OUTPUT_PATH', {
+                    taskId,
+                    workingDir: workingDirectory,
+                });
+                const path = (res as { path?: string | null })?.path;
+                command = path ? `tail -f ${path}` : taskId;
+            } catch {
+                command = taskId;
+            }
+        } else {
+            command = taskId;
+        }
+
+        try {
+            await navigator.clipboard.writeText(command);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error('[TaskOutputRenderer] clipboard write failed:', err);
+        }
+    };
+
     return (
         <ToolWrapper message={props.message}>
             <ToolHeader name="TaskOutput" inProgress={!props.toolResult} className="mb-2.5">
-                <div className="text-text-primary/60 truncate text-[0.9230rem]">task: "{description}"</div>
+                <div className="flex items-center gap-2 min-w-0">
+                    <div
+                        className="text-text-primary/60 truncate text-[0.9230rem] cursor-pointer hover:text-text-primary/90 transition-colors"
+                        onClick={handleCopy}
+                    >
+                        task: "{description}"
+                    </div>
+                    {copied && (
+                        <span className="text-state-success-fg text-[0.8461rem] shrink-0">Copied</span>
+                    )}
+                </div>
             </ToolHeader>
 
             {props.toolResult && output && (
