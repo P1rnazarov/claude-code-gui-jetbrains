@@ -138,8 +138,8 @@ export function TunnelModal(props: Props) {
                 </button>
               </div>
               <div className="flex justify-start">
-                <div className="bg-surface-base p-3 rounded-lg">
-                  <QRCodeSVG value={fullTunnelUrl} size={100} />
+                <div className="bg-white p-3 rounded-lg">
+                  <QRCodeSVG value={fullTunnelUrl} size={100} bgColor="#ffffff" fgColor="#000000" />
                 </div>
               </div>
             </div>
