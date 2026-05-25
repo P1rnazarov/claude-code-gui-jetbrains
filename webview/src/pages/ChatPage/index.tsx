@@ -12,20 +12,27 @@ import { BrowserPermissionBanner } from './BrowserPermissionBanner';
 import { useChatInputFocus } from '../../contexts/ChatInputFocusContext';
 import { useChatStreamContext } from '../../contexts/ChatStreamContext';
 import { useSessionContext } from '../../contexts/SessionContext';
+import { useAwaitingNotifications } from '../../hooks';
 import { usePendingAskUserQuestion } from '../../hooks/usePendingAskUserQuestion';
 import { usePendingPermissions } from '../../hooks/usePendingPermissions';
 import { usePendingPlanApproval } from '../../hooks/usePendingPlanApproval';
+import { useNotificationSound } from '@/notifications';
 import {isMobile} from "@/config/environment.ts";
 
 export function ChatPage() {
   const { textareaRef, focus: focusInput } = useChatInputFocus();
-  const { currentSessionId } = useSessionContext();
+  const { currentSessionId, currentSession } = useSessionContext();
   const { messages, isStreaming } = useChatStreamContext();
   const { pending: pendingUserAnswer, dismiss } = usePendingAskUserQuestion(messages, isStreaming);
   const { pending: pendingPermission, approve: approvePermission, approveForSession, deny: denyPermission } = usePendingPermissions();
   const { pending: pendingPlan, approve: approvePlan, deny: denyPlan } = usePendingPlanApproval();
+  const { selection: soundSelection } = useNotificationSound();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomPanelRef = useRef<HTMLDivElement>(null);
+
+  useAwaitingNotifications(currentSession?.title ?? null, soundSelection, {
+    pendingPermission: pendingPermission !== null,
+  });
 
   // Save scroll position to localStorage (debounced via scroll event)
   useEffect(() => {

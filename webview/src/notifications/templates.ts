@@ -16,4 +16,9 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationKind, NotificationTempla
     body: 'Response failed',
     icon: '/favicon.svg',
   },
+  [NotificationKind.AWAITING_PERMISSION]: {
+    title: (ctx: NotificationContext) => ctx.sessionTitle ?? APP_NAME,
+    body: 'Permission requested',
+    icon: '/favicon.svg',
+  },
 };

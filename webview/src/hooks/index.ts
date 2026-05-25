@@ -6,6 +6,7 @@ export { useTools } from './useTools';
 export { useTheme } from './useTheme';
 export { useContext } from './useContext';
 export { useDocumentTitle } from './useDocumentTitle';
+export { useAwaitingNotifications } from './useAwaitingNotifications';
 export type { LoadedMessage } from './useChatStream';
 export type { AttachedContext } from './useContext';
 export { useTunnelStatus } from './useTunnelStatus';

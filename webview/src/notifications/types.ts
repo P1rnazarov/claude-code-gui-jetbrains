@@ -7,6 +7,7 @@
 export enum NotificationKind {
   SESSION_COMPLETE = 'SESSION_COMPLETE',
   STREAM_ERROR = 'STREAM_ERROR',
+  AWAITING_PERMISSION = 'AWAITING_PERMISSION',
 }
 
 export interface NotificationContext {
