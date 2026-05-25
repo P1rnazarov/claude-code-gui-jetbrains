@@ -10,6 +10,7 @@ import {
   ArrowsRightLeftIcon,
   ArrowUpCircleIcon,
   ComputerDesktopIcon,
+  BellIcon,
 } from '@heroicons/react/24/outline';
 import type { ComponentType, SVGProps } from 'react';
 
@@ -29,6 +30,7 @@ export enum IconName {
   ARROWS_RIGHT_LEFT = 'ArrowsRightLeftIcon',
   ARROW_UP_CIRCLE = 'ArrowUpCircleIcon',
   COMPUTER_DESKTOP = 'ComputerDesktopIcon',
+  BELL = 'BellIcon',
 }
 
 /**
@@ -48,6 +50,7 @@ export enum Route {
   SETTINGS_TUNNEL = 'settings/tunnel',
   SETTINGS_USAGE = 'settings/usage',
   SETTINGS_RELEASES = 'settings/releases',
+  SETTINGS_BROWSER = 'settings/browser',
   SETTINGS_ACCOUNT = 'settings/account',
   SETTINGS_ABOUT = 'settings/about',
   SWITCH_ACCOUNT = 'switch-account',
@@ -147,6 +150,13 @@ export const ROUTE_META: Record<Route, RouteMeta> = {
     description: 'Release notes and updates',
     scopeSupport: 'none',
   },
+  [Route.SETTINGS_BROWSER]: {
+    path: '/settings/browser',
+    label: 'Browser',
+    icon: IconName.BELL,
+    description: 'Browser-only options',
+    scopeSupport: 'none',
+  },
   [Route.SETTINGS_ACCOUNT]: {
     path: '/settings/account',
     label: 'Account',
@@ -178,6 +188,7 @@ export const ICON_COMPONENTS: Record<IconName, ComponentType<SVGProps<SVGSVGElem
   [IconName.ARROWS_RIGHT_LEFT]: ArrowsRightLeftIcon,
   [IconName.ARROW_UP_CIRCLE]: ArrowUpCircleIcon,
   [IconName.COMPUTER_DESKTOP]: ComputerDesktopIcon,
+  [IconName.BELL]: BellIcon,
 };
 
 /**
@@ -263,6 +274,7 @@ export const SETTINGS_SUB_ROUTES: Route[] = [
   Route.SETTINGS_PERMISSIONS,
   Route.SETTINGS_CLI,
   // Route.SETTINGS_ADVANCED,  // TODO: not yet implemented
+  Route.SETTINGS_BROWSER,
   Route.SETTINGS_ACCOUNT,
   Route.SETTINGS_TUNNEL,
   Route.SETTINGS_USAGE,

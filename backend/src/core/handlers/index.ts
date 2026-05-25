@@ -45,6 +45,8 @@ import { listProjectFilesHandler } from './listProjectFiles';
 import { getCliConfigHandler } from './getCliConfig';
 import { openFolderDialogHandler } from './openFolderDialog';
 import { findBackgroundTaskOutputPathHandler } from './findBackgroundTaskOutputPathHandler';
+import { listSystemSoundsHandler } from './listSystemSounds';
+import { playSystemSoundHandler } from './playSystemSound';
 
 export async function handleMessage(
   connectionId: string,
@@ -186,6 +188,12 @@ export async function handleMessage(
       break;
     case 'FIND_BG_TASK_OUTPUT_PATH':
       await findBackgroundTaskOutputPathHandler(connectionId, message, connections, bridge);
+      break;
+    case 'LIST_SYSTEM_SOUNDS':
+      await listSystemSoundsHandler(connectionId, message, connections, bridge);
+      break;
+    case 'PLAY_SYSTEM_SOUND':
+      await playSystemSoundHandler(connectionId, message, connections, bridge);
       break;
     default:
       console.error('[node-backend]', `Unknown message type: ${message.type}`);

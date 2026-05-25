@@ -7,11 +7,13 @@ import { NewTabButton } from './NewTabButton';
 import { useDocumentTitle } from '@/hooks';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
+import { useNotificationSound } from '@/notifications';
 
 export function SessionHeader() {
   const { currentSession } = useSessionContext();
   const { isStreaming } = useChatStreamContext();
-  useDocumentTitle(currentSession?.title || null, isStreaming);
+  const { selection } = useNotificationSound();
+  useDocumentTitle(currentSession?.title || null, isStreaming, selection);
 
   return (
     <div className="flex justify-between items-center px-2 py-1">

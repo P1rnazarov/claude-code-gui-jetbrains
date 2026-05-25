@@ -1,0 +1,48 @@
+/**
+ * Kinds of desktop notifications the app can emit.
+ *
+ * Phase 1 only ships SESSION_COMPLETE; future kinds (AWAITING_USER_INPUT,
+ * AWAITING_PERMISSION, AWAITING_PLAN_APPROVAL, STREAM_ERROR, ...) plug in
+ * by adding an entry here plus a template in templates.ts.
+ */
+export enum NotificationKind {
+  SESSION_COMPLETE = 'SESSION_COMPLETE',
+}
+
+export interface NotificationContext {
+  sessionTitle: string | null;
+}
+
+export interface NotificationTemplate {
+  title: (ctx: NotificationContext) => string;
+  body: string;
+  icon: string;
+}
+
+/**
+ * Sentinel value indicating "no sound on notification".
+ *
+ * Any other string value is interpreted as a backend-issued `soundId`
+ * (see `SystemSound.id` and the `PLAY_SYSTEM_SOUND` RPC).
+ */
+export const SOUND_OFF = 'off' as const;
+
+/**
+ * The user's notification-sound preference.
+ *
+ * - `'off'`              → suppress sound entirely (no `PLAY_SYSTEM_SOUND` call)
+ * - any other string     → backend `soundId` to play on each notification
+ */
+export type SoundSelection = typeof SOUND_OFF | string;
+
+/**
+ * One OS system sound exposed by the backend's `LIST_SYSTEM_SOUNDS` RPC.
+ *
+ * - `id`    is the canonical key the backend uses to map back to a path
+ *           (sent in `PLAY_SYSTEM_SOUND { soundId }`).
+ * - `label` is a user-facing string for display in the settings UI.
+ */
+export interface SystemSound {
+  id: string;
+  label: string;
+}

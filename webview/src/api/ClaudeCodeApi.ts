@@ -2,6 +2,7 @@ import { BridgeClient, getBridgeClient } from './bridge/BridgeClient';
 import { SessionsApi } from './modules/SessionsApi';
 import { MessagesApi } from './modules/MessagesApi';
 import { ToolsApi } from './modules/ToolsApi';
+import { SoundsApi } from './modules/SoundsApi';
 
 /**
  * API configuration options
@@ -41,6 +42,7 @@ export class ClaudeCodeApi {
   readonly sessions: SessionsApi;
   readonly messages: MessagesApi;
   readonly tools: ToolsApi;
+  readonly sounds: SoundsApi;
 
   constructor(configOrBridge?: ApiConfig | BridgeClient, bridge?: BridgeClient) {
     // Handle both constructor signatures for backwards compatibility
@@ -58,6 +60,7 @@ export class ClaudeCodeApi {
     this.sessions = new SessionsApi(this.bridge, getConfig);
     this.messages = new MessagesApi(this.bridge);
     this.tools = new ToolsApi(this.bridge);
+    this.sounds = new SoundsApi(this.bridge);
   }
 
   /**

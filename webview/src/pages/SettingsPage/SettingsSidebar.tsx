@@ -1,15 +1,20 @@
 import { ROUTE_META, ICON_COMPONENTS, SETTINGS_SUB_ROUTES, Route } from '@/router/routes';
 import { useRouter } from '@/router';
 import { useUpdateAvailable } from '@/hooks/useUpdateAvailable';
+import { isBrowser } from '@/config/environment';
 
 export function SettingsSidebar() {
   const { route, navigate } = useRouter();
   const { hasUpdate } = useUpdateAvailable();
+  const browser = isBrowser();
 
   return (
     <nav className="w-48 flex-shrink-0 border-r border-border-default py-4">
       <ul className="space-y-1 px-2">
         {SETTINGS_SUB_ROUTES.map((subRoute) => {
+          if (subRoute === Route.SETTINGS_BROWSER && !browser) {
+            return null;
+          }
           const meta = ROUTE_META[subRoute];
           const Icon = meta.icon ? ICON_COMPONENTS[meta.icon] : null;
           const isActive = route === subRoute;

@@ -8,6 +8,7 @@ import { AcceptPlanPanel } from './AcceptPlanPanel';
 import { BannerArea } from './BannerArea';
 import { UpdateBanner } from './UpdateBanner';
 import { ConnectionLostBanner } from './ConnectionLostBanner';
+import { BrowserPermissionBanner } from './BrowserPermissionBanner';
 import { useChatInputFocus } from '../../contexts/ChatInputFocusContext';
 import { useChatStreamContext } from '../../contexts/ChatStreamContext';
 import { useSessionContext } from '../../contexts/SessionContext';
@@ -88,6 +89,7 @@ export function ChatPage() {
       <BannerArea>
         <UpdateBanner />
         <ConnectionLostBanner />
+        <BrowserPermissionBanner />
       </BannerArea>
 
       {/* Messages Area */}
