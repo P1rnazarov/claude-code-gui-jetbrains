@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import clawdSvg from '../../assets/clawd.svg';
 import claudeCodeLogo from '../../assets/claude-code-logo.svg';
+import { APP_NAME } from '@/config/app';
 
 export const EmptyState = () => {
   const isMac = navigator.platform.toUpperCase().includes('MAC');
@@ -37,7 +38,7 @@ export const EmptyState = () => {
   return (
     <div className="h-full flex flex-col">
       <div className="pt-4 flex justify-center">
-        <img src={claudeCodeLogo} alt="Claude Code" width={120} />
+        <img src={claudeCodeLogo} alt={APP_NAME} width={120} />
       </div>
       <div className="flex-1 flex flex-col items-center justify-center gap-5 pt-14">
         <img src={clawdSvg} alt="Clawd" width={46} />

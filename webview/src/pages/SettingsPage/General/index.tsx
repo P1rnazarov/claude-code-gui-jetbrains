@@ -1,5 +1,6 @@
 import { SettingSection, SettingRow } from '../common';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
+import { APP_NAME } from '@/config/app';
 import { ROUTE_META, Route } from '@/router/routes';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 
@@ -31,7 +32,7 @@ export function GeneralSettings() {
     <div>
       <h2 className="text-xl font-semibold text-text-primary mb-6">{meta.label}</h2>
 
-      <SettingSection title="Claude Code">
+      <SettingSection title={APP_NAME}>
         <SettingRow
           label="Language"
           description="Claude's preferred response language"

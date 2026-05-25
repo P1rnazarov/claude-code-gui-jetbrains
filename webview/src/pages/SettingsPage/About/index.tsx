@@ -1,5 +1,6 @@
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { SettingSection, SettingRow } from '../common';
+import { APP_NAME } from '@/config/app';
 import { ROUTE_META, Route } from '@/router/routes';
 import { useVersionInfo } from '@/hooks/useVersionInfo';
 
@@ -16,7 +17,7 @@ export function AboutSettings() {
           <span className="text-sm text-text-secondary">{pluginVersion}</span>
         </SettingRow>
 
-        <SettingRow label="Claude Code Version">
+        <SettingRow label={`${APP_NAME} Version`}>
           <div className="flex items-center gap-2">
             <span className="text-sm text-text-secondary">{cliVersion ?? 'not detected'}</span>
             <button

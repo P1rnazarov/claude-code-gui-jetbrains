@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { APP_NAME } from '@/config/app';
 import {
   NotificationKind,
   notify,
@@ -49,7 +50,7 @@ export function useDocumentTitle(
   }, [soundSelection]);
 
   useEffect(() => {
-    document.title = title || 'Claude Code';
+    document.title = title || APP_NAME;
   }, [title]);
 
   // Notify JCEF of streaming state changes

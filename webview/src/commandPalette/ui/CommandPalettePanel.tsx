@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { PanelSection, PanelItem } from '@/types/commandPalette';
 import { useVersionInfo } from '@/hooks/useVersionInfo';
 import { useCliConfig } from '@/contexts/CliConfigContext';
+import { APP_NAME } from '@/config/app';
 import { PanelSectionComponent } from './PanelSectionComponent';
 
 interface CommandPalettePanelProps {
@@ -109,7 +110,7 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
           </button>
         </div>
         <div className="text-text-secondary/80">
-          {cliVersion ? `v${pluginVersion} · Claude Code ${cliVersion}` : `v${pluginVersion}`}
+          {cliVersion ? `v${pluginVersion} · ${APP_NAME} ${cliVersion}` : `v${pluginVersion}`}
         </div>
       </div>
     </div>
