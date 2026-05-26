@@ -79,7 +79,7 @@ fi
 # ─── 4. download + extract ─────────────────────────────────────
 
 mkdir -p "$CCG_HOME"
-asset_url="https://github.com/${CCG_RELEASE_REPO}/releases/download/v${version}/ccg-v${version}.tar.gz"
+asset_url="https://github.com/${CCG_RELEASE_REPO}/releases/download/v${version}/ccg-cli-v${version}.tar.gz"
 say "Downloading $asset_url..."
 
 if ! (
@@ -87,7 +87,7 @@ if ! (
   curl -fsSL --max-time 60 "$asset_url" | tar -xz -C "$CCG_HOME"
 ); then
   err "Download or extraction failed."
-  err "Check that the release v${version} has the asset 'ccg-v${version}.tar.gz' attached."
+  err "Check that the release v${version} has the asset 'ccg-cli-v${version}.tar.gz' attached."
   exit 1
 fi
 

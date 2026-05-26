@@ -46,17 +46,17 @@ if [[ -z "$ZIP" ]]; then
 fi
 echo "Build artifact: $ZIP"
 
-# --- CLI / ccg runtime + cli tarballs (for the `ccg` terminal launcher) ---
+# --- Standalone runtime + ccg CLI tarballs (for the `ccg` terminal launcher) ---
 echo ""
-echo "--- runtime tgz + ccg tgz ---"
-bash "$ROOT/scripts/build.sh" runtime-tgz
-bash "$ROOT/scripts/build.sh" ccg-tgz
-RUNTIME_TGZ="$ROOT/dist/claude-code-gui-runtime-v${VERSION}.tgz"
-CCG_TGZ="$ROOT/dist/ccg-v${VERSION}.tar.gz"
-if [[ ! -f "$RUNTIME_TGZ" || ! -f "$CCG_TGZ" ]]; then
+echo "--- standalone tgz + ccg-cli tgz ---"
+bash "$ROOT/scripts/build.sh" standalone-tgz
+bash "$ROOT/scripts/build.sh" ccg-cli-tgz
+STANDALONE_TGZ="$ROOT/dist/claude-code-gui-standalone-v${VERSION}.tgz"
+CCG_CLI_TGZ="$ROOT/dist/ccg-cli-v${VERSION}.tar.gz"
+if [[ ! -f "$STANDALONE_TGZ" || ! -f "$CCG_CLI_TGZ" ]]; then
   echo "ERROR: Expected tgz artifacts not found:" >&2
-  echo "  $RUNTIME_TGZ" >&2
-  echo "  $CCG_TGZ" >&2
+  echo "  $STANDALONE_TGZ" >&2
+  echo "  $CCG_CLI_TGZ" >&2
   exit 1
 fi
 
@@ -96,7 +96,7 @@ gh release create "$TAG" \
   --notes "$RELEASE_BODY"
 
 echo "--- Upload tgz assets to release ---"
-gh release upload "$TAG" "$RUNTIME_TGZ" "$CCG_TGZ"
+gh release upload "$TAG" "$STANDALONE_TGZ" "$CCG_CLI_TGZ"
 
 # --- Step 7: Publish to Marketplace ---
 echo ""

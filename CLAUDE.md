@@ -35,6 +35,15 @@ WebView는 클라이언트 실행환경에 관계없이 항상 Node.js 백엔드
 
 **두 환경 모두 실제 제품이 동작하는 환경이다.** 브라우저 환경은 개발 전용이 아니며, 독립 배포 대상이다.
 
+### 실행 모드 용어
+
+| 용어 | 의미 |
+|------|------|
+| **JetBrains 모드** | IDE가 Node.js 백엔드를 spawn하고 JCEF WebView로 접속. `JETBRAINS_MODE=true` 환경변수로 활성화. |
+| **Standalone 모드** | IDE 외부에서 Node.js 백엔드를 실행하고 일반 브라우저로 접속. `JETBRAINS_MODE` 미설정 시 자동 적용. 부트스트랩 경로 2가지: ① 개발용 Vite dev server, ② 사용자 머신의 `ccg` 명령(터미널 런처). |
+
+배포 산출물 이름도 이 용어를 따른다 — `claude-code-gui-standalone-v<ver>.tgz`는 standalone 모드용 backend + webview 런타임. JetBrains 모드 산출물은 마켓플레이스 zip(`claude-code-gui-jetbrains-<ver>.zip`).
+
 ### 핵심 원칙
 
 - **유일한 백엔드는 Node.js**: 비즈니스 로직(세션, 설정, Claude CLI, 파일 I/O)은 모두 Node.js에서 처리

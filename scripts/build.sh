@@ -30,9 +30,9 @@ WebView (webview/):
 
 CLI / ccg (cli/):
   cli-test       Run bats test suite (passes extra args to bats)
-  runtime-tgz    Create dist/claude-code-gui-runtime-v<ver>.tgz
-                   (requires be-build + wv-build first)
-  ccg-tgz        Create dist/ccg-v<ver>.tar.gz from cli/{bin,lib,locales,uninstall.sh}
+  standalone-tgz Create dist/claude-code-gui-standalone-v<ver>.tgz
+                   (backend + webview for Standalone mode; requires be-build + wv-build)
+  ccg-cli-tgz    Create dist/ccg-cli-v<ver>.tar.gz from cli/{bin,lib,locales,uninstall.sh}
 
 Plugin (Gradle):
   build          gradlew build
@@ -74,7 +74,7 @@ case "${1:-}" in
   cli-test)
     bash "$ROOT/cli/run-tests.sh" "${@:2}"
     ;;
-  runtime-tgz)
+  standalone-tgz)
     version=$(grep -E '"version"' "$ROOT/backend/package.json" | head -1 \
               | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
     if [[ -z "$version" ]]; then
@@ -87,24 +87,24 @@ case "${1:-}" in
       echo "webview/dist not found. Run 'wv-build' first." >&2; exit 1
     fi
     mkdir -p "$ROOT/dist"
-    stage="$ROOT/dist/.stage-runtime-v$version"
+    stage="$ROOT/dist/.stage-standalone-v$version"
     rm -rf "$stage"
     mkdir -p "$stage/webview"
     cp "$ROOT/backend/dist/backend.mjs" "$stage/"
     cp -R "$ROOT/webview/dist/." "$stage/webview/"
-    out="$ROOT/dist/claude-code-gui-runtime-v$version.tgz"
+    out="$ROOT/dist/claude-code-gui-standalone-v$version.tgz"
     tar -czf "$out" -C "$stage" backend.mjs webview
     rm -rf "$stage"
     echo "Created: $out"
     ;;
-  ccg-tgz)
+  ccg-cli-tgz)
     version=$(grep -E '"version"' "$ROOT/backend/package.json" | head -1 \
               | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
     if [[ -z "$version" ]]; then
       echo "Could not read version from backend/package.json" >&2; exit 1
     fi
     mkdir -p "$ROOT/dist"
-    stage="$ROOT/dist/.stage-ccg-v$version"
+    stage="$ROOT/dist/.stage-ccg-cli-v$version"
     rm -rf "$stage"
     mkdir -p "$stage"
     cp -R "$ROOT/cli/bin" "$stage/"
@@ -112,7 +112,7 @@ case "${1:-}" in
     cp -R "$ROOT/cli/locales" "$stage/"
     cp "$ROOT/cli/uninstall.sh" "$stage/"
     chmod +x "$stage/bin/ccg" "$stage/uninstall.sh"
-    out="$ROOT/dist/ccg-v$version.tar.gz"
+    out="$ROOT/dist/ccg-cli-v$version.tar.gz"
     tar -czf "$out" -C "$stage" .
     rm -rf "$stage"
     echo "Created: $out"

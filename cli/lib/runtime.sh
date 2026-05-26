@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
-# runtime.sh — manage cached runtime tarballs under $CCG_HOME/runtimes/<version>/.
+# runtime.sh — manage cached Standalone-mode runtimes under
+# $CCG_HOME/runtimes/<version>/. Each cache holds the backend.mjs + webview
+# pair that ccg spawns in Standalone mode.
 #
 # Public API:
 #   runtime_cache_dir <version>   → echoes absolute cache path
 #   runtime_is_cached <version>   → 0 if valid runtime present, else 1
 #   runtime_list_cached           → echoes one version per line (sorted)
-#   runtime_asset_url <version>   → echoes GitHub release download URL
+#   runtime_asset_url <version>   → echoes GitHub release download URL for
+#                                    claude-code-gui-standalone-v<ver>.tgz
 #   runtime_download <version>    → fetches + extracts (or cleans up on failure)
 #
 # CCG_HOME defaults to ~/.claude-code-gui; CCG_RELEASE_REPO defaults to upstream.
@@ -50,7 +53,7 @@ runtime_list_cached() {
 runtime_asset_url() {
   local v
   v=$(_strip_v "$1")
-  printf 'https://github.com/%s/releases/download/v%s/claude-code-gui-runtime-v%s.tgz' \
+  printf 'https://github.com/%s/releases/download/v%s/claude-code-gui-standalone-v%s.tgz' \
     "$CCG_RELEASE_REPO" "$v" "$v"
 }
 

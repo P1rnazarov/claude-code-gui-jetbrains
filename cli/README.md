@@ -100,6 +100,6 @@ The CLI is pure Bash with bats tests. See [CLAUDE.md](CLAUDE.md) for the full do
 ./cli/run-tests.sh
 
 # Build the release assets locally
-./scripts/build.sh runtime-tgz   # backend + webview
-./scripts/build.sh ccg-tgz       # cli files
+./scripts/build.sh standalone-tgz   # backend + webview (Standalone runtime)
+./scripts/build.sh ccg-cli-tgz      # cli files
 ```

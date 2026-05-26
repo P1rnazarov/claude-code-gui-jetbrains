@@ -85,8 +85,13 @@ make_fake_runtime_tgz() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"github.com"* ]]
   [[ "$output" == *"v0.15.0"* ]]
-  [[ "$output" == *"runtime"* ]]
+  [[ "$output" == *"standalone"* ]]
   [[ "$output" == *".tgz"* ]]
+}
+
+@test "runtime_asset_url: uses claude-code-gui-standalone-v<ver>.tgz exactly" {
+  run runtime_asset_url "0.15.0"
+  [[ "$output" == *"/claude-code-gui-standalone-v0.15.0.tgz" ]]
 }
 
 @test "runtime_asset_url: respects CCG_RELEASE_REPO override" {

@@ -1,12 +1,14 @@
-# cli/ — `ccg` Terminal Launcher
+# cli/ — `ccg` Standalone Launcher
 
-이 패키지는 JetBrains 플러그인과 **동일한 백엔드 런타임**을 터미널에서 직접 실행할 수 있게 해주는 독립 CLI 도구입니다. 사용자는 `curl | bash` 한 줄로 설치한 뒤 `ccg` 명령으로 호출합니다.
+이 패키지는 JetBrains 플러그인과 **동일한 백엔드 런타임을 Standalone 모드로** 실행해주는 터미널 CLI입니다. 사용자는 `curl | bash` 한 줄로 설치한 뒤 `ccg` 명령으로 호출합니다.
+
+> **Standalone 모드란?** IDE 외부에서 Node.js 백엔드를 spawn하고 일반 브라우저로 접속하는 실행 모드. JetBrains 모드와 같은 `backend.mjs`를 사용하지만 클라이언트가 JCEF가 아닌 브라우저. 루트 [../CLAUDE.md](../CLAUDE.md)의 "실행 모드 용어" 참조.
 
 ## 목적
 
-- JetBrains 외부 환경에서도 동일한 WebView UX를 제공 (브라우저로 접속)
-- 플러그인과 분리된 별도 배포 채널 — 즉 npm 의존성 없이, **GitHub Releases만으로 완결**
-- 플러그인과 런타임이 같은 머신에서 충돌 없이 공존 (같은 19836 포트를 공유)
+- JetBrains 외부에서 **Standalone 모드**로 동일한 WebView UX 제공
+- 플러그인과 분리된 별도 배포 채널 — npm 의존성 없이 **GitHub Releases만으로 완결**
+- 플러그인과 standalone이 같은 머신에서 충돌 없이 공존 (같은 19836 포트 공유)
 
 ## 패키지 경계 (중요)
 
@@ -172,15 +174,15 @@ GitHub Releases의 각 태그에 다음 두 개를 첨부:
 
 | 자산 | 내용 | 소비자 |
 |------|------|--------|
-| `claude-code-gui-runtime-v<ver>.tgz` | `backend.mjs` + `webview/` 디렉토리 | ccg가 다운로드 |
-| `ccg-v<ver>.tar.gz` | `cli/bin/` + `cli/lib/` + `cli/locales/` + `cli/install.sh` + `cli/uninstall.sh` (test 제외) | install.sh가 다운로드 |
+| `claude-code-gui-standalone-v<ver>.tgz` | `backend.mjs` + `webview/` (Standalone 모드 런타임) | `ccg`가 첫 실행 시 다운로드 |
+| `ccg-cli-v<ver>.tar.gz` | `cli/bin/` + `cli/lib/` + `cli/locales/` + `cli/uninstall.sh` (test, README, CLAUDE.md 제외) | `install.sh`가 설치 시 다운로드 |
 
 ### 빌드 커맨드
 
 ```bash
-./scripts/build.sh runtime-tgz   # backend + webview 빌드 후 tgz 생성
-./scripts/build.sh ccg-tgz       # cli/ 패키징 (test, CLAUDE.md 제외)
-./scripts/build.sh cli-test      # bats 테스트 실행
+./scripts/build.sh standalone-tgz   # backend + webview → claude-code-gui-standalone-v<ver>.tgz
+./scripts/build.sh ccg-cli-tgz      # cli/ 패키징 → ccg-cli-v<ver>.tar.gz
+./scripts/build.sh cli-test         # bats 테스트 실행
 ```
 
 ### 릴리즈 흐름
