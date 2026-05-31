@@ -31,8 +31,9 @@ export default defineConfig({
     assetsInlineLimit: 10240,
     rollupOptions: {
       output: {
-        entryFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name].[ext]',
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
         // JCEF 환경에서 dynamic chunk 로드 실패 방지: 단일 번들로 통합
         inlineDynamicImports: true,
       }

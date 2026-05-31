@@ -43,6 +43,7 @@ vi.mock('../EmptyState', () => ({
 }));
 
 const scrollContainerRef = React.createRef<HTMLDivElement>() as React.RefObject<HTMLDivElement | null>;
+const sentinelRef = React.createRef<HTMLDivElement>() as React.RefObject<HTMLDivElement | null>;
 
 const renderWithScrollContainer = (ui: React.ReactElement) => {
   return render(
@@ -66,7 +67,7 @@ describe('ChatMessageArea', () => {
   });
 
   it('shows ProjectSelector when no working directory in browser environment', () => {
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} />);
+    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} isUserNearBottom={true} sentinelRef={sentinelRef} />);
 
     expect(screen.getByTestId('project-selector')).toBeInTheDocument();
     expect(screen.getByText('Select Project')).toBeInTheDocument();
@@ -79,7 +80,7 @@ describe('ChatMessageArea', () => {
       configurable: true,
     });
 
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} />);
+    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} isUserNearBottom={true} sentinelRef={sentinelRef} />);
 
     expect(screen.getByText('Loading working directory...')).toBeInTheDocument();
     expect(screen.queryByTestId('project-selector')).not.toBeInTheDocument();
@@ -88,7 +89,7 @@ describe('ChatMessageArea', () => {
   it('shows empty state message when no messages with working directory', () => {
     mockSessionContext.workingDirectory = '/test/path';
 
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} />);
+    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} isUserNearBottom={true} sentinelRef={sentinelRef} />);
 
     expect(screen.getByTestId('empty-state')).toBeInTheDocument();
   });
@@ -102,7 +103,7 @@ describe('ChatMessageArea', () => {
       timestamp: new Date().toISOString(),
     }];
 
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} />);
+    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} isUserNearBottom={true} sentinelRef={sentinelRef} />);
 
     expect(screen.getByTestId('message-bubble-msg1')).toBeInTheDocument();
     expect(screen.getByText('user: Hello, assistant!')).toBeInTheDocument();
@@ -117,7 +118,7 @@ describe('ChatMessageArea', () => {
       timestamp: new Date().toISOString(),
     }];
 
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} />);
+    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} isUserNearBottom={true} sentinelRef={sentinelRef} />);
 
     expect(screen.getByTestId('message-bubble-msg2')).toBeInTheDocument();
     expect(screen.getByText('assistant: Hello, user!')).toBeInTheDocument();
@@ -138,7 +139,7 @@ describe('ChatMessageArea', () => {
       timestamp: new Date().toISOString(),
     }];
 
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} />);
+    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} isUserNearBottom={true} sentinelRef={sentinelRef} />);
 
     expect(screen.getByTestId('message-bubble-msg3')).toBeInTheDocument();
   });
@@ -167,7 +168,7 @@ describe('ChatMessageArea', () => {
       },
     ];
 
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} />);
+    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} isUserNearBottom={true} sentinelRef={sentinelRef} />);
 
     expect(screen.getByTestId('message-bubble-msg1')).toBeInTheDocument();
     expect(screen.getByTestId('message-bubble-msg2')).toBeInTheDocument();
@@ -193,7 +194,7 @@ describe('ChatMessageArea', () => {
       timestamp: new Date().toISOString(),
     }];
 
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} />);
+    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} isUserNearBottom={true} sentinelRef={sentinelRef} />);
 
     expect(screen.getByTestId('message-bubble-msg4')).toBeInTheDocument();
   });

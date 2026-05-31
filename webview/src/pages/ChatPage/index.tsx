@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { ChatInput } from './ChatInput';
 import { SessionHeader } from './SessionHeader';
 import { ChatMessageArea } from './ChatMessageArea';
@@ -19,6 +20,8 @@ import { usePendingPlanApproval } from '../../hooks/usePendingPlanApproval';
 import { useNotificationSound } from '@/notifications';
 import {isMobile} from "@/config/environment.ts";
 
+const SCROLL_THRESHOLD = 80;
+
 export function ChatPage() {
   const { textareaRef, focus: focusInput } = useChatInputFocus();
   const { currentSessionId, currentSession } = useSessionContext();
@@ -29,6 +32,30 @@ export function ChatPage() {
   const { selection: soundSelection } = useNotificationSound();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomPanelRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [isUserNearBottom, setIsUserNearBottom] = useState(true);
+
+  // Poll sentinel position every 200ms to detect near-bottom state.
+  // Polling instead of scroll/IntersectionObserver because those are unreliable
+  // in JCEF when the scrollable element differs from what listeners expect.
+  useEffect(() => {
+    const measure = () => {
+      const s = sentinelRef.current;
+      if (!s) return;
+      const rect = s.getBoundingClientRect();
+      const isNear = rect.top <= window.innerHeight + SCROLL_THRESHOLD;
+      setIsUserNearBottom(prev => (prev === isNear ? prev : isNear));
+    };
+    measure();
+    const id = setInterval(measure, 200);
+    return () => clearInterval(id);
+  }, []);
+
+  const scrollToBottom = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, []);
 
   useAwaitingNotifications(currentSession?.title ?? null, soundSelection, {
     pendingPermission: pendingPermission !== null,
@@ -103,7 +130,12 @@ export function ChatPage() {
 
       {/* Messages Area */}
       <div ref={scrollContainerRef} className={`flex flex-col flex-1 overflow-y-auto w-full h-screen pt-10 ${isMobile() ? 'pb-52' : ''} bg-surface-base z-0`}>
-        <ChatMessageArea isStreaming={isStreaming && !pendingUserAnswer && !pendingPlan && !pendingPermission} scrollContainerRef={scrollContainerRef} />
+        <ChatMessageArea
+          isStreaming={isStreaming && !pendingUserAnswer && !pendingPlan && !pendingPermission}
+          scrollContainerRef={scrollContainerRef}
+          isUserNearBottom={isUserNearBottom}
+          sentinelRef={sentinelRef}
+        />
 
         {/* Input Area */}
         <div ref={bottomPanelRef} className="sticky w-full left-0 bottom-0 z-10">
@@ -132,6 +164,16 @@ export function ChatPage() {
         </div>
 
       </div>
+
+      {!isUserNearBottom && (
+        <button
+          onClick={scrollToBottom}
+          className="fixed bottom-[7.5rem] left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-surface-raised border border-border-default rounded-full shadow-md text-xs text-text-primary hover:bg-surface-hover transition-colors"
+        >
+          <ChevronDownIcon className="w-3.5 h-3.5" />
+          Scroll to bottom
+        </button>
+      )}
     </div>
   );
 }

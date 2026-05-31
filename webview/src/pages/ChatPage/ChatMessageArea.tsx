@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import {LoadedMessageDto, isContentBlockArray} from '../../types';
 import { MessageBubble } from './MessageBubble';
 import { ProjectSelectorPage } from '@/pages/ProjectSelectorPage';
@@ -37,54 +37,37 @@ function buildSubAgentMessages(progressEntries: LoadedMessageDto[]): SubAgentMes
     });
 }
 
-const SCROLL_THRESHOLD = 200;
-
 interface Props {
   isStreaming: boolean;
   scrollContainerRef: RefObject<HTMLDivElement | null>;
+  isUserNearBottom: boolean;
+  sentinelRef: RefObject<HTMLDivElement | null>;
 }
 
 export function ChatMessageArea(props: Props) {
-  const { isStreaming, scrollContainerRef } = props;
+  const { isStreaming, scrollContainerRef, isUserNearBottom, sentinelRef } = props;
   const { workingDirectory } = useSessionContext();
   const { messages, retry: onRetry } = useChatStreamContext();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isUserNearBottom, setIsUserNearBottom] = useState(true);
 
-  // 스크롤 컨테이너의 스크롤 이벤트를 감지하여 사용자가 하단 근처인지 판별
-  const handleScroll = useCallback(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    setIsUserNearBottom(distanceFromBottom <= SCROLL_THRESHOLD);
-  }, [scrollContainerRef]);
-
-  useEffect(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    el.addEventListener('scroll', handleScroll, { passive: true });
-    return () => el.removeEventListener('scroll', handleScroll);
-  }, [scrollContainerRef, handleScroll]);
-
-  // 사용자가 하단 근처에 있을 때 1초 인터벌로 자동 스크롤
+  // Auto-scroll when user is near bottom (1s interval)
   useEffect(() => {
     if (!isUserNearBottom) return;
 
     const tick = () => {
       const el = scrollContainerRef.current;
-      if (!el || !messagesEndRef.current) return;
+      if (!el || !sentinelRef.current) return;
 
       const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
-      if (dist <= 5) return; // 이미 바닥
+      if (dist <= 5) return; // already at bottom
 
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      sentinelRef.current.scrollIntoView({ behavior: 'smooth' });
     };
 
-    tick(); // 즉시 1회 실행
+    tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [isUserNearBottom, scrollContainerRef]);
+  }, [isUserNearBottom, scrollContainerRef, sentinelRef]);
 
   // Merge tool_result user messages into preceding assistant's tool_use blocks
   const mergedMessages = useMemo(() => {
@@ -199,7 +182,7 @@ export function ChatMessageArea(props: Props) {
       ))}
       {isStreaming && <StreamingIndicator />}
       <StreamErrorBanner />
-      <div ref={messagesEndRef} />
+      <div ref={sentinelRef as RefObject<HTMLDivElement>} />
     </div>
   );
 }
