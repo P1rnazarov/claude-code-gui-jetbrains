@@ -11,6 +11,7 @@ const DEFAULT_SETTINGS: Record<string, unknown> = {
   cliPath: null,
   theme: 'system',
   fontSize: 13,
+  autoScrollThreshold: 80,
   debugMode: false,
   logLevel: 'info',
   terminalApp: null,
@@ -20,6 +21,7 @@ const COMMENT_MAP: Record<string, string> = {
   cliPath: 'Claude CLI 실행 파일 경로 (null이면 자동 감지)',
   theme: '테마: "system" | "light" | "dark"',
   fontSize: '글꼴 크기 (8~32)',
+  autoScrollThreshold: '자동 스크롤 임계점(px). 메시지 끝에서 이 거리 안에 있을 때만 스트림을 따라 내려간다',
   debugMode: '디버그 모드 활성화',
   logLevel: '로그 레벨: "debug" | "info" | "warn" | "error"',
   terminalApp: '터미널 프로그램 (null이면 OS 기본 터미널)',
@@ -96,6 +98,13 @@ function validateSetting(key: string, value: unknown): string | null {
       const n = Number(value);
       if (!Number.isInteger(n) || n < 8 || n > 32) {
         return 'fontSize must be an integer between 8 and 32';
+      }
+      break;
+    }
+    case 'autoScrollThreshold': {
+      const n = Number(value);
+      if (!Number.isInteger(n) || n < 1) {
+        return 'autoScrollThreshold must be a positive integer';
       }
       break;
     }

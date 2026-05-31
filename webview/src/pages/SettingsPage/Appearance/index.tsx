@@ -16,6 +16,9 @@ export function AppearanceSettings() {
   const rawFontSize = scopeSettings[SettingKey.FONT_SIZE] as number | undefined;
   const isFontSizeNotSet = rawFontSize === undefined && scope === 'project';
 
+  const rawAutoScrollThreshold = scopeSettings[SettingKey.AUTO_SCROLL_THRESHOLD] as number | undefined;
+  const isAutoScrollThresholdNotSet = rawAutoScrollThreshold === undefined && scope === 'project';
+
   return (
     <div>
       <h2 className="text-xl font-semibold text-text-primary mb-6">
@@ -74,6 +77,36 @@ export function AppearanceSettings() {
             }}
             className={`w-20 bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm ${
               isFontSizeNotSet ? 'text-text-tertiary italic' : 'text-text-primary'
+            }`}
+          />
+        </SettingRow>
+      </SettingSection>
+
+      <SettingSection title="Scrolling">
+        <SettingRow
+          label="Auto-scroll threshold"
+          description="Pixel distance from the bottom within which the chat keeps following the stream. Increase to make following more forgiving when you scroll up slightly."
+        >
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={isAutoScrollThresholdNotSet ? '' : (rawAutoScrollThreshold ?? 80)}
+            placeholder={isAutoScrollThresholdNotSet ? 'Not set' : undefined}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === '') {
+                if (scope === 'project') {
+                  resetToGlobal(SettingKey.AUTO_SCROLL_THRESHOLD);
+                }
+                return;
+              }
+              const parsed = parseInt(value, 10);
+              if (!Number.isInteger(parsed) || parsed < 1) return;
+              updateSetting(SettingKey.AUTO_SCROLL_THRESHOLD, parsed);
+            }}
+            className={`w-24 bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm ${
+              isAutoScrollThresholdNotSet ? 'text-text-tertiary italic' : 'text-text-primary'
             }`}
           />
         </SettingRow>

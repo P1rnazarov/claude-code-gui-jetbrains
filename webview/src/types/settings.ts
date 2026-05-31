@@ -8,6 +8,7 @@ export enum SettingKey {
   // Appearance
   THEME = 'theme',
   FONT_SIZE = 'fontSize',
+  AUTO_SCROLL_THRESHOLD = 'autoScrollThreshold',
 
   // Advanced
   DEBUG_MODE = 'debugMode',
@@ -43,6 +44,7 @@ export interface SettingsState {
   [SettingKey.CLI_PATH]: string | null;
   [SettingKey.THEME]: ThemeMode;
   [SettingKey.FONT_SIZE]: number;
+  [SettingKey.AUTO_SCROLL_THRESHOLD]: number;
   [SettingKey.DEBUG_MODE]: boolean;
   [SettingKey.LOG_LEVEL]: LogLevel;
   [SettingKey.TERMINAL_APP]: string | null;
@@ -55,6 +57,7 @@ export const DEFAULT_SETTINGS: SettingsState = {
   [SettingKey.CLI_PATH]: null,
   [SettingKey.THEME]: ThemeMode.SYSTEM,
   [SettingKey.FONT_SIZE]: 13,
+  [SettingKey.AUTO_SCROLL_THRESHOLD]: 80,
   [SettingKey.DEBUG_MODE]: false,
   [SettingKey.LOG_LEVEL]: LogLevel.INFO,
   [SettingKey.TERMINAL_APP]: null,

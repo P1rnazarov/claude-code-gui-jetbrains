@@ -19,8 +19,8 @@ import { usePendingPermissions } from '../../hooks/usePendingPermissions';
 import { usePendingPlanApproval } from '../../hooks/usePendingPlanApproval';
 import { useNotificationSound } from '@/notifications';
 import {isMobile} from "@/config/environment.ts";
-
-const SCROLL_THRESHOLD = 80;
+import { useSettings } from '@/contexts/SettingsContext';
+import { SettingKey } from '@/types/settings';
 
 export function ChatPage() {
   const { textareaRef, focus: focusInput } = useChatInputFocus();
@@ -30,6 +30,8 @@ export function ChatPage() {
   const { pending: pendingPermission, approve: approvePermission, approveForSession, deny: denyPermission } = usePendingPermissions();
   const { pending: pendingPlan, approve: approvePlan, deny: denyPlan } = usePendingPlanApproval();
   const { selection: soundSelection } = useNotificationSound();
+  const { settings } = useSettings();
+  const autoScrollThreshold = settings[SettingKey.AUTO_SCROLL_THRESHOLD] ?? 80;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomPanelRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -43,13 +45,13 @@ export function ChatPage() {
       const s = sentinelRef.current;
       if (!s) return;
       const rect = s.getBoundingClientRect();
-      const isNear = rect.top <= window.innerHeight + SCROLL_THRESHOLD;
+      const isNear = rect.top <= window.innerHeight + autoScrollThreshold;
       setIsUserNearBottom(prev => (prev === isNear ? prev : isNear));
     };
     measure();
     const id = setInterval(measure, 200);
     return () => clearInterval(id);
-  }, []);
+  }, [autoScrollThreshold]);
 
   const scrollToBottom = useCallback(() => {
     const el = scrollContainerRef.current;
