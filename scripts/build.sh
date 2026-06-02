@@ -37,6 +37,16 @@ CLI / ccg (cli/):
 Plugin (Gradle):
   build          gradlew build
   run-ide        gradlew runIde (CLAUDE_DEV_MODE=true)
+                   PLATFORM_VERSION=<ver> overrides IDE version
+                   e.g. PLATFORM_VERSION=2026.1.2 ./scripts/build.sh run-ide
+                        PLATFORM_VERSION=2025.3.2 ./scripts/build.sh run-ide
+                   Each version gets an isolated sandbox under build/idea-sandbox/.
+  run-ide-installed
+                 Launch a cached IDE directly with a pre-built plugin zip installed.
+                   Useful when source compilation against the target IDE fails
+                   (e.g. forward-compat testing on a newer IDE without bumping build chain).
+                   Requires: PLATFORM_VERSION=<ver> and an existing
+                   build/distributions/*.zip from a previous buildPlugin run.
   build-plugin   gradlew buildPlugin
   clean          gradlew clean
   test           gradlew test
@@ -120,7 +130,59 @@ case "${1:-}" in
 
   # --- Plugin (Gradle) ---
   build)          "$ROOT/gradlew" -p "$ROOT" build ;;
-  run-ide)        CLAUDE_DEV_MODE=true "$ROOT/gradlew" -p "$ROOT" runIde ;;
+  run-ide)
+    if [[ -n "${PLATFORM_VERSION:-}" ]]; then
+      echo "=== runIde on IntelliJ ${PLATFORM_VERSION} ==="
+      CLAUDE_DEV_MODE=true "$ROOT/gradlew" -p "$ROOT" runIde "-PplatformVersion=${PLATFORM_VERSION}"
+    else
+      CLAUDE_DEV_MODE=true "$ROOT/gradlew" -p "$ROOT" runIde
+    fi
+    ;;
+  run-ide-installed)
+    if [[ -z "${PLATFORM_VERSION:-}" ]]; then
+      echo "PLATFORM_VERSION is required (e.g. PLATFORM_VERSION=2026.1.2)" >&2
+      exit 1
+    fi
+    plugin_zip=$(ls -t "$ROOT/build/distributions"/*.zip 2>/dev/null | head -1)
+    if [[ -z "$plugin_zip" ]]; then
+      echo "No plugin zip found in build/distributions/. Run 'build-plugin' first." >&2
+      exit 1
+    fi
+    ide_root=$(find "$HOME/.gradle/caches" -type d -name "idea-${PLATFORM_VERSION}*" 2>/dev/null | head -1)
+    if [[ -z "$ide_root" ]] || [[ ! -x "$ide_root/MacOS/idea" ]]; then
+      echo "IDE ${PLATFORM_VERSION} not found in Gradle cache." >&2
+      echo "Run 'PLATFORM_VERSION=${PLATFORM_VERSION} ./scripts/build.sh run-ide' once to trigger download" >&2
+      echo "(compile may fail — that's OK, the IDE binary will still be cached)." >&2
+      exit 1
+    fi
+    sandbox="$ROOT/build/idea-installed-sandbox/IU-${PLATFORM_VERSION}"
+    mkdir -p "$sandbox/config" "$sandbox/system" "$sandbox/plugins" "$sandbox/log"
+    echo "=== Installing $(basename "$plugin_zip") into 2026 sandbox ==="
+    rm -rf "$sandbox/plugins"/claude-code-gui-* 2>/dev/null || true
+    unzip -q -o "$plugin_zip" -d "$sandbox/plugins"
+
+    # macOS rejects launching IntelliJ binaries that aren't inside a proper .app
+    # bundle. Wrap the gradle-cache Contents/ directory in a symlinked .app.
+    app_wrapper="$sandbox/IDE.app"
+    rm -rf "$app_wrapper"
+    mkdir -p "$app_wrapper"
+    ln -s "$ide_root" "$app_wrapper/Contents"
+
+    # Inject sandbox paths via idea.properties (read by IDEA_PROPERTIES env var).
+    cat > "$sandbox/idea.properties" <<EOF
+idea.config.path=$sandbox/config
+idea.system.path=$sandbox/system
+idea.plugins.path=$sandbox/plugins
+idea.log.path=$sandbox/log
+EOF
+
+    echo "=== Launching IDE ${PLATFORM_VERSION} ==="
+    echo "    sandbox: $sandbox"
+    echo "    app:     $app_wrapper"
+    echo "    log:     $sandbox/log/idea.log"
+    IDEA_PROPERTIES="$sandbox/idea.properties" open -n -a "$app_wrapper"
+    echo "    status:  open command issued (IDE launches asynchronously via LaunchServices)"
+    ;;
   build-plugin)   "$ROOT/gradlew" -p "$ROOT" buildPlugin ;;
   clean)          "$ROOT/gradlew" -p "$ROOT" clean ;;
   test)           "$ROOT/gradlew" -p "$ROOT" test ;;
@@ -151,7 +213,12 @@ case "${1:-}" in
     echo "=== Plugin build ==="
     "$ROOT/gradlew" -p "$ROOT" build
     echo "=== RunIde ==="
-    CLAUDE_DEV_MODE=true "$ROOT/gradlew" -p "$ROOT" runIde
+    if [[ -n "${PLATFORM_VERSION:-}" ]]; then
+      echo "    on IntelliJ ${PLATFORM_VERSION}"
+      CLAUDE_DEV_MODE=true "$ROOT/gradlew" -p "$ROOT" runIde "-PplatformVersion=${PLATFORM_VERSION}"
+    else
+      CLAUDE_DEV_MODE=true "$ROOT/gradlew" -p "$ROOT" runIde
+    fi
     ;;
   clear-cache)
     "$ROOT/clear-cache.sh"
