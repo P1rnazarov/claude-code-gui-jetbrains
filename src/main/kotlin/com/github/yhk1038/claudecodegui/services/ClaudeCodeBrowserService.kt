@@ -82,9 +82,19 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
             // macOS Retina, producing pixelated output (issue #23, JBR-3526). Our
             // panel has no other Swing widgets that need to overlay the browser, so
             // the z-order trade-off does not apply.
-            val browser = JBCefBrowser.createBuilder()
-                .setOffScreenRendering(false)
-                .build()
+            //
+            // IntelliJ 2026.1+ runs JCEF out-of-process (remote-mode) where windowed
+            // (non-OSR) browsers are unsupported; setOffScreenRendering(false) is
+            // silently ignored and the browser paints as a black rectangle (issue #51,
+            // IJPL-184288). JBCefApp.isRemoteEnabled() is package-private and cannot
+            // be called from a plugin, so detect remote-mode via the JVM system
+            // property that JBCefApp sets at class-load time.
+            val isRemoteJcef = "true" == System.getProperty("jcef.remote.enabled")
+            val builder = JBCefBrowser.createBuilder()
+            if (!isRemoteJcef) {
+                builder.setOffScreenRendering(false)
+            }
+            val browser = builder.build()
             val cursorQuery = JBCefJSQuery.create(browser as JBCefBrowserBase)
             val streamingQuery = JBCefJSQuery.create(browser as JBCefBrowserBase)
             BrowserHolder(browser, cursorQuery, streamingQuery)

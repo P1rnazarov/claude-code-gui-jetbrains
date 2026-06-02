@@ -8,9 +8,9 @@ buildscript {
 }
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "2.1.0"
+    id("org.jetbrains.kotlin.jvm") version "2.3.21"
     id("org.jetbrains.intellij.platform") version "2.10.4"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.3.21"
     id("org.jetbrains.kotlinx.kover") version "0.9.1"
 }
 
@@ -119,6 +119,11 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
+            <h3>0.16.1 - Restore WebView panel on IntelliJ 2026.1+</h3>
+            <ul>
+                <li>Fixed a regression where the WebView panel rendered as a black/blank rectangle on IntelliJ Platform 2026.1+, which runs JCEF in out-of-process (remote) mode. The plugin now detects remote-mode at runtime and skips the windowed-rendering flag that was introduced in v0.16.0 for HiDPI sharpness — that flag is unsupported in remote-mode and silently ignored by the platform, leaving the browser unable to paint (closes #51).</li>
+                <li>On 2024.x/2025.x (in-process JCEF) behavior is unchanged — the HiDPI fix from #23 still applies. On 2026.1+ the WebView renders via off-screen rendering, which restores functionality at the cost of some HiDPI sharpness until the platform-level scale-propagation issue is resolved upstream.</li>
+            </ul>
             <h3>0.16.0 - System theme follows IDE, desktop notifications, ccg launcher</h3>
             <ul>
                 <li>System theme now follows the IDE's Look-and-Feel in JetBrains mode and reacts to LAF changes without a restart; standalone (browser) mode continues to follow the OS preference. The dropdown is labeled "System (IDE)" or "System (OS)" accordingly (closes #45).</li>
