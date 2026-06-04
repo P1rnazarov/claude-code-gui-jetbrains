@@ -27,6 +27,15 @@ import { MentionDropdown } from './MentionDropdown';
 import { isMobile } from '@/config/environment';
 import { shouldSubmitOnEnter } from './shouldSubmitOnEnter';
 
+interface NativeDropEntry {
+  path: string;
+  type: 'file' | 'folder';
+}
+
+function basename(path: string): string {
+  return path.replace(/[\\/]+$/, '').split(/[\\/]/).pop() || path;
+}
+
 export function ChatInput() {
   const { textareaRef } = useChatInputFocus();
   const { currentSessionId, sessionState, workingDirectory, inputMode: mode, cycleInputMode: cycleMode, syncInitialInputMode, modeResetTrigger } = useSessionContext();
@@ -62,6 +71,38 @@ export function ChatInput() {
   const lastMetaArrowTime = useRef<number>(0);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showModelSwitch, setShowModelSwitch] = useState(false);
+
+  // Native (IDE/Swing) drag-and-drop bridge — entries arrive via JCEF injection.
+  // Holder.flushPendingIdeInjectionScripts already gates the injection until the page
+  // is ready, so a single listener + initial drain is enough (no polling needed).
+  useEffect(() => {
+    const consumeEntries = (entries: NativeDropEntry[] | undefined) => {
+      if (!entries) return;
+      for (const entry of entries) {
+        if (!entry.path) continue;
+        if (entry.type === 'folder') {
+          addFolderAttachment(entry.path, basename(entry.path));
+        } else {
+          addFileAttachment(entry.path, basename(entry.path));
+        }
+      }
+    };
+
+    const handleNativeDrop = (event: Event) => {
+      const entries = (event as CustomEvent<{ entries?: NativeDropEntry[] }>).detail?.entries;
+      consumeEntries(entries);
+    };
+    window.addEventListener('claude-code:native-drop-paths', handleNativeDrop);
+
+    if (window.__CLAUDE_CODE_PENDING_DROP_ENTRIES__?.length) {
+      consumeEntries(window.__CLAUDE_CODE_PENDING_DROP_ENTRIES__);
+      window.__CLAUDE_CODE_PENDING_DROP_ENTRIES__ = [];
+    }
+
+    return () => {
+      window.removeEventListener('claude-code:native-drop-paths', handleNativeDrop);
+    };
+  }, [addFileAttachment, addFolderAttachment]);
 
   // 커맨드 팔레트 "Attach file..." 항목 연동
   useEffect(() => {

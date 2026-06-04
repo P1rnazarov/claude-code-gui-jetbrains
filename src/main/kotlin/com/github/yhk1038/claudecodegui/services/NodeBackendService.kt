@@ -109,6 +109,14 @@ class NodeBackendService : Disposable {
                 ?: logger.warn("No active panel handler for openUrl")
         }
 
+        override suspend fun pickFiles(mode: String, multiple: Boolean): List<String> {
+            return rpcHandlers.values.firstOrNull()?.second?.pickFiles(mode, multiple)
+                ?: run {
+                    logger.warn("No active panel handler for pickFiles")
+                    emptyList()
+                }
+        }
+
         override suspend fun updatePlugin() {
             rpcHandlers.values.firstOrNull()?.second?.updatePlugin()
                 ?: logger.warn("No active panel handler for updatePlugin")
