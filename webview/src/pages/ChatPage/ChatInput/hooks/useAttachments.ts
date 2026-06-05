@@ -1,75 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Attachment, ImageAttachment, FileAttachment, FolderAttachment, ATTACHMENT_LIMITS } from '../../../../types';
 
-type DroppedPathKind = 'file' | 'folder';
-
-interface DroppedPath {
-  path: string;
-  kind: DroppedPathKind;
-}
-
-function basename(path: string): string {
-  return path.replace(/[\\/]+$/, '').split(/[\\/]/).pop() || path;
-}
-
-function normalizeDroppedPath(rawPath: string): string | null {
-  const trimmed = rawPath.trim();
-  if (!trimmed || trimmed.startsWith('#')) return null;
-  try {
-    if (trimmed.startsWith('file://')) {
-      return decodeURIComponent(new URL(trimmed).pathname)
-        .replace(/^\/([A-Za-z]:\/)/, '$1')
-        .replace(/\//g, navigator.platform.toLowerCase().includes('win') ? '\\' : '/');
-    }
-  } catch {
-    // Fall through and treat it as a plain local path.
-  }
-  if (/^[A-Za-z]:[\\/]/.test(trimmed) || trimmed.startsWith('/') || trimmed.startsWith('\\\\')) {
-    return trimmed;
-  }
-  return null;
-}
-
-function extractPathsFromText(value: string): string[] {
-  return value
-    .split(/\r?\n/)
-    .map(normalizeDroppedPath)
-    .filter((path): path is string => Boolean(path));
-}
-
-function getEntryKinds(items: DataTransferItemList): Map<string, DroppedPathKind> {
-  const kinds = new Map<string, DroppedPathKind>();
-  for (const item of Array.from(items)) {
-    const entry = item.webkitGetAsEntry?.();
-    if (!entry) continue;
-    kinds.set(entry.name, entry.isDirectory ? 'folder' : 'file');
-  }
-  return kinds;
-}
-
-function extractDroppedPaths(dataTransfer: DataTransfer): DroppedPath[] {
-  const paths = new Set<string>();
-  const uriList = dataTransfer.getData('text/uri-list');
-  const plainText = dataTransfer.getData('text/plain');
-  for (const path of [...extractPathsFromText(uriList), ...extractPathsFromText(plainText)]) {
-    paths.add(path);
-  }
-
-  for (const file of Array.from(dataTransfer.files)) {
-    const path = (file as File & { path?: string }).path || normalizeDroppedPath(file.name);
-    if (path) paths.add(path);
-  }
-
-  const entryKinds = getEntryKinds(dataTransfer.items);
-  return Array.from(paths).map((path) => {
-    const name = basename(path);
-    const kind = path.endsWith('/') || path.endsWith('\\')
-      ? 'folder'
-      : entryKinds.get(name) ?? 'file';
-    return { path, kind };
-  });
-}
-
 export interface UseAttachmentsReturn {
   attachments: Attachment[];
   addImageAttachment: (file: File) => Promise<void>;
@@ -198,21 +129,19 @@ export function useAttachments(): UseAttachmentsReturn {
     e.preventDefault();
     setIsDragOver(false);
 
+    // Only handle images here. Native file/folder paths are routed through the
+    // NATIVE_DROP_FLUSH RPC (Kotlin CefDragHandler → backend stash → IPC), which
+    // gives canonical OS paths. Reading them off `dataTransfer` here causes
+    // duplicates: IDE project-tree drops put the user-project path in text/plain
+    // *and* deliver a sandbox-mirror path via CefDragHandler — two different
+    // strings for the same file, so the dedup guard can't collapse them.
     const files = e.dataTransfer.files;
     for (const file of Array.from(files)) {
       if (file.type.startsWith('image/')) {
         await addImageAttachment(file);
       }
     }
-    const droppedPaths = extractDroppedPaths(e.dataTransfer);
-    for (const dropped of droppedPaths) {
-      if (dropped.kind === 'folder') {
-        addFolderAttachment(dropped.path, basename(dropped.path));
-      } else {
-        addFileAttachment(dropped.path, basename(dropped.path));
-      }
-    }
-  }, [addImageAttachment, addFileAttachment, addFolderAttachment, setIsDragOver]);
+  }, [addImageAttachment, setIsDragOver]);
 
   return useMemo(() => ({
     attachments,

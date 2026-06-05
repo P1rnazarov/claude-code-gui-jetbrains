@@ -24,6 +24,14 @@ interface ClientRecord {
    * at, independent of sessionId which the webview generates itself.
    */
   panelId: string | null;
+  /**
+   * Native drop paths stashed by CefDragHandler.onDragEnter, waiting for the page-level
+   * drop event to flush them. JCEF doesn't expose absolute paths on `dataTransfer` for
+   * security reasons, so we receive the paths over the /rpc socket on drag-enter, hold
+   * them here, and release them on NATIVE_DROP_FLUSH (which the webview fires from its
+   * own `drop` handler). Cleared on flush and on disconnect.
+   */
+  nativeDropStash: unknown[] | null;
 }
 
 export class ConnectionManager {
@@ -39,13 +47,31 @@ export class ConnectionManager {
   addConnection(ws: WebSocket, env: ClientEnv = ClientEnv.BROWSER, panelId: string | null = null): string {
     const connectionId = `conn-${++this.nextId}-${Date.now()}`;
     this.connectionMap.set(connectionId, ws);
-    this.clientMap.set(connectionId, { subscribedSessionId: null, env, panelId });
+    this.clientMap.set(connectionId, { subscribedSessionId: null, env, panelId, nativeDropStash: null });
     this.cancelIdleShutdown();
     console.error(
       '[node-backend]',
       `Connection added: ${connectionId} (env: ${env}, panelId: ${panelId ?? 'none'})`,
     );
     return connectionId;
+  }
+
+  setNativeDropStash(panelId: string, entries: unknown[]): boolean {
+    for (const record of this.clientMap.values()) {
+      if (record.panelId === panelId) {
+        record.nativeDropStash = entries;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  takeNativeDropStash(connectionId: string): unknown[] | null {
+    const record = this.clientMap.get(connectionId);
+    if (!record || !record.nativeDropStash) return null;
+    const stash = record.nativeDropStash;
+    record.nativeDropStash = null;
+    return stash;
   }
 
   /**

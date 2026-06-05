@@ -294,18 +294,26 @@ class ClaudeCodePanel(
         // open-in-new-tab). We swallow file drops here, extract the paths off CefDragData,
         // and route them to the composer; returning true cancels CEF's own handling so the
         // tab can't jump to about:blank#blocked.
-        // CefDragHandler only has onDragEnter (no onDrop hook), so dispatching attachment
-        // here would fire on hover, not on release — that's the "file attached before I
-        // dropped" symptom. Instead we return false to let CEF forward the drag as HTML5
-        // events; the webview's window-level drop handler catches the actual drop and
-        // calls useAttachments. The window-level dragover/drop preventDefault in
-        // ChatInput blocks CEF's default file:// navigation that would otherwise jump
-        // the tab to about:blank#blocked.
+        // CefDragHandler only has onDragEnter (no onDrop hook), and the page-level
+        // dataTransfer can't carry absolute file paths for security reasons. So:
+        //   1. On drag-enter, stash the OS paths on the backend (NATIVE_DROP),
+        //   2. Return false so CEF forwards the drag as HTML5 events,
+        //   3. The webview's drop handler issues NATIVE_DROP_FLUSH, which makes
+        //      the backend replay the stashed paths back as NATIVE_DROP_ENTRIES.
+        // Net effect: attach happens on drop (not on hover) AND uses the real
+        // OS paths Kotlin received from CEF.
         b.jbCefClient.addDragHandler(CefDragHandler { _, dragData, _ ->
             if (dragData?.isFile == true) {
                 val names = java.util.Vector<String>()
                 dragData.getFileNames(names)
-                logger.info("[NativeDrop] CefDragHandler.onDragEnter (forwarding to page): ${names.size} file(s)")
+                if (names.isNotEmpty()) {
+                    logger.info("[NativeDrop] CefDragHandler.onDragEnter stashing ${names.size} file(s)")
+                    val files = names.map { path ->
+                        val file = File(path)
+                        DroppedFile(file.absolutePath, file.isDirectory)
+                    }
+                    dispatchNativeDrop(files)
+                }
             }
             false
         }, b.cefBrowser)

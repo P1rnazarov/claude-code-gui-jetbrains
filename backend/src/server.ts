@@ -125,21 +125,20 @@ async function main() {
   // 3. 서버 시작 (logWs 전달)
   const { port, close, connections } = await startServerWithRetry(bridges, logWs);
 
-  // Route Kotlin-originated NATIVE_DROP notifications to the exact webview the user
-  // dropped onto. Panel ↔ webview connection is 1:1 (each panel hosts one JCEF browser
-  // that opens one /ws socket), so we use panelId — assigned by Kotlin when the panel
-  // is constructed and propagated through the JCEF URL — rather than sessionId, which
-  // the webview generates independently and isn't even set on a fresh /sessions/new.
+  // Stash native drop paths on drag-enter; the webview will flush them on its drop event.
+  // The page's HTML5 `dataTransfer` doesn't expose absolute paths (browser security), so
+  // Kotlin sends the paths it received from CefDragHandler over /rpc, and we hold them
+  // against the panelId until the webview confirms the actual drop via NATIVE_DROP_FLUSH.
+  // That ensures attach happens on release — not on hover — while still using the real
+  // OS file paths.
   (bridges[ClientEnv.JETBRAINS] as JetBrainsBridge).onNotification('NATIVE_DROP', (_method, params) => {
     const panelId = typeof params.panelId === 'string' ? params.panelId : '';
     const entries = Array.isArray(params.entries) ? params.entries : [];
     if (!panelId || entries.length === 0) return;
-    const connectionId = connections.getConnectionIdByPanelId(panelId);
-    if (!connectionId) {
-      console.error('[node-backend]', `[NATIVE_DROP] no webview connection for panelId=${panelId}`);
-      return;
+    const stashed = connections.setNativeDropStash(panelId, entries);
+    if (!stashed) {
+      console.error('[node-backend]', `[NATIVE_DROP] stash failed — no connection for panelId=${panelId}`);
     }
-    connections.sendTo(connectionId, 'NATIVE_DROP_ENTRIES', { entries });
   });
 
   // 4. Logger에 LogWS 참조 설정

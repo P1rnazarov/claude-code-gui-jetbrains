@@ -49,7 +49,8 @@ export function ChatInput() {
     stop: onStop,
   } = useChatStreamContext();
   const inputHistory = useInputHistory();
-  const { subscribe } = useBridgeContext();
+  const bridge = useBridgeContext();
+  const { subscribe } = bridge;
   const [isFocused, setIsFocused] = useState(false);
   const lastInitSessionRef = useRef<string | undefined>(undefined);
 
@@ -66,6 +67,7 @@ export function ChatInput() {
     handleDragOver,
     handleDragLeave,
     handleDrop,
+    setIsDragOver,
   } = useAttachments();
 
   const { settings: claudeSettings, updateSetting: updateClaudeSetting } = useClaudeSettings();
@@ -95,6 +97,8 @@ export function ChatInput() {
   // The Kotlin CefDragHandler returns false so CEF forwards the drag as HTML5 events;
   // without window-level dragover/drop preventDefault, CEF's default action navigates
   // the tab to `file://...` (which the popup blocker rewrites to about:blank#blocked).
+  // On drop we also fire NATIVE_DROP_FLUSH so the backend releases the OS paths that
+  // CefDragHandler stashed at drag-enter — the page's dataTransfer can't carry them.
   useEffect(() => {
     const isFileDrag = (e: DragEvent) =>
       !!e.dataTransfer && (
@@ -102,20 +106,34 @@ export function ChatInput() {
         e.dataTransfer.types.includes('text/uri-list')
       );
     const handleWindowDragOver = (e: DragEvent) => {
-      if (isFileDrag(e)) e.preventDefault();
+      if (!isFileDrag(e)) return;
+      e.preventDefault();
+      // Always reflect drag state on the composer chrome, even when the user hovers
+      // over the message list or another non-input region of the panel.
+      setIsDragOver(true);
+    };
+    const handleWindowDragLeave = (e: DragEvent) => {
+      // dragleave fires when leaving any child element too; relatedTarget=null is
+      // the OS signal for the cursor actually leaving the window.
+      if (!e.relatedTarget) setIsDragOver(false);
     };
     const handleWindowDrop = (e: DragEvent) => {
       if (!isFileDrag(e)) return;
-      // Reuse the React drop handler — only dataTransfer / preventDefault are touched.
+      e.preventDefault();
+      setIsDragOver(false);
+      // Image drops are handled here; file/folder paths are released by NATIVE_DROP_FLUSH.
       handleDrop(e as unknown as ReactDragEvent);
+      void bridge.send('NATIVE_DROP_FLUSH', {});
     };
     window.addEventListener('dragover', handleWindowDragOver);
+    window.addEventListener('dragleave', handleWindowDragLeave);
     window.addEventListener('drop', handleWindowDrop);
     return () => {
       window.removeEventListener('dragover', handleWindowDragOver);
+      window.removeEventListener('dragleave', handleWindowDragLeave);
       window.removeEventListener('drop', handleWindowDrop);
     };
-  }, [handleDrop]);
+  }, [handleDrop, bridge, setIsDragOver]);
 
   // 커맨드 팔레트 "Attach file..." 항목 연동
   useEffect(() => {
