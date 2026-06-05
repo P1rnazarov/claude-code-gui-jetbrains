@@ -1,6 +1,6 @@
 import type { WebSocket } from 'ws';
 import type { ChildProcess } from 'child_process';
-import type { IPCMessage } from '../core/types';
+import type { IPCMessage, NativeDropEntry } from '../core/types';
 import { ClientEnv } from '../shared';
 
 const SESSION_CLEANUP_GRACE_MS = 30_000;
@@ -31,7 +31,7 @@ interface ClientRecord {
    * them here, and release them on NATIVE_DROP_FLUSH (which the webview fires from its
    * own `drop` handler). Cleared on flush and on disconnect.
    */
-  nativeDropStash: unknown[] | null;
+  nativeDropStash: NativeDropEntry[] | null;
 }
 
 export class ConnectionManager {
@@ -61,7 +61,7 @@ export class ConnectionManager {
     return connectionId;
   }
 
-  setNativeDropStash(panelId: string, entries: unknown[]): boolean {
+  setNativeDropStash(panelId: string, entries: NativeDropEntry[]): boolean {
     const connectionId = this.panelIdIndex.get(panelId);
     if (!connectionId) return false;
     const record = this.clientMap.get(connectionId);
@@ -70,7 +70,7 @@ export class ConnectionManager {
     return true;
   }
 
-  takeNativeDropStash(connectionId: string): unknown[] | null {
+  takeNativeDropStash(connectionId: string): NativeDropEntry[] | null {
     const record = this.clientMap.get(connectionId);
     if (!record || !record.nativeDropStash) return null;
     const stash = record.nativeDropStash;
