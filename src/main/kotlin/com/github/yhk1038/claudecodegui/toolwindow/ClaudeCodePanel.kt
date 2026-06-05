@@ -7,8 +7,15 @@ import com.github.yhk1038.claudecodegui.services.ClaudeCodeBrowserService
 import com.github.yhk1038.claudecodegui.services.DiffService
 import com.github.yhk1038.claudecodegui.services.NodeBackendService
 import com.intellij.ide.BrowserUtil
+import com.intellij.ide.dnd.DnDEvent
+import com.intellij.ide.dnd.DnDManager
+import com.intellij.ide.dnd.DnDTarget
+import com.intellij.ide.dnd.FileCopyPasteUtil
+import com.intellij.ide.dnd.TransferableWrapper
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileChooser.FileChooser
+import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -16,19 +23,43 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiElement
 import com.intellij.ui.jcef.JBCefBrowser
 import com.intellij.ui.jcef.JBCefJSQuery
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
+import org.cef.callback.CefDragData
 import org.cef.handler.CefDisplayHandlerAdapter
+import org.cef.handler.CefDragHandler
 import org.cef.handler.CefLifeSpanHandlerAdapter
 import org.cef.handler.CefLoadHandlerAdapter
+import org.cef.handler.CefRequestHandlerAdapter
+import org.cef.network.CefRequest
 import java.awt.BorderLayout
+import java.awt.Component
+import java.awt.Image
+import java.awt.Point
+import java.awt.datatransfer.DataFlavor
+import java.awt.datatransfer.Transferable
+import java.awt.dnd.DnDConstants
+import java.awt.dnd.DropTarget
+import java.awt.dnd.DropTargetAdapter
+import java.awt.dnd.DropTargetDragEvent
+import java.awt.dnd.DropTargetDropEvent
+import java.io.File
 import java.util.UUID
+import javax.swing.JComponent
 import javax.swing.JPanel
 
 /**
@@ -124,6 +155,13 @@ class ClaudeCodePanel(
         if (!holder.handlersInstalled) {
             setupBrowserHandlers()
             holder.handlersInstalled = true
+        }
+
+        // Install native (Swing / IDE) drag-and-drop bridge once per holder. Reinstalling on
+        // every panel recreate would attach duplicate listeners during tab move/split.
+        if (!holder.nativeDropBridgeInstalled) {
+            setupNativeDropBridge()
+            holder.nativeDropBridgeInstalled = true
         }
 
         // Register RPC handler for this panel
@@ -250,6 +288,56 @@ class ClaudeCodePanel(
             WebViewKeyboardHandler(onOpenDevTools = { openDevTools() }),
             b.cefBrowser
         )
+
+        // Primary native-DnD hook for the JCEF surface. CEF asks every drag whether the
+        // embedder wants to handle it before it does anything else (download / navigate /
+        // open-in-new-tab). We swallow file drops here, extract the paths off CefDragData,
+        // and route them to the composer; returning true cancels CEF's own handling so the
+        // tab can't jump to about:blank#blocked.
+        // CefDragHandler only has onDragEnter (no onDrop hook), and the page-level
+        // dataTransfer can't carry absolute file paths for security reasons. So:
+        //   1. On drag-enter, stash the OS paths on the backend (NATIVE_DROP),
+        //   2. Return false so CEF forwards the drag as HTML5 events,
+        //   3. The webview's drop handler issues NATIVE_DROP_FLUSH, which makes
+        //      the backend replay the stashed paths back as NATIVE_DROP_ENTRIES.
+        // Net effect: attach happens on drop (not on hover) AND uses the real
+        // OS paths Kotlin received from CEF.
+        b.jbCefClient.addDragHandler(CefDragHandler { _, dragData, _ ->
+            if (dragData?.isFile == true) {
+                val names = java.util.Vector<String>()
+                dragData.getFileNames(names)
+                if (names.isNotEmpty()) {
+                    logger.debug("[NativeDrop] CefDragHandler.onDragEnter stashing ${names.size} file(s)")
+                    val files = names.map { path ->
+                        val file = File(path)
+                        DroppedFile(file.absolutePath, file.isDirectory)
+                    }
+                    dispatchNativeDrop(files)
+                }
+            }
+            false
+        }, b.cefBrowser)
+
+        // Safety net: if a file:// navigation still slips through (e.g. via the JS layer),
+        // cancel it before CEF's popup blocker jumps the tab to about:blank#blocked.
+        b.jbCefClient.addRequestHandler(object : CefRequestHandlerAdapter() {
+            override fun onBeforeBrowse(
+                browser: CefBrowser?,
+                frame: CefFrame?,
+                request: CefRequest?,
+                userGesture: Boolean,
+                isRedirect: Boolean,
+            ): Boolean {
+                val url = request?.url ?: return false
+                if (!url.startsWith("file://")) return false
+                val droppedPath = runCatching { java.net.URI(url).path }.getOrNull()
+                if (droppedPath.isNullOrBlank()) return true
+                val file = File(droppedPath)
+                logger.debug("Intercepted JCEF file:// navigation as native drop: $droppedPath (isDir=${file.isDirectory})")
+                dispatchNativeDrop(listOf(DroppedFile(file.absolutePath, file.isDirectory)))
+                return true
+            }
+        }, b.cefBrowser)
 
         // Life span handler: intercept window.open() popups and route them correctly
         b.jbCefClient.addLifeSpanHandler(object : CefLifeSpanHandlerAdapter() {
@@ -445,6 +533,187 @@ class ClaudeCodePanel(
         }
     }
 
+    // ─── Native (Swing / IDE) drag-and-drop bridge ──────────────────
+
+    private fun setupNativeDropBridge() {
+        val b = browser ?: return
+        val dropTarget = object : DropTargetAdapter() {
+            override fun dragEnter(event: DropTargetDragEvent) {
+                event.acceptDrag(DnDConstants.ACTION_COPY)
+            }
+
+            override fun drop(event: DropTargetDropEvent) {
+                logger.debug("[NativeDrop] Swing DropTarget fired")
+                try {
+                    event.acceptDrop(DnDConstants.ACTION_COPY)
+                    val droppedFiles = extractDroppedFiles(event.transferable)
+                    if (droppedFiles.isEmpty()) {
+                        event.dropComplete(false)
+                        return
+                    }
+                    dispatchNativeDrop(droppedFiles)
+                    event.dropComplete(true)
+                } catch (e: Exception) {
+                    logger.warn("Native Swing drop failed", e)
+                    event.dropComplete(false)
+                }
+            }
+        }
+        installDropTarget(this, dropTarget)
+        installDropTarget(b.component, dropTarget)
+        installIdeaDnDTarget(this)
+        installIdeaDnDTarget(b.component as JComponent)
+    }
+
+    private fun installDropTarget(component: Component, dropTarget: DropTargetAdapter) {
+        try {
+            DropTarget(component, DnDConstants.ACTION_COPY, dropTarget, true)
+            if (component is JComponent) {
+                component.components.forEach { child -> installDropTarget(child, dropTarget) }
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun installIdeaDnDTarget(component: JComponent) {
+        val target = object : DnDTarget {
+            override fun update(event: DnDEvent): Boolean {
+                val droppedFiles = extractDroppedFiles(event.attachedObject)
+                val canDrop = droppedFiles.isNotEmpty()
+                event.setDropPossible(canDrop, if (canDrop) "" else "Drop files or folders")
+                return false
+            }
+
+            override fun drop(event: DnDEvent) {
+                logger.debug("[NativeDrop] IDE DnDTarget fired (attached=${event.attachedObject?.javaClass?.name})")
+                val droppedFiles = extractDroppedFiles(event.attachedObject)
+                dispatchNativeDrop(droppedFiles)
+            }
+
+            override fun cleanUpOnLeave() {}
+
+            override fun updateDraggedImage(image: Image?, dropPoint: Point?, imageOffset: Point?) {}
+        }
+
+        try {
+            DnDManager.getInstance().registerTarget(target, component)
+            Disposer.register(this, Disposable {
+                runCatching { DnDManager.getInstance().unregisterTarget(target, component) }
+            })
+        } catch (_: Exception) {}
+    }
+
+    private data class DroppedFile(val path: String, val isDirectory: Boolean)
+
+    private fun addDroppedPath(
+        result: MutableMap<String, DroppedFile>,
+        path: String?,
+        isDirectory: Boolean?,
+    ) {
+        if (path.isNullOrBlank()) return
+        val file = File(path)
+        val normalizedPath = file.absolutePath
+        result[normalizedPath] = DroppedFile(
+            normalizedPath,
+            isDirectory ?: file.isDirectory,
+        )
+    }
+
+    /**
+     * Walk a DnD payload and append every file/folder path we can recognize into
+     * [result]. Handles both raw clipboard values (File, VirtualFile, PsiElement,
+     * String paths) and IDE-internal containers (TransferableWrapper for project-
+     * tree drags, nested Transferable / arrays / iterables). Unknown payloads log
+     * at debug rather than silently disappear.
+     */
+    private fun addDroppedValue(result: MutableMap<String, DroppedFile>, value: Any?) {
+        when (value) {
+            null -> return
+            is File -> addDroppedPath(result, value.absolutePath, value.isDirectory)
+            is VirtualFile -> addDroppedPath(result, value.path, value.isDirectory)
+            is PsiElement -> value.containingFile?.virtualFile
+                ?.let { addDroppedPath(result, it.path, it.isDirectory) }
+            is Transferable -> extractDroppedFiles(value)
+                .forEach { addDroppedPath(result, it.path, it.isDirectory) }
+            // IDE DnD payloads (project tree, "Find Usages", etc.) implement TransferableWrapper.
+            is TransferableWrapper -> {
+                value.asFileList()?.forEach { addDroppedValue(result, it) }
+                value.psiElements?.forEach { addDroppedValue(result, it) }
+            }
+            is Array<*> -> value.forEach { addDroppedValue(result, it) }
+            is Iterable<*> -> value.forEach { addDroppedValue(result, it) }
+            is String -> parseDroppedText(value).forEach { addDroppedPath(result, it, null) }
+            else -> logger.debug(
+                "extractDroppedFiles: ignoring unknown payload of type ${value.javaClass.name}"
+            )
+        }
+    }
+
+    private fun extractDroppedFiles(transferable: Transferable): List<DroppedFile> {
+        val result = linkedMapOf<String, DroppedFile>()
+
+        if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+            runCatching { addDroppedValue(result, transferable.getTransferData(DataFlavor.javaFileListFlavor)) }
+                .onFailure { logger.debug("getTransferData(javaFileListFlavor) failed", it) }
+        }
+
+        // FileCopyPasteUtil normalizes the various OS-specific clipboard/DnD encodings
+        // (Finder's text/uri-list, Explorer's CF_HDROP, etc.) into java.io.File entries.
+        runCatching { FileCopyPasteUtil.getFileList(transferable) }
+            .onSuccess { addDroppedValue(result, it) }
+            .onFailure { logger.debug("FileCopyPasteUtil.getFileList failed", it) }
+
+        for (flavor in transferable.transferDataFlavors) {
+            runCatching { addDroppedValue(result, transferable.getTransferData(flavor)) }
+                .onFailure { logger.debug("getTransferData($flavor) failed", it) }
+        }
+
+        return result.values.toList()
+    }
+
+    private fun extractDroppedFiles(attachedObject: Any?): List<DroppedFile> {
+        val result = linkedMapOf<String, DroppedFile>()
+        addDroppedValue(result, attachedObject)
+        return result.values.toList()
+    }
+
+    private fun parseDroppedText(text: String): List<String> {
+        return text
+            .lineSequence()
+            .map { it.trim() }
+            .filter { it.isNotBlank() && !it.startsWith("#") }
+            .mapNotNull { raw ->
+                if (raw.startsWith("file://")) {
+                    runCatching { java.net.URI(raw).path }.getOrNull()
+                } else if (
+                    raw.startsWith("/") ||
+                    raw.startsWith("\\\\") ||
+                    raw.matches(Regex("^[A-Za-z]:[\\\\/].*"))
+                ) {
+                    raw
+                } else {
+                    null
+                }
+            }
+            .toList()
+    }
+
+    private fun dispatchNativeDrop(files: List<DroppedFile>) {
+        logger.debug("[NativeDrop] dispatchNativeDrop panelId=$panelId, ${files.size} files: ${files.map { it.path }}")
+        if (files.isEmpty()) return
+        val params = buildJsonObject {
+            put("panelId", JsonPrimitive(panelId))
+            putJsonArray("entries") {
+                files.forEach { file ->
+                    add(buildJsonObject {
+                        put("path", JsonPrimitive(file.path))
+                        put("type", JsonPrimitive(if (file.isDirectory) "folder" else "file"))
+                    })
+                }
+            }
+        }
+        backendService.sendNotification("NATIVE_DROP", params)
+    }
+
     // ─── WebView loading ────────────────────────────────────────────
 
     /**
@@ -457,11 +726,14 @@ class ClaudeCodePanel(
         System.err.println("[ClaudeCodePanel] project.basePath: ${project.basePath}")
 
         val workingDirParam = project.basePath?.let {
-            "?workingDir=${java.net.URLEncoder.encode(it, "UTF-8")}"
-        } ?: ""
-
+            "workingDir=${java.net.URLEncoder.encode(it, "UTF-8")}"
+        }
+        // panelId is forwarded to the /ws query by WebSocketConnector so the backend can
+        // route panel-scoped notifications (NATIVE_DROP, etc.) back to this exact webview.
+        val panelParam = "panelId=${java.net.URLEncoder.encode(panelId, "UTF-8")}"
+        val query = listOfNotNull(workingDirParam, panelParam).joinToString("&")
         val pathSegment = initialPath ?: "/sessions/new"
-        val url = "http://localhost:$port$pathSegment$workingDirParam"
+        val url = "http://localhost:$port$pathSegment?$query"
         System.err.println("[ClaudeCodePanel] Loading URL: $url")
         logger.info("Loading WebView from Node.js backend: $url")
 
@@ -620,6 +892,21 @@ class ClaudeCodePanel(
                 logger.info("Opened URL in browser: $url")
             }
 
+            override suspend fun pickFiles(mode: String, multiple: Boolean): List<String> {
+                val result = CompletableDeferred<List<String>>()
+                ApplicationManager.getApplication().invokeLater {
+                    try {
+                        val descriptor = createFileChooserDescriptor(mode, multiple)
+                        val files = FileChooser.chooseFiles(descriptor, project, null)
+                        result.complete(files.map { it.path })
+                    } catch (e: Exception) {
+                        logger.warn("Failed to pick files (mode=$mode, multiple=$multiple)", e)
+                        result.complete(emptyList())
+                    }
+                }
+                return result.await()
+            }
+
             override suspend fun updatePlugin() {
                 ApplicationManager.getApplication().invokeLater {
                     try {
@@ -649,6 +936,25 @@ class ClaudeCodePanel(
     }
 
     // ─── Project Helpers ─────────────────────────────────────────────
+
+    private fun createFileChooserDescriptor(mode: String, multiple: Boolean): FileChooserDescriptor {
+        val chooseFiles = mode != "folders"
+        val chooseFolders = mode == "folders" || mode == "both"
+        return FileChooserDescriptor(
+            chooseFiles,
+            chooseFolders,
+            false,
+            false,
+            false,
+            multiple,
+        ).apply {
+            title = when (mode) {
+                "folders" -> "Select Folder"
+                "both" -> "Select File or Folder"
+                else -> "Select File"
+            }
+        }
+    }
 
     private fun findProjectByBasePath(basePath: String): Project? {
         if (basePath.isBlank()) return null

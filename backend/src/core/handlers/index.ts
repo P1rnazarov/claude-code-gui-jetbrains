@@ -30,6 +30,7 @@ import { openUrlHandler } from './openUrl';
 import { getAvailableTerminalsHandler } from './getAvailableTerminals';
 import { getDetectedCliPathHandler } from './getDetectedCliPath';
 import { pickFilesHandler } from './pickFiles';
+import { nativeDropFlushHandler } from './nativeDropFlush';
 import { getPluginUpdatesHandler } from './getPluginUpdates';
 import { updatePluginHandler } from './updatePlugin';
 import { getClaudeSettingsHandler } from './getClaudeSettings';
@@ -143,6 +144,9 @@ export async function handleMessage(
       break;
     case 'PICK_FILES':
       await pickFilesHandler(connectionId, message, connections, bridge);
+      break;
+    case 'NATIVE_DROP_FLUSH':
+      await nativeDropFlushHandler(connectionId, message, connections, bridge);
       break;
     case 'GET_PLUGIN_UPDATES':
       await getPluginUpdatesHandler(connectionId, message, connections, bridge);

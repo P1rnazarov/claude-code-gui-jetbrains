@@ -12,8 +12,6 @@ export interface UseAttachmentsReturn {
   isDragOver: boolean;
   setIsDragOver: (v: boolean) => void;
   handlePaste: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void;
-  handleDragOver: (e: React.DragEvent) => void;
-  handleDragLeave: (e: React.DragEvent) => void;
   handleDrop: (e: React.DragEvent) => void;
 }
 
@@ -66,12 +64,22 @@ export function useAttachments(): UseAttachmentsReturn {
 
   const addFileAttachment = useCallback((absolutePath: string, fileName: string, size?: number) => {
     const attachment = new FileAttachment({ fileName, absolutePath, size });
-    setAttachments((prev) => [...prev, attachment]);
+    setAttachments((prev) => {
+      if (prev.some((att) => att instanceof FileAttachment && att.absolutePath === attachment.absolutePath)) {
+        return prev;
+      }
+      return [...prev, attachment];
+    });
   }, []);
 
   const addFolderAttachment = useCallback((absolutePath: string, folderName: string) => {
     const attachment = new FolderAttachment({ folderName, absolutePath });
-    setAttachments((prev) => [...prev, attachment]);
+    setAttachments((prev) => {
+      if (prev.some((att) => att instanceof FolderAttachment && att.absolutePath === attachment.absolutePath)) {
+        return prev;
+      }
+      return [...prev, attachment];
+    });
   }, []);
 
   const removeAttachment = useCallback((id: string) => {
@@ -103,22 +111,16 @@ export function useAttachments(): UseAttachmentsReturn {
     }
   }, [addImageAttachment]);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    if (e.dataTransfer.types.includes('Files')) {
-      setIsDragOver(true);
-    }
-  }, [setIsDragOver]);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-    setIsDragOver(false);
-  }, [setIsDragOver]);
-
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
 
+    // Only handle images here. Native file/folder paths are routed through the
+    // NATIVE_DROP_FLUSH RPC (Kotlin CefDragHandler → backend stash → IPC), which
+    // gives canonical OS paths. Reading them off `dataTransfer` here causes
+    // duplicates: IDE project-tree drops put the user-project path in text/plain
+    // *and* deliver a sandbox-mirror path via CefDragHandler — two different
+    // strings for the same file, so the dedup guard can't collapse them.
     const files = e.dataTransfer.files;
     for (const file of Array.from(files)) {
       if (file.type.startsWith('image/')) {
@@ -138,8 +140,6 @@ export function useAttachments(): UseAttachmentsReturn {
     isDragOver,
     setIsDragOver,
     handlePaste,
-    handleDragOver,
-    handleDragLeave,
     handleDrop,
-  }), [attachments, addImageAttachment, addFileAttachment, addFolderAttachment, removeAttachment, clearAttachments, error, isDragOver, setIsDragOver, handlePaste, handleDragOver, handleDragLeave, handleDrop]);
+  }), [attachments, addImageAttachment, addFileAttachment, addFolderAttachment, removeAttachment, clearAttachments, error, isDragOver, setIsDragOver, handlePaste, handleDrop]);
 }

@@ -11,6 +11,7 @@ import { initLogger, getLogger } from './logging';
 import { LogWebSocketServer } from './logging/log-ws';
 import { Claude } from './core/claude';
 import { ClientEnv } from './shared';
+import type { NativeDropEntry } from './core/types';
 
 /**
  * JetBrains 모드: JETBRAINS_MODE=true 환경변수로 감지
@@ -96,6 +97,25 @@ async function startServerWithRetry(
   }
 }
 
+/**
+ * Validate NATIVE_DROP `params.entries` arriving over JSON-RPC. Kotlin builds
+ * each entry as `{ path: string; type: "file" | "folder" }`, but the value lands
+ * here as `unknown`, so we narrow it explicitly. Malformed elements are dropped
+ * (not coerced) so a single bad path can't poison the stash.
+ */
+function parseNativeDropEntries(raw: unknown): NativeDropEntry[] {
+  if (!Array.isArray(raw)) return [];
+  const result: NativeDropEntry[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== 'object') continue;
+    const candidate = item as { path?: unknown; type?: unknown };
+    if (typeof candidate.path !== 'string' || !candidate.path) continue;
+    const type = candidate.type === 'folder' ? 'folder' : 'file';
+    result.push({ path: candidate.path, type });
+  }
+  return result;
+}
+
 async function main() {
   // Survive parent process (Kotlin/JVM) shutdown.
   // When JVM exits, stdin/stdout/stderr pipes break. Without these handlers,
@@ -124,6 +144,22 @@ async function main() {
 
   // 3. 서버 시작 (logWs 전달)
   const { port, close, connections } = await startServerWithRetry(bridges, logWs);
+
+  // Stash native drop paths on drag-enter; the webview will flush them on its drop event.
+  // The page's HTML5 `dataTransfer` doesn't expose absolute paths (browser security), so
+  // Kotlin sends the paths it received from CefDragHandler over /rpc, and we hold them
+  // against the panelId until the webview confirms the actual drop via NATIVE_DROP_FLUSH.
+  // That ensures attach happens on release — not on hover — while still using the real
+  // OS file paths.
+  (bridges[ClientEnv.JETBRAINS] as JetBrainsBridge).onNotification('NATIVE_DROP', (_method, params) => {
+    const panelId = typeof params.panelId === 'string' ? params.panelId : '';
+    const entries = parseNativeDropEntries(params.entries);
+    if (!panelId || entries.length === 0) return;
+    const stashed = connections.setNativeDropStash(panelId, entries);
+    if (!stashed) {
+      console.error('[node-backend]', `[NATIVE_DROP] stash failed — no connection for panelId=${panelId}`);
+    }
+  });
 
   // 4. Logger에 LogWS 참조 설정
   logger.setLogWs(logWs);

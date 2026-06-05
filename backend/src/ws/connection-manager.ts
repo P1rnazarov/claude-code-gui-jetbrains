@@ -1,6 +1,6 @@
 import type { WebSocket } from 'ws';
 import type { ChildProcess } from 'child_process';
-import type { IPCMessage } from '../core/types';
+import type { IPCMessage, NativeDropEntry } from '../core/types';
 import { ClientEnv } from '../shared';
 
 const SESSION_CLEANUP_GRACE_MS = 30_000;
@@ -17,6 +17,21 @@ interface SessionRecord {
 interface ClientRecord {
   subscribedSessionId: string | null;
   env: ClientEnv;
+  /**
+   * IDE panel that owns this webview connection (JetBrains mode only). Set from the
+   * `panelId` query param that Kotlin embeds in the JCEF URL. Used to route panel-
+   * scoped notifications (e.g. NATIVE_DROP) to the exact webview the user is looking
+   * at, independent of sessionId which the webview generates itself.
+   */
+  panelId: string | null;
+  /**
+   * Native drop paths stashed by CefDragHandler.onDragEnter, waiting for the page-level
+   * drop event to flush them. JCEF doesn't expose absolute paths on `dataTransfer` for
+   * security reasons, so we receive the paths over the /rpc socket on drag-enter, hold
+   * them here, and release them on NATIVE_DROP_FLUSH (which the webview fires from its
+   * own `drop` handler). Cleared on flush and on disconnect.
+   */
+  nativeDropStash: NativeDropEntry[] | null;
 }
 
 export class ConnectionManager {
@@ -25,21 +40,57 @@ export class ConnectionManager {
   private sessionRegistry = new Map<string, SessionRecord>();
   private cleanupTimers = new Map<string, NodeJS.Timeout>();
   private idleShutdownTimer: NodeJS.Timeout | null = null;
+  // Secondary index for O(1) panelId → connectionId resolution. Panel ↔ connection
+  // is 1:1 (one JCEF browser per IDE panel, one /ws socket per browser), so this
+  // map is always in sync with the panelId stored on each ClientRecord.
+  private panelIdIndex = new Map<string, string>();
   private nextId = 0;
 
   // ─── Connection lifecycle ───────────────────────────────────────────────────
 
-  addConnection(ws: WebSocket, env: ClientEnv = ClientEnv.BROWSER): string {
+  addConnection(ws: WebSocket, env: ClientEnv = ClientEnv.BROWSER, panelId: string | null = null): string {
     const connectionId = `conn-${++this.nextId}-${Date.now()}`;
     this.connectionMap.set(connectionId, ws);
-    this.clientMap.set(connectionId, { subscribedSessionId: null, env });
+    this.clientMap.set(connectionId, { subscribedSessionId: null, env, panelId, nativeDropStash: null });
+    if (panelId) this.panelIdIndex.set(panelId, connectionId);
     this.cancelIdleShutdown();
-    console.error('[node-backend]', `Connection added: ${connectionId} (env: ${env})`);
+    console.error(
+      '[node-backend]',
+      `Connection added: ${connectionId} (env: ${env}, panelId: ${panelId ?? 'none'})`,
+    );
     return connectionId;
+  }
+
+  setNativeDropStash(panelId: string, entries: NativeDropEntry[]): boolean {
+    const connectionId = this.panelIdIndex.get(panelId);
+    if (!connectionId) return false;
+    const record = this.clientMap.get(connectionId);
+    if (!record) return false;
+    record.nativeDropStash = entries;
+    return true;
+  }
+
+  takeNativeDropStash(connectionId: string): NativeDropEntry[] | null {
+    const record = this.clientMap.get(connectionId);
+    if (!record || !record.nativeDropStash) return null;
+    const stash = record.nativeDropStash;
+    record.nativeDropStash = null;
+    return stash;
+  }
+
+  /**
+   * Resolve a panelId (assigned by Kotlin on JCEF browser creation) back to its
+   * webview connection. Panel ↔ connection is 1:1 since each panel hosts one
+   * JCEF browser that opens one /ws socket.
+   */
+  getConnectionIdByPanelId(panelId: string): string | null {
+    return this.panelIdIndex.get(panelId) ?? null;
   }
 
   removeConnection(connectionId: string): void {
     this.unsubscribe(connectionId);
+    const record = this.clientMap.get(connectionId);
+    if (record?.panelId) this.panelIdIndex.delete(record.panelId);
     this.connectionMap.delete(connectionId);
     this.clientMap.delete(connectionId);
     console.error('[node-backend]', `Connection removed: ${connectionId}`);
@@ -268,6 +319,8 @@ export class ConnectionManager {
 
     this.sessionRegistry.clear();
     this.connectionMap.clear();
+    this.clientMap.clear();
+    this.panelIdIndex.clear();
 
     console.error(
       '[node-backend]',

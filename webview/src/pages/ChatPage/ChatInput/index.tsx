@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, KeyboardEvent, useState } from 'react';
+import { useCallback, useEffect, useRef, KeyboardEvent, useState, type DragEvent as ReactDragEvent } from 'react';
 import { CommandPalettePanel } from '@/commandPalette/ui/CommandPalettePanel';
 import { useCommandPalette } from '@/commandPalette/hooks/useCommandPalette';
 import { PanelSectionId, PanelItemType, CommandItem } from '@/types/commandPalette';
@@ -10,6 +10,7 @@ import { useInputHistory } from './hooks/useInputHistory';
 import { useTextareaAutoResize } from './hooks/useTextareaAutoResize';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
+import { useBridgeContext } from '@/contexts/BridgeContext';
 import { getTextContent, SessionState } from '@/types';
 import { LoadedMessageType } from '@/dto';
 import { useAttachments } from './hooks/useAttachments';
@@ -26,6 +27,12 @@ import { useMention } from './hooks/useMention';
 import { MentionDropdown } from './MentionDropdown';
 import { isMobile } from '@/config/environment';
 import { shouldSubmitOnEnter } from './shouldSubmitOnEnter';
+import { basename } from './basename';
+
+interface NativeDropEntry {
+  path: string;
+  type: 'file' | 'folder';
+}
 
 export function ChatInput() {
   const { textareaRef } = useChatInputFocus();
@@ -39,6 +46,8 @@ export function ChatInput() {
     stop: onStop,
   } = useChatStreamContext();
   const inputHistory = useInputHistory();
+  const bridge = useBridgeContext();
+  const { subscribe } = bridge;
   const [isFocused, setIsFocused] = useState(false);
   const lastInitSessionRef = useRef<string | undefined>(undefined);
 
@@ -52,9 +61,8 @@ export function ChatInput() {
     error: attachmentError,
     isDragOver,
     handlePaste,
-    handleDragOver,
-    handleDragLeave,
     handleDrop,
+    setIsDragOver,
   } = useAttachments();
 
   const { settings: claudeSettings, updateSetting: updateClaudeSetting } = useClaudeSettings();
@@ -62,6 +70,65 @@ export function ChatInput() {
   const lastMetaArrowTime = useRef<number>(0);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showModelSwitch, setShowModelSwitch] = useState(false);
+
+  // Native (IDE/Swing) drag-and-drop bridge: Kotlin → Node backend → IPC NATIVE_DROP_ENTRIES.
+  // Currently unused (CefDragHandler forwards drops to the page as HTML5 events instead),
+  // but kept as a fallback path for sources that don't surface paths in dataTransfer.
+  useEffect(() => {
+    return subscribe('NATIVE_DROP_ENTRIES', (message) => {
+      const entries = (message.payload?.entries as NativeDropEntry[] | undefined) ?? [];
+      for (const entry of entries) {
+        if (!entry.path) continue;
+        if (entry.type === 'folder') {
+          addFolderAttachment(entry.path, basename(entry.path));
+        } else {
+          addFileAttachment(entry.path, basename(entry.path));
+        }
+      }
+    });
+  }, [subscribe, addFileAttachment, addFolderAttachment]);
+
+  // Catch native file drops anywhere in the JCEF surface, not just the chat input box.
+  // The Kotlin CefDragHandler returns false so CEF forwards the drag as HTML5 events;
+  // without window-level dragover/drop preventDefault, CEF's default action navigates
+  // the tab to `file://...` (which the popup blocker rewrites to about:blank#blocked).
+  // On drop we also fire NATIVE_DROP_FLUSH so the backend releases the OS paths that
+  // CefDragHandler stashed at drag-enter — the page's dataTransfer can't carry them.
+  useEffect(() => {
+    const isFileDrag = (e: DragEvent) =>
+      !!e.dataTransfer && (
+        e.dataTransfer.types.includes('Files') ||
+        e.dataTransfer.types.includes('text/uri-list')
+      );
+    const handleWindowDragOver = (e: DragEvent) => {
+      if (!isFileDrag(e)) return;
+      e.preventDefault();
+      // Always reflect drag state on the composer chrome, even when the user hovers
+      // over the message list or another non-input region of the panel.
+      setIsDragOver(true);
+    };
+    const handleWindowDragLeave = (e: DragEvent) => {
+      // dragleave fires when leaving any child element too; relatedTarget=null is
+      // the OS signal for the cursor actually leaving the window.
+      if (!e.relatedTarget) setIsDragOver(false);
+    };
+    const handleWindowDrop = (e: DragEvent) => {
+      if (!isFileDrag(e)) return;
+      e.preventDefault();
+      setIsDragOver(false);
+      // Image drops are handled here; file/folder paths are released by NATIVE_DROP_FLUSH.
+      handleDrop(e as unknown as ReactDragEvent);
+      void bridge.send('NATIVE_DROP_FLUSH', {});
+    };
+    window.addEventListener('dragover', handleWindowDragOver);
+    window.addEventListener('dragleave', handleWindowDragLeave);
+    window.addEventListener('drop', handleWindowDrop);
+    return () => {
+      window.removeEventListener('dragover', handleWindowDragOver);
+      window.removeEventListener('dragleave', handleWindowDragLeave);
+      window.removeEventListener('drop', handleWindowDrop);
+    };
+  }, [handleDrop, bridge, setIsDragOver]);
 
   // 커맨드 팔레트 "Attach file..." 항목 연동
   useEffect(() => {
@@ -345,16 +412,13 @@ export function ChatInput() {
 
   return (
     <div className="max-w-[44rem] mx-auto px-4 pb-[14px] pt-2">
-      {/* 메인 인풋 컨테이너 */}
+      {/* 메인 인풋 컨테이너 — drag/drop은 window 레벨 리스너가 패널 전체에서 처리한다. */}
       <div
         className={`
           relative rounded-lg border bg-surface-raised
           transition-colors duration-150
           ${isDragOver ? 'border-border-focus bg-accent-primary/5' : isFocused && mode !== 'plan' ? modeConfig.borderColor : 'border-border-default'}
         `}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
       >
         {/* Mention dropdown */}
         {mention.isActive && !palette.showSlashCommands && (

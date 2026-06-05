@@ -153,12 +153,13 @@ export function startWebSocketServer(
 
     // WebSocket 연결 핸들러 — 한 번만 등록
     wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
-      // Parse client environment from query parameter: /ws?env=jetbrains
+      // Parse client environment + optional panelId from query: /ws?env=jetbrains&panelId=...
       const params = new URL(request.url ?? '/ws', 'http://localhost').searchParams;
       const envParam = params.get('env');
       const clientEnv = envParam === ClientEnv.JETBRAINS ? ClientEnv.JETBRAINS : ClientEnv.BROWSER;
+      const panelId = params.get('panelId');
 
-      const connectionId = connections.addConnection(ws, clientEnv);
+      const connectionId = connections.addConnection(ws, clientEnv, panelId);
       console.error('[node-backend]', `Client connected: ${connectionId}`);
 
       // 연결 준비 신호 전송

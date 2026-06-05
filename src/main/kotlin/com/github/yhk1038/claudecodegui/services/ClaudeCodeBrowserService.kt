@@ -46,6 +46,9 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
         /** Whether JCEF handlers (display, load, keyboard, lifespan) have been installed. */
         var handlersInstalled: Boolean = false
 
+        /** Whether native IDE/Swing drag-and-drop has been bridged into the WebView. */
+        var nativeDropBridgeInstalled: Boolean = false
+
         /** Whether the IME NPE workaround has been applied. */
         var imeWorkaroundInstalled: Boolean = false
 

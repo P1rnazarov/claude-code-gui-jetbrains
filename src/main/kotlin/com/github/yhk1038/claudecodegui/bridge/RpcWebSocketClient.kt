@@ -44,6 +44,27 @@ class RpcWebSocketClient(
         connectInternal(port)
     }
 
+    /**
+     * Send a JSON-RPC notification (no id, no response expected) to the Node.js backend.
+     * Used for IDE-originated events such as native drag-and-drop that the backend then
+     * routes to the appropriate webview connection.
+     */
+    fun sendNotification(method: String, params: JsonObject) {
+        val ws = webSocket
+        if (ws == null) {
+            logger.warn("RPC WebSocket not connected; dropping notification: $method")
+            return
+        }
+        val message = buildJsonObject {
+            put("jsonrpc", "2.0")
+            put("method", method)
+            put("params", params)
+        }
+        val text = json.encodeToString(JsonObject.serializer(), message)
+        logger.debug("[NativeDrop] sendNotification method=$method, payload length=${text.length}")
+        ws.sendText(text, true)
+    }
+
     private fun connectInternal(port: Int) {
         if (disposed) return
 
@@ -217,6 +238,16 @@ class RpcWebSocketClient(
                     ?: throw IllegalArgumentException("Missing 'url' param")
                 rpcHandler.openUrl(url)
                 buildJsonObject {}
+            }
+            "PICK_FILES" -> {
+                val mode = params["mode"]?.jsonPrimitive?.content ?: "files"
+                val multiple = params["multiple"]?.jsonPrimitive?.booleanOrNull ?: true
+                val paths = rpcHandler.pickFiles(mode, multiple)
+                buildJsonObject {
+                    putJsonArray("paths") {
+                        paths.forEach { path -> add(path) }
+                    }
+                }
             }
             "UPDATE_PLUGIN" -> {
                 rpcHandler.updatePlugin()
