@@ -15,6 +15,18 @@
 }
 
 /* ============================================
+   contentEditable placeholder (RichInput)
+   Shown only while the editable element is empty. Mirrors the textarea's
+   placeholder using the disabled-text token. pointer-events:none keeps the
+   caret/click behaviour identical to a real placeholder.
+   ============================================ */
+[contenteditable][data-placeholder]:empty:before {
+  content: attr(data-placeholder);
+  color: var(--text-disabled);
+  pointer-events: none;
+}
+
+/* ============================================
    Semantic Color Tokens — Light (default :root)
    ============================================ */
 :root {
