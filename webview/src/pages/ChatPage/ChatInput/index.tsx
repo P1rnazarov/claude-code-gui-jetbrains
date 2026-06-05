@@ -24,6 +24,7 @@ import { THINKING_TOGGLE_EVENT } from '@/commandPalette/sections/model/ThinkingI
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { useEffort } from '@/hooks/useEffort';
 import { useMention } from './hooks/useMention';
+import { useEditorContext } from '@/hooks/useEditorContext';
 import { MentionDropdown } from './MentionDropdown';
 import { isMobile } from '@/config/environment';
 import { shouldSubmitOnEnter } from './shouldSubmitOnEnter';
@@ -184,6 +185,16 @@ export function ChatInput() {
     addFolderAttachment,
     value,
     onChange,
+  });
+
+  // Backend pushes EDITOR_CONTEXT (the file the user is viewing + selection)
+  // → insert `relativePath[#L..]` at the composer caret.
+  // shouldFocus defaults to true; wiring it to a user setting is step 4.
+  useEditorContext({
+    value,
+    onChange,
+    textareaRef,
+    currentWorkingDir: workingDirectory ?? '',
   });
 
   const handleCompact = useCallback(() => {

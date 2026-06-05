@@ -10,3 +10,4 @@ export { useAwaitingNotifications } from './useAwaitingNotifications';
 export type { LoadedMessage } from './useChatStream';
 export type { AttachedContext } from './useContext';
 export { useTunnelStatus } from './useTunnelStatus';
+export * from './useEditorContext';
