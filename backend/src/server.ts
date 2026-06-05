@@ -125,18 +125,24 @@ async function main() {
   // 3. 서버 시작 (logWs 전달)
   const { port, close, connections } = await startServerWithRetry(bridges, logWs);
 
-  // Route Kotlin-originated NATIVE_DROP notifications to the subscribed webview.
-  // Kotlin → /rpc WebSocket notification → here → /ipc broadcast to the panel's session.
+  // Route Kotlin-originated NATIVE_DROP notifications to the webview.
+  // Kotlin → /rpc WebSocket notification → here → /ipc broadcast.
+  // NOTE: panel.sessionId (Kotlin-side UUID from OpenClaudeCodeAction) and the webview's
+  // self-generated sessionId from /sessions/new are independent — broadcastToSession with
+  // panel.sessionId never matches the subscriber. Fall back to broadcastToAll for now; the
+  // dedup gates in useAttachments.addFile/FolderAttachment prevent duplicate chips when
+  // multiple panels happen to receive the same drop. A follow-up commit will route the
+  // panel sessionId into the webview URL so subscribe ids align and we can go back to
+  // broadcastToSession.
   (bridges[ClientEnv.JETBRAINS] as JetBrainsBridge).onNotification('NATIVE_DROP', (_method, params) => {
     const sessionId = typeof params.sessionId === 'string' ? params.sessionId : '';
     const entries = Array.isArray(params.entries) ? params.entries : [];
-    const subscriberCount = connections.getSession(sessionId)?.subscribers.size ?? 0;
     console.error(
       '[node-backend]',
-      `[NATIVE_DROP] received sessionId=${sessionId} entries=${entries.length} subscribers=${subscriberCount}`,
+      `[NATIVE_DROP] received sessionId=${sessionId} entries=${entries.length} → broadcastToAll`,
     );
-    if (!sessionId || entries.length === 0) return;
-    connections.broadcastToSession(sessionId, 'NATIVE_DROP_ENTRIES', { entries });
+    if (entries.length === 0) return;
+    connections.broadcastToAll('NATIVE_DROP_ENTRIES', { entries });
   });
 
   // 4. Logger에 LogWS 참조 설정
