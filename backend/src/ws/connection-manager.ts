@@ -40,6 +40,10 @@ export class ConnectionManager {
   private sessionRegistry = new Map<string, SessionRecord>();
   private cleanupTimers = new Map<string, NodeJS.Timeout>();
   private idleShutdownTimer: NodeJS.Timeout | null = null;
+  // Secondary index for O(1) panelId → connectionId resolution. Panel ↔ connection
+  // is 1:1 (one JCEF browser per IDE panel, one /ws socket per browser), so this
+  // map is always in sync with the panelId stored on each ClientRecord.
+  private panelIdIndex = new Map<string, string>();
   private nextId = 0;
 
   // ─── Connection lifecycle ───────────────────────────────────────────────────
@@ -48,6 +52,7 @@ export class ConnectionManager {
     const connectionId = `conn-${++this.nextId}-${Date.now()}`;
     this.connectionMap.set(connectionId, ws);
     this.clientMap.set(connectionId, { subscribedSessionId: null, env, panelId, nativeDropStash: null });
+    if (panelId) this.panelIdIndex.set(panelId, connectionId);
     this.cancelIdleShutdown();
     console.error(
       '[node-backend]',
@@ -57,13 +62,12 @@ export class ConnectionManager {
   }
 
   setNativeDropStash(panelId: string, entries: unknown[]): boolean {
-    for (const record of this.clientMap.values()) {
-      if (record.panelId === panelId) {
-        record.nativeDropStash = entries;
-        return true;
-      }
-    }
-    return false;
+    const connectionId = this.panelIdIndex.get(panelId);
+    if (!connectionId) return false;
+    const record = this.clientMap.get(connectionId);
+    if (!record) return false;
+    record.nativeDropStash = entries;
+    return true;
   }
 
   takeNativeDropStash(connectionId: string): unknown[] | null {
@@ -80,14 +84,13 @@ export class ConnectionManager {
    * JCEF browser that opens one /ws socket.
    */
   getConnectionIdByPanelId(panelId: string): string | null {
-    for (const [connectionId, record] of this.clientMap) {
-      if (record.panelId === panelId) return connectionId;
-    }
-    return null;
+    return this.panelIdIndex.get(panelId) ?? null;
   }
 
   removeConnection(connectionId: string): void {
     this.unsubscribe(connectionId);
+    const record = this.clientMap.get(connectionId);
+    if (record?.panelId) this.panelIdIndex.delete(record.panelId);
     this.connectionMap.delete(connectionId);
     this.clientMap.delete(connectionId);
     console.error('[node-backend]', `Connection removed: ${connectionId}`);
@@ -316,6 +319,8 @@ export class ConnectionManager {
 
     this.sessionRegistry.clear();
     this.connectionMap.clear();
+    this.clientMap.clear();
+    this.panelIdIndex.clear();
 
     console.error(
       '[node-backend]',
