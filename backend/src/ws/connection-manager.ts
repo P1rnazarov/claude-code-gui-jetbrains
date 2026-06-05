@@ -17,6 +17,13 @@ interface SessionRecord {
 interface ClientRecord {
   subscribedSessionId: string | null;
   env: ClientEnv;
+  /**
+   * IDE panel that owns this webview connection (JetBrains mode only). Set from the
+   * `panelId` query param that Kotlin embeds in the JCEF URL. Used to route panel-
+   * scoped notifications (e.g. NATIVE_DROP) to the exact webview the user is looking
+   * at, independent of sessionId which the webview generates itself.
+   */
+  panelId: string | null;
 }
 
 export class ConnectionManager {
@@ -29,13 +36,28 @@ export class ConnectionManager {
 
   // ─── Connection lifecycle ───────────────────────────────────────────────────
 
-  addConnection(ws: WebSocket, env: ClientEnv = ClientEnv.BROWSER): string {
+  addConnection(ws: WebSocket, env: ClientEnv = ClientEnv.BROWSER, panelId: string | null = null): string {
     const connectionId = `conn-${++this.nextId}-${Date.now()}`;
     this.connectionMap.set(connectionId, ws);
-    this.clientMap.set(connectionId, { subscribedSessionId: null, env });
+    this.clientMap.set(connectionId, { subscribedSessionId: null, env, panelId });
     this.cancelIdleShutdown();
-    console.error('[node-backend]', `Connection added: ${connectionId} (env: ${env})`);
+    console.error(
+      '[node-backend]',
+      `Connection added: ${connectionId} (env: ${env}, panelId: ${panelId ?? 'none'})`,
+    );
     return connectionId;
+  }
+
+  /**
+   * Resolve a panelId (assigned by Kotlin on JCEF browser creation) back to its
+   * webview connection. Panel ↔ connection is 1:1 since each panel hosts one
+   * JCEF browser that opens one /ws socket.
+   */
+  getConnectionIdByPanelId(panelId: string): string | null {
+    for (const [connectionId, record] of this.clientMap) {
+      if (record.panelId === panelId) return connectionId;
+    }
+    return null;
   }
 
   removeConnection(connectionId: string): void {

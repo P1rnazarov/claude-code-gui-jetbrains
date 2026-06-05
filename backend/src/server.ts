@@ -125,24 +125,21 @@ async function main() {
   // 3. 서버 시작 (logWs 전달)
   const { port, close, connections } = await startServerWithRetry(bridges, logWs);
 
-  // Route Kotlin-originated NATIVE_DROP notifications to the webview.
-  // Kotlin → /rpc WebSocket notification → here → /ipc broadcast.
-  // NOTE: panel.sessionId (Kotlin-side UUID from OpenClaudeCodeAction) and the webview's
-  // self-generated sessionId from /sessions/new are independent — broadcastToSession with
-  // panel.sessionId never matches the subscriber. Fall back to broadcastToAll for now; the
-  // dedup gates in useAttachments.addFile/FolderAttachment prevent duplicate chips when
-  // multiple panels happen to receive the same drop. A follow-up commit will route the
-  // panel sessionId into the webview URL so subscribe ids align and we can go back to
-  // broadcastToSession.
+  // Route Kotlin-originated NATIVE_DROP notifications to the exact webview the user
+  // dropped onto. Panel ↔ webview connection is 1:1 (each panel hosts one JCEF browser
+  // that opens one /ws socket), so we use panelId — assigned by Kotlin when the panel
+  // is constructed and propagated through the JCEF URL — rather than sessionId, which
+  // the webview generates independently and isn't even set on a fresh /sessions/new.
   (bridges[ClientEnv.JETBRAINS] as JetBrainsBridge).onNotification('NATIVE_DROP', (_method, params) => {
-    const sessionId = typeof params.sessionId === 'string' ? params.sessionId : '';
+    const panelId = typeof params.panelId === 'string' ? params.panelId : '';
     const entries = Array.isArray(params.entries) ? params.entries : [];
-    console.error(
-      '[node-backend]',
-      `[NATIVE_DROP] received sessionId=${sessionId} entries=${entries.length} → broadcastToAll`,
-    );
-    if (entries.length === 0) return;
-    connections.broadcastToAll('NATIVE_DROP_ENTRIES', { entries });
+    if (!panelId || entries.length === 0) return;
+    const connectionId = connections.getConnectionIdByPanelId(panelId);
+    if (!connectionId) {
+      console.error('[node-backend]', `[NATIVE_DROP] no webview connection for panelId=${panelId}`);
+      return;
+    }
+    connections.sendTo(connectionId, 'NATIVE_DROP_ENTRIES', { entries });
   });
 
   // 4. Logger에 LogWS 참조 설정

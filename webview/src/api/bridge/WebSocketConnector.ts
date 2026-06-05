@@ -34,7 +34,12 @@ export class WebSocketConnector implements Connector {
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const env = detectRuntime();
-    const wsUrl = `${protocol}//${window.location.host}/ws?env=${env}`;
+    // panelId (Kotlin IDE panel UUID) is embedded in the page URL by ClaudeCodePanel.
+    // Forwarding it on the /ws query lets the backend route panel-scoped events
+    // (e.g. NATIVE_DROP) back to the exact webview the user dropped onto.
+    const panelId = new URLSearchParams(window.location.search).get('panelId');
+    const panelParam = panelId ? `&panelId=${encodeURIComponent(panelId)}` : '';
+    const wsUrl = `${protocol}//${window.location.host}/ws?env=${env}${panelParam}`;
     console.log('[WebSocketConnector] Connecting to:', wsUrl);
 
     const ws = new WebSocket(wsUrl);

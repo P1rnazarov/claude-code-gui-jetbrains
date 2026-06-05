@@ -707,10 +707,10 @@ class ClaudeCodePanel(
     }
 
     private fun dispatchNativeDrop(files: List<DroppedFile>) {
-        logger.info("[NativeDrop] dispatchNativeDrop sessionId=$sessionId, ${files.size} files: ${files.map { it.path }}")
+        logger.info("[NativeDrop] dispatchNativeDrop panelId=$panelId, ${files.size} files: ${files.map { it.path }}")
         if (files.isEmpty()) return
         val params = buildJsonObject {
-            put("sessionId", JsonPrimitive(sessionId))
+            put("panelId", JsonPrimitive(panelId))
             putJsonArray("entries") {
                 files.forEach { file ->
                     add(buildJsonObject {
@@ -735,11 +735,14 @@ class ClaudeCodePanel(
         System.err.println("[ClaudeCodePanel] project.basePath: ${project.basePath}")
 
         val workingDirParam = project.basePath?.let {
-            "?workingDir=${java.net.URLEncoder.encode(it, "UTF-8")}"
-        } ?: ""
-
+            "workingDir=${java.net.URLEncoder.encode(it, "UTF-8")}"
+        }
+        // panelId is forwarded to the /ws query by WebSocketConnector so the backend can
+        // route panel-scoped notifications (NATIVE_DROP, etc.) back to this exact webview.
+        val panelParam = "panelId=${java.net.URLEncoder.encode(panelId, "UTF-8")}"
+        val query = listOfNotNull(workingDirParam, panelParam).joinToString("&")
         val pathSegment = initialPath ?: "/sessions/new"
-        val url = "http://localhost:$port$pathSegment$workingDirParam"
+        val url = "http://localhost:$port$pathSegment?$query"
         System.err.println("[ClaudeCodePanel] Loading URL: $url")
         logger.info("Loading WebView from Node.js backend: $url")
 
