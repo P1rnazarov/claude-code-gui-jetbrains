@@ -71,6 +71,14 @@
   box-decoration-break: clone;
 }
 
+/* Clickable path chips in submitted message bubbles brighten on hover/focus to
+   signal they open the file. Plain (folder) chips keep the static appearance. */
+.richInputChip[role='button']:hover,
+.richInputChip[role='button']:focus-visible {
+  filter: brightness(1.15);
+  outline: none;
+}
+
 /* ============================================
    Semantic Color Tokens — Light (default :root)
    ============================================ */

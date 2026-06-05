@@ -7,6 +7,8 @@ import { ContextPills } from './components/ContextPills';
 import { ImageAttachments } from './components/ImageAttachments';
 import { MessageActions } from './components/MessageActions';
 import { parseUserContent } from './utils/parseUserContent';
+import { tokenizeMessagePaths } from './utils/tokenizeMessagePaths';
+import { MessagePathChip } from './components/MessagePathChip';
 import { InterruptedMessageRenderer } from './InterruptedMessageRenderer';
 import { MessageBox } from './components/MessageBox';
 
@@ -79,7 +81,13 @@ export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ messag
         <div className="min-w-0">
           <MessageBox>
             <div className="text-text-primary/80 text-[1rem] leading-[1.5] whitespace-pre-wrap break-words">
-              {parsedContent.text}
+              {tokenizeMessagePaths(parsedContent.text).map((seg, idx) =>
+                seg.isPath ? (
+                  <MessagePathChip key={idx} token={seg.text} />
+                ) : (
+                  <React.Fragment key={idx}>{seg.text}</React.Fragment>
+                ),
+              )}
             </div>
           </MessageBox>
         </div>
