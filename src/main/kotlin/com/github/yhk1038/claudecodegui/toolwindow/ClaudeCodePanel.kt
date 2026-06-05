@@ -307,7 +307,7 @@ class ClaudeCodePanel(
                 val names = java.util.Vector<String>()
                 dragData.getFileNames(names)
                 if (names.isNotEmpty()) {
-                    logger.info("[NativeDrop] CefDragHandler.onDragEnter stashing ${names.size} file(s)")
+                    logger.debug("[NativeDrop] CefDragHandler.onDragEnter stashing ${names.size} file(s)")
                     val files = names.map { path ->
                         val file = File(path)
                         DroppedFile(file.absolutePath, file.isDirectory)
@@ -333,7 +333,7 @@ class ClaudeCodePanel(
                 val droppedPath = runCatching { java.net.URI(url).path }.getOrNull()
                 if (droppedPath.isNullOrBlank()) return true
                 val file = File(droppedPath)
-                logger.info("Intercepted JCEF file:// navigation as native drop: $droppedPath (isDir=${file.isDirectory})")
+                logger.debug("Intercepted JCEF file:// navigation as native drop: $droppedPath (isDir=${file.isDirectory})")
                 dispatchNativeDrop(listOf(DroppedFile(file.absolutePath, file.isDirectory)))
                 return true
             }
@@ -543,7 +543,7 @@ class ClaudeCodePanel(
             }
 
             override fun drop(event: DropTargetDropEvent) {
-                logger.info("[NativeDrop] Swing DropTarget fired")
+                logger.debug("[NativeDrop] Swing DropTarget fired")
                 try {
                     event.acceptDrop(DnDConstants.ACTION_COPY)
                     val droppedFiles = extractDroppedFiles(event.transferable)
@@ -584,7 +584,7 @@ class ClaudeCodePanel(
             }
 
             override fun drop(event: DnDEvent) {
-                logger.info("[NativeDrop] IDE DnDTarget fired (attached=${event.attachedObject?.javaClass?.name})")
+                logger.debug("[NativeDrop] IDE DnDTarget fired (attached=${event.attachedObject?.javaClass?.name})")
                 val droppedFiles = extractDroppedFiles(event.attachedObject)
                 dispatchNativeDrop(droppedFiles)
             }
@@ -711,7 +711,7 @@ class ClaudeCodePanel(
     }
 
     private fun dispatchNativeDrop(files: List<DroppedFile>) {
-        logger.info("[NativeDrop] dispatchNativeDrop panelId=$panelId, ${files.size} files: ${files.map { it.path }}")
+        logger.debug("[NativeDrop] dispatchNativeDrop panelId=$panelId, ${files.size} files: ${files.map { it.path }}")
         if (files.isEmpty()) return
         val params = buildJsonObject {
             put("panelId", JsonPrimitive(panelId))
