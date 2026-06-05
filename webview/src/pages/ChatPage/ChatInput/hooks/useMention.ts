@@ -38,10 +38,29 @@ interface MentionState {
 
 interface UseMentionParams {
   workingDirectory: string | null | undefined;
-  addFileAttachment: (absolutePath: string, fileName: string, size?: number) => void;
-  addFolderAttachment: (absolutePath: string, folderName: string) => void;
+  /**
+   * Called with the inserted path token (no trailing space) and the caret
+   * offset immediately after the inserted `token + ' '`, so the composer can
+   * highlight the token as a chip and restore the caret. Fired once per
+   * successful {@link UseMentionReturn.selectResult}.
+   */
+  onInsertMention: (token: string, caretOffset: number) => void;
   value: string;
   onChange: (value: string) => void;
+}
+
+/**
+ * Build the inline path token for a selected mention result. The token is
+ * prefixed with `@` so Claude Code CLI can recognise it as a file reference.
+ * Directories get a single trailing slash (added only when not already present).
+ * Examples: `@src/App.tsx`, `@src/utils/`.
+ */
+export function buildMentionToken(result: MentionResult): string {
+  if (result.type === MentionItemType.Directory) {
+    const path = result.relativePath.endsWith('/') ? result.relativePath : `${result.relativePath}/`;
+    return `@${path}`;
+  }
+  return `@${result.relativePath}`;
 }
 
 interface UseMentionReturn {
@@ -58,7 +77,7 @@ interface UseMentionReturn {
 const DEBOUNCE_MS = 150;
 
 export function useMention(params: UseMentionParams): UseMentionReturn {
-  const { workingDirectory, addFileAttachment, addFolderAttachment, value, onChange } = params;
+  const { workingDirectory, onInsertMention, value, onChange } = params;
   const bridge = useBridgeContext();
 
   const [state, setState] = useState<MentionState>({
@@ -181,28 +200,27 @@ export function useMention(params: UseMentionParams): UseMentionReturn {
       const result = state.results[index];
       if (!result || !workingDirectory) return;
 
-      const absolutePath = workingDirectory.replace(/\/$/, '') + '/' + result.relativePath;
-
-      if (result.type === MentionItemType.Directory) {
-        const folderName = result.displayName;
-        addFolderAttachment(absolutePath, folderName);
-      } else {
-        const fileName = result.displayName;
-        addFileAttachment(absolutePath, fileName);
-      }
-
-      // textarea에서 @query 텍스트 제거
-      const currentValue = valueRef.current;
       const { triggerIndex } = state;
-
-      if (triggerIndex !== -1) {
-        const newValue = currentValue.slice(0, triggerIndex) + currentValue.slice(triggerIndex + 1 + state.query.length);
-        onChange(newValue);
+      if (triggerIndex === -1) {
+        close();
+        return;
       }
+
+      // Replace the `@query` span (from the `@` through the typed query) with the
+      // resolved path token plus a trailing space, keeping surrounding text intact.
+      const token = buildMentionToken(result);
+      const currentValue = valueRef.current;
+      const before = currentValue.slice(0, triggerIndex);
+      const after = currentValue.slice(triggerIndex + 1 + state.query.length);
+      const newValue = before + token + ' ' + after;
+      const caretOffset = triggerIndex + token.length + 1;
+
+      onChange(newValue);
+      onInsertMention(token, caretOffset);
 
       close();
     },
-    [state, workingDirectory, addFileAttachment, addFolderAttachment, onChange, close],
+    [state, workingDirectory, onInsertMention, onChange, close],
   );
 
   const handleKeyDown = useCallback(

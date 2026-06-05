@@ -186,10 +186,17 @@ export function ChatInput() {
 
   const mention = useMention({
     workingDirectory,
-    addFileAttachment,
-    addFolderAttachment,
     value,
     onChange,
+    // @-mention selection inserts an inline path token (same chip set as Alt+K
+    // editor-context inserts), then restores the caret just past the token.
+    onInsertMention: (token, caretOffset) => {
+      setPathTokens(prev => (prev.includes(token) ? prev : [...prev, token]));
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        if (el) setCaretOffset(el, caretOffset);
+      });
+    },
   });
 
   // Backend pushes EDITOR_CONTEXT (the file the user is viewing + selection)

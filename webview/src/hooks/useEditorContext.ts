@@ -40,16 +40,18 @@ function normalizeDir(dir: string): string {
 
 /**
  * Build the text inserted into the composer for an editor-context payload.
- * With a selection (both lines numeric): `relativePath#L{start}-L{end}`.
- * Without a selection (either line null): `relativePath`.
+ * The token is prefixed with `@` so Claude Code CLI can recognise it as a
+ * file reference.
+ * With a selection (both lines numeric): `@relativePath#L{start}-L{end}`.
+ * Without a selection (either line null): `@relativePath`.
  * The trailing space is added by the caller at insertion time.
  */
 export function buildEditorContextText(payload: EditorContextPayload): string {
   const { relativePath, startLine, endLine } = payload;
   if (typeof startLine === 'number' && typeof endLine === 'number') {
-    return `${relativePath}#L${startLine}-L${endLine}`;
+    return `@${relativePath}#L${startLine}-L${endLine}`;
   }
-  return relativePath;
+  return `@${relativePath}`;
 }
 
 export interface InsertAtCursorResult {

@@ -59,7 +59,7 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('buildEditorContextText', () => {
-  it('appends #L range when both start and end lines are numbers', () => {
+  it('prefixes @ and appends #L range when both start and end lines are numbers', () => {
     expect(
       buildEditorContextText({
         absolutePath: '/abs/src/file.ts',
@@ -68,10 +68,10 @@ describe('buildEditorContextText', () => {
         endLine: 25,
         workingDir: '/abs',
       }),
-    ).toBe('src/file.ts#L10-L25');
+    ).toBe('@src/file.ts#L10-L25');
   });
 
-  it('returns relativePath only when there is no selection (endLine null)', () => {
+  it('returns @relativePath only when there is no selection (endLine null)', () => {
     expect(
       buildEditorContextText({
         absolutePath: '/abs/src/file.ts',
@@ -80,10 +80,10 @@ describe('buildEditorContextText', () => {
         endLine: null,
         workingDir: '/abs',
       }),
-    ).toBe('src/file.ts');
+    ).toBe('@src/file.ts');
   });
 
-  it('returns relativePath only when startLine is null', () => {
+  it('returns @relativePath only when startLine is null', () => {
     expect(
       buildEditorContextText({
         absolutePath: '/abs/src/file.ts',
@@ -92,7 +92,7 @@ describe('buildEditorContextText', () => {
         endLine: 25,
         workingDir: '/abs',
       }),
-    ).toBe('src/file.ts');
+    ).toBe('@src/file.ts');
   });
 });
 
@@ -179,7 +179,7 @@ describe('useEditorContext — handler', () => {
     expect(unsubscribeMock).toHaveBeenCalled();
   });
 
-  it('inserts "relativePath#L.. " with trailing space at cursor on selection', () => {
+  it('inserts "@relativePath#L.. " with trailing space at cursor on selection', () => {
     const onChange = vi.fn();
     // Cursor sits between "ab" and "cd"; inserted text keeps both sides intact.
     renderEditorContext(
@@ -198,10 +198,10 @@ describe('useEditorContext — handler', () => {
     });
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith('absrc/file.ts#L10-L25 cd');
+    expect(onChange).toHaveBeenCalledWith('ab@src/file.ts#L10-L25 cd');
   });
 
-  it('inserts relativePath only when there is no selection', () => {
+  it('inserts @relativePath only when there is no selection', () => {
     const onChange = vi.fn();
     renderEditorContext({ value: '', currentWorkingDir: '/work' }, onChange);
 
@@ -215,10 +215,10 @@ describe('useEditorContext — handler', () => {
       });
     });
 
-    expect(onChange).toHaveBeenCalledWith('src/file.ts ');
+    expect(onChange).toHaveBeenCalledWith('@src/file.ts ');
   });
 
-  it('fires onInsertToken with the bare token (no trailing space) on a selection', () => {
+  it('fires onInsertToken with the @ token (no trailing space) on a selection', () => {
     const onChange = vi.fn();
     const onInsertToken = vi.fn();
     renderEditorContext(
@@ -237,10 +237,10 @@ describe('useEditorContext — handler', () => {
     });
 
     expect(onInsertToken).toHaveBeenCalledTimes(1);
-    expect(onInsertToken).toHaveBeenCalledWith('src/file.ts#L10-L25');
+    expect(onInsertToken).toHaveBeenCalledWith('@src/file.ts#L10-L25');
   });
 
-  it('fires onInsertToken with the relativePath when there is no selection', () => {
+  it('fires onInsertToken with @relativePath when there is no selection', () => {
     const onChange = vi.fn();
     const onInsertToken = vi.fn();
     renderEditorContext(
@@ -258,7 +258,7 @@ describe('useEditorContext — handler', () => {
       });
     });
 
-    expect(onInsertToken).toHaveBeenCalledWith('src/file.ts');
+    expect(onInsertToken).toHaveBeenCalledWith('@src/file.ts');
   });
 
   it('does not fire onInsertToken when the payload is ignored (wrong workingDir)', () => {
@@ -313,7 +313,7 @@ describe('useEditorContext — handler', () => {
       });
     });
 
-    expect(onChange).toHaveBeenCalledWith('src/file.ts ');
+    expect(onChange).toHaveBeenCalledWith('@src/file.ts ');
   });
 
   it('ignores payloads missing relativePath', () => {
