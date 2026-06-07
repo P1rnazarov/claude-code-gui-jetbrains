@@ -67,14 +67,26 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
     private val holders = ConcurrentHashMap<String, BrowserHolder>()
 
     /**
+     * Whether JCEF is available in this runtime.
+     *
+     * Single source of truth for the "can we host a browser?" check. The
+     * `claude.simulate.no.jcef` system property is a developer-only escape hatch
+     * for verifying the fallback path without swapping the boot JBR.
+     *
+     * Cheap to call — does NOT initialize CefApp (only [JBCefApp.isSupported]
+     * is consulted, which is a capability probe, not a builder).
+     */
+    fun isJcefAvailable(): Boolean {
+        if (java.lang.Boolean.getBoolean("claude.simulate.no.jcef")) return false
+        return JBCefApp.isSupported()
+    }
+
+    /**
      * Get an existing browser for the session, or create a new one.
      * The browser is NOT registered with Disposer — it is managed by this service.
      */
     fun getOrCreate(sessionId: String): BrowserHolder? {
-        // The system property is a developer-only escape hatch for verifying the
-        // JCEF-unavailable fallback path (e.g. Android Studio reproduction) without
-        // having to swap the boot JBR. End users are not expected to set it.
-        if (!JBCefApp.isSupported() || java.lang.Boolean.getBoolean("claude.simulate.no.jcef")) {
+        if (!isJcefAvailable()) {
             logger.warn("JCEF is not supported in this runtime — cannot create browser for session: $sessionId")
             return null
         }
