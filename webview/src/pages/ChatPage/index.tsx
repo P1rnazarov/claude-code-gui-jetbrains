@@ -46,7 +46,14 @@ export function ChatPage() {
   useEffect(() => {
     const measure = () => {
       const s = sentinelRef.current;
-      if (!s) return;
+      if (!s) {
+        // No sentinel means the message list is empty (e.g. after clearing the
+        // session). There is nothing to scroll, so treat the view as
+        // at-bottom; otherwise a stale `false` keeps the "Scroll to bottom"
+        // button stuck on an empty screen.
+        setIsUserNearBottom(prev => (prev ? prev : true));
+        return;
+      }
       // Anchor the near-bottom test to the top of the sticky input panel, not
       // window.innerHeight. The sentinel sits just above the input panel, so
       // using innerHeight adds the panel height as a hidden offset and forces
