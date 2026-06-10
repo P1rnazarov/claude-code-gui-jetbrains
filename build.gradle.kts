@@ -147,6 +147,13 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+            <h3>0.17.4 - Cross-platform stability fixes</h3>
+            <ul>
+                <li><b>WSL projects work on Windows</b>: Opening a project from inside WSL on a Windows IDE now starts Claude inside the distro instead of failing. (#57)</li>
+                <li><b>PowerShell commands now render on Windows</b>: When Claude runs PowerShell, the actual command shows in the permission prompt and the tool card instead of "unknown". (#84)</li>
+                <li><b>Chat panel reliability</b>: The panel renders correctly on IntelliJ 2025.1+ / 2026.1 instead of coming up blank, and opening a second IDE window no longer surfaces "Internal Error" popups — chats route to the IDE you clicked from. (#76, #79)</li>
+                <li><b>Nested working-directory navigation</b>: A new dropdown at the top-left folder icon lists sibling and descendant working directories around the IDE root, so sessions started inside a sub-folder are one click away. (#43)</li>
+            </ul>
             <h3>0.17.3 - Editor stability fixes</h3>
             <ul>
                 <li><b>No more typing lag in long conversations</b>: Even as the context grows, the chat input stays responsive while you type. (#31)</li>
