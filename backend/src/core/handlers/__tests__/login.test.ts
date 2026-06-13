@@ -5,7 +5,7 @@ vi.mock('../../claude', () => ({
   Claude: { spawn: vi.fn() },
 }));
 
-import { loginHandler, cancelLogin } from '../login';
+import { loginHandler, cancelLogin, extractOAuthUrl } from '../login';
 import { Claude } from '../../claude';
 import type { ConnectionManager } from '../../../ws/connection-manager';
 import type { Bridge } from '../../../bridge/bridge-interface';
@@ -92,5 +92,39 @@ describe('cancelLogin', () => {
 
   it('returns false when the connection has no in-flight login', () => {
     expect(cancelLogin('no-such-connection')).toBe(false);
+  });
+});
+
+describe('extractOAuthUrl', () => {
+  const URL = 'https://claude.ai/oauth/authorize?code=abc123&state=xyz';
+
+  it('extracts a bare OAuth URL', () => {
+    expect(extractOAuthUrl(`Visit: ${URL}`)).toBe(URL);
+  });
+
+  it('matches the console authorize host too', () => {
+    const consoleUrl = 'https://console.anthropic.com/oauth/authorize?code=q';
+    expect(extractOAuthUrl(`open ${consoleUrl}`)).toBe(consoleUrl);
+  });
+
+  it('strips ANSI color codes wrapping the URL', () => {
+    // Ink renders the URL underlined/colored: ESC[4m ... ESC[0m
+    const colored = `\x1b[4m${URL}\x1b[0m`;
+    expect(extractOAuthUrl(colored)).toBe(URL);
+  });
+
+  it('strips ANSI codes embedded mid-URL', () => {
+    const split = `https://claude.ai/oauth/\x1b[0mauthorize?code=abc123&state=xyz`;
+    expect(extractOAuthUrl(split)).toBe(URL);
+  });
+
+  it('trims trailing punctuation and quotes', () => {
+    expect(extractOAuthUrl(`visit "${URL}".`)).toBe(URL);
+    expect(extractOAuthUrl(`(${URL})`)).toBe(URL);
+  });
+
+  it('returns null when there is no OAuth URL', () => {
+    expect(extractOAuthUrl('no url here, just text')).toBeNull();
+    expect(extractOAuthUrl('https://example.com/login')).toBeNull();
   });
 });

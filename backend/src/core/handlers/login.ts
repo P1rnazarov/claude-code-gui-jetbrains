@@ -9,6 +9,27 @@ import { Claude } from '../claude';
 // OAuth code to the right process's stdin. Issue #57.
 const activeLoginChildren = new Map<string, ChildProcess>();
 
+// CSI escape sequences (colors, cursor moves). The CLI's login screen is an Ink
+// (terminal) UI, so its output is peppered with these — they must be stripped
+// before matching or they get absorbed into the URL.
+const ANSI_PATTERN = /\x1b\[[0-9;?]*[ -/]*[@-~]/g;
+// Punctuation/brackets/quotes the URL may be wrapped in or followed by in prose
+// ("(https://…)", 'visit "https://…".'). Stripped only from the tail.
+const TRAILING_PUNCTUATION = /[)\]}>.,;:!?'"`]+$/;
+const OAUTH_URL_PATTERN = /https:\/\/[^\s]*\/oauth\/authorize[^\s]*/;
+
+/**
+ * Pull the OAuth authorize URL out of a chunk of CLI output, tolerating the ANSI
+ * codes Ink emits and any surrounding prose punctuation. Returns null when the
+ * text has no such URL. Exported for testing.
+ */
+export function extractOAuthUrl(text: string): string | null {
+  const clean = text.replace(ANSI_PATTERN, '');
+  const match = clean.match(OAUTH_URL_PATTERN);
+  if (!match) return null;
+  return match[0].replace(TRAILING_PUNCTUATION, '');
+}
+
 export function loginHandler(
   connectionId: string,
   message: IPCMessage,
@@ -43,11 +64,11 @@ export function loginHandler(
       // OAuth URL and open it through the IDE (BrowserUtil.browse on the Windows
       // side). Issue #57.
       if (!urlOpened) {
-        const match = buf.match(/https:\/\/[^\s]*\/oauth\/authorize[^\s]*/);
-        if (match) {
+        const url = extractOAuthUrl(buf);
+        if (url) {
           urlOpened = true;
-          console.error('[login] opening OAuth URL via IDE:', match[0]);
-          bridge.openUrl(match[0]).catch((err) => {
+          console.error('[login] opening OAuth URL via IDE:', url);
+          bridge.openUrl(url).catch((err) => {
             console.error('[login] bridge.openUrl failed:', err);
           });
         }
