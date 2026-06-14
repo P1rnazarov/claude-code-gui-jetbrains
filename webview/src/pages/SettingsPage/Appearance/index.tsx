@@ -93,8 +93,8 @@ export function AppearanceSettings() {
 
       <SettingSection title="Scrolling">
         <SettingRow
-          label="Auto-scroll threshold"
-          description={`Pixel distance from the bottom within which the chat keeps auto-scrolling. Scroll up past it to read freely; smaller releases sooner. Default ${AUTO_SCROLL_THRESHOLD_DEFAULT}.`}
+          label="Auto-scroll resume distance"
+          description={`Scrolling up always pauses auto-scroll so you can read freely. It resumes once you scroll back within this many pixels of the bottom. Smaller means you must return closer to re-engage. Default ${AUTO_SCROLL_THRESHOLD_DEFAULT}.`}
         >
           <input
             type="number"

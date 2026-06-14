@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
   clampAutoScrollThreshold,
-  isNearBottom,
+  nextAutoFollow,
   AUTO_SCROLL_THRESHOLD_DEFAULT,
   AUTO_SCROLL_THRESHOLD_MAX,
   AUTO_SCROLL_THRESHOLD_MIN,
+  AUTO_SCROLL_RELEASE_EPS,
 } from '../autoScroll';
 
 describe('clampAutoScrollThreshold', () => {
@@ -32,28 +33,55 @@ describe('clampAutoScrollThreshold', () => {
   });
 });
 
-describe('isNearBottom', () => {
-  // referenceBottom is the top edge of the sticky input panel.
-  // When scrolled to the bottom, the sentinel sits at the panel top.
-  it('is true when the sentinel rests at the panel top', () => {
-    expect(isNearBottom(500, 500, 80)).toBe(true);
+describe('nextAutoFollow', () => {
+  const RESUME = 80;
+
+  // release: the user scrolled up (scrollTop decreased past the EPS).
+  it('releases (false) when the user scrolls up beyond the release EPS', () => {
+    // far from bottom so resume cannot fire
+    expect(nextAutoFollow(true, -(AUTO_SCROLL_RELEASE_EPS + 1), 500, RESUME)).toBe(false);
   });
 
-  it('is true while scrolled up within the threshold', () => {
-    // scrolled up 50px -> sentinel is 50px below the panel top
-    expect(isNearBottom(550, 500, 80)).toBe(true);
+  it('ignores tiny upward jitter within the release EPS', () => {
+    // jitter smaller than EPS, still far from bottom -> keep previous state
+    expect(nextAutoFollow(true, -(AUTO_SCROLL_RELEASE_EPS - 0.5), 500, RESUME)).toBe(true);
+    expect(nextAutoFollow(false, -(AUTO_SCROLL_RELEASE_EPS - 0.5), 500, RESUME)).toBe(false);
   });
 
-  it('is false once scrolled up beyond the threshold', () => {
-    expect(isNearBottom(581, 500, 80)).toBe(false);
+  // resume: the user must actively scroll DOWN to within the resume distance.
+  it('resumes (true) when actively scrolling down within the resume distance', () => {
+    expect(nextAutoFollow(false, 5, 10, RESUME)).toBe(true);
+    expect(nextAutoFollow(false, AUTO_SCROLL_RELEASE_EPS + 1, RESUME, RESUME)).toBe(true);
   });
 
-  it('regression (issue #87): input panel height must not shift the boundary', () => {
-    // Anchored to the panel top, only `threshold` governs release —
-    // the panel's own height is irrelevant. With the old window.innerHeight
-    // basis a tall panel would force the user to scroll panelHeight + threshold.
-    const panelTop = 400; // e.g. innerHeight 800 minus a 400px input panel
-    expect(isNearBottom(panelTop + 80, panelTop, 80)).toBe(true);
-    expect(isNearBottom(panelTop + 81, panelTop, 80)).toBe(false);
+  it('does NOT resume just by sitting near the bottom (no downward scroll)', () => {
+    // The bug the user hit: nudge up to read, release fires, then on the idle
+    // tick (delta ~= 0) the view must stay put, not snap back to bottom.
+    expect(nextAutoFollow(false, 0, 10, RESUME)).toBe(false);
+    expect(nextAutoFollow(false, 0, RESUME, RESUME)).toBe(false);
+  });
+
+  it('does not resume while scrolling down but still beyond the resume distance', () => {
+    expect(nextAutoFollow(false, 50, RESUME + 1, RESUME)).toBe(false);
+  });
+
+  // release takes priority over resume in the same tick (Lundis: scrolling up
+  // must always stop following, even near the bottom).
+  it('prioritizes release over resume when both could fire in one tick', () => {
+    expect(nextAutoFollow(true, -(AUTO_SCROLL_RELEASE_EPS + 1), 10, RESUME)).toBe(false);
+  });
+
+  it('keeps the previous state when neither release nor resume applies', () => {
+    // idle / content growth: delta ~= 0 -> unchanged
+    expect(nextAutoFollow(true, 0, 500, RESUME)).toBe(true);
+    expect(nextAutoFollow(false, 0, 500, RESUME)).toBe(false);
+    // big block inserted at once: scrollTop unchanged (delta 0), dist jumps ->
+    // must stay following (the issue #100 bug case)
+    expect(nextAutoFollow(true, 0, 4000, RESUME)).toBe(true);
+  });
+
+  it('respects a custom release EPS argument', () => {
+    expect(nextAutoFollow(true, -10, 500, RESUME, 20)).toBe(true);
+    expect(nextAutoFollow(true, -25, 500, RESUME, 20)).toBe(false);
   });
 });

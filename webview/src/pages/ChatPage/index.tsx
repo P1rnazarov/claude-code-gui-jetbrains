@@ -21,7 +21,7 @@ import { useNotificationSound } from '@/notifications';
 import {isMobile} from "@/config/environment.ts";
 import { useSettings } from '@/contexts/SettingsContext';
 import { SettingKey } from '@/types/settings';
-import { clampAutoScrollThreshold, isNearBottom, AUTO_SCROLL_THRESHOLD_DEFAULT } from '@/utils/autoScroll';
+import { clampAutoScrollThreshold, nextAutoFollow, AUTO_SCROLL_THRESHOLD_DEFAULT, AUTO_SCROLL_BOTTOM_EPS } from '@/utils/autoScroll';
 
 export function ChatPage() {
   // Redirect logged-out users to the login screen before they hit a failing chat.
@@ -39,49 +39,53 @@ export function ChatPage() {
     settings[SettingKey.AUTO_SCROLL_THRESHOLD] ?? AUTO_SCROLL_THRESHOLD_DEFAULT,
   );
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const bottomPanelRef = useRef<HTMLDivElement>(null);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const [isUserNearBottom, setIsUserNearBottom] = useState(true);
+  // Auto-follow tracks user *intent*, not viewport position. A large block
+  // inserted at once grows scrollHeight while scrollTop stays put — the user
+  // did not move, so following must continue (issue #100). Only a deliberate
+  // upward scroll (negative scrollTop delta) releases it.
+  const autoFollowRef = useRef(true);
+  const prevScrollTopRef = useRef(0);
+  const lastScrollHeightRef = useRef(0);
+  const [autoFollow, setAutoFollow] = useState(true);
 
-  // Poll sentinel position every 200ms to detect near-bottom state.
-  // Polling instead of scroll/IntersectionObserver because those are unreliable
-  // in JCEF when the scrollable element differs from what listeners expect.
+  // Drive auto-follow from a requestAnimationFrame loop. A single loop both
+  // decides the next auto-follow state and performs the scroll, so the two can
+  // never disagree. The scroll itself is animated by CSS `scroll-smooth` on the
+  // container, so a large block inserted at once slides into view instead of
+  // jumping. We only call scrollTo when scrollHeight actually changed: firing it
+  // every frame at the same target restarts the smooth animation each frame and
+  // can stall it. The programmatic scroll moves the view down (delta >= 0),
+  // which never satisfies the upward-release test — so it cannot release itself
+  // and needs no guard flag. rAF is reliable in JCEF (Chromium), unlike the
+  // scroll events / IntersectionObserver that earlier polling worked around.
   useEffect(() => {
-    const measure = () => {
-      const s = sentinelRef.current;
-      if (!s) {
-        // No sentinel means the message list is empty (e.g. after clearing the
-        // session). There is nothing to scroll, so treat the view as
-        // at-bottom; otherwise a stale `false` keeps the "Scroll to bottom"
-        // button stuck on an empty screen.
-        setIsUserNearBottom(prev => (prev ? prev : true));
-        return;
+    let rafId = 0;
+    const tick = () => {
+      const el = scrollContainerRef.current;
+      if (el) {
+        const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+        const delta = el.scrollTop - prevScrollTopRef.current;
+        const next = nextAutoFollow(autoFollowRef.current, delta, dist, autoScrollThreshold);
+        autoFollowRef.current = next;
+        setAutoFollow(prev => (prev === next ? prev : next));
+        const grew = el.scrollHeight !== lastScrollHeightRef.current;
+        if (next && grew && dist > AUTO_SCROLL_BOTTOM_EPS) {
+          el.scrollTo({ top: el.scrollHeight });
+        }
+        lastScrollHeightRef.current = el.scrollHeight;
+        prevScrollTopRef.current = el.scrollTop;
       }
-      // Anchor the near-bottom test to the top of the sticky input panel, not
-      // window.innerHeight. The sentinel sits just above the input panel, so
-      // using innerHeight adds the panel height as a hidden offset and forces
-      // the user to scroll up panelHeight + threshold before auto-follow
-      // releases (issue #87). Falling back to innerHeight only if the panel
-      // ref is not mounted yet.
-      const panel = bottomPanelRef.current;
-      const referenceBottom = panel
-        ? panel.getBoundingClientRect().top
-        : window.innerHeight;
-      const isNear = isNearBottom(
-        s.getBoundingClientRect().top,
-        referenceBottom,
-        autoScrollThreshold,
-      );
-      setIsUserNearBottom(prev => (prev === isNear ? prev : isNear));
+      rafId = requestAnimationFrame(tick);
     };
-    measure();
-    const id = setInterval(measure, 200);
-    return () => clearInterval(id);
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
   }, [autoScrollThreshold]);
 
   const scrollToBottom = useCallback(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
+    autoFollowRef.current = true;
+    setAutoFollow(true);
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, []);
 
@@ -120,8 +124,18 @@ export function ChatPage() {
     const key = `claude-gui:scroll:${currentSessionId}`;
     const cached = localStorage.getItem(key);
     if (cached) {
+      const top = Number(cached);
       requestAnimationFrame(() => {
-        el.scrollTop = Number(cached);
+        el.scrollTop = top;
+        // Sync the poll baseline so the next tick does not read the restore as a
+        // huge upward scroll, and release auto-follow unless we restored near
+        // the bottom — otherwise the first tick would yank the view back down
+        // and defeat the restore.
+        prevScrollTopRef.current = el.scrollTop;
+        const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+        const atBottom = dist <= autoScrollThreshold;
+        autoFollowRef.current = atBottom;
+        setAutoFollow(atBottom);
       });
       localStorage.removeItem(key);
     }
@@ -157,16 +171,13 @@ export function ChatPage() {
       </BannerArea>
 
       {/* Messages Area */}
-      <div ref={scrollContainerRef} className={`flex flex-col flex-1 overflow-y-auto w-full h-screen pt-10 ${isMobile() ? 'pb-52' : ''} bg-surface-base z-0`}>
+      <div ref={scrollContainerRef} className={`flex flex-col flex-1 overflow-y-auto scroll-smooth w-full h-screen pt-10 ${isMobile() ? 'pb-52' : ''} bg-surface-base z-0`}>
         <ChatMessageArea
           isStreaming={isStreaming && !pendingUserAnswer && !pendingPlan && !pendingPermission}
-          scrollContainerRef={scrollContainerRef}
-          isUserNearBottom={isUserNearBottom}
-          sentinelRef={sentinelRef}
         />
 
         {/* Input Area */}
-        <div ref={bottomPanelRef} className="sticky w-full left-0 bottom-0 z-10">
+        <div className="sticky w-full left-0 bottom-0 z-10">
           {pendingUserAnswer ? (
             <AskUserQuestionInputPanel
               toolUse={pendingUserAnswer.toolUse}
@@ -193,7 +204,7 @@ export function ChatPage() {
 
       </div>
 
-      {!isUserNearBottom && (
+      {!autoFollow && (
         <button
           onClick={scrollToBottom}
           className="fixed bottom-[7.5rem] left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-surface-raised border border-border-default rounded-full shadow-md text-xs text-text-primary hover:bg-surface-hover transition-colors"

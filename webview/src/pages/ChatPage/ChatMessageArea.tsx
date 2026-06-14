@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type RefObject } from 'react';
+import { useMemo, useRef } from 'react';
 import {LoadedMessageDto, isContentBlockArray} from '../../types';
 import { MessageBubble } from './MessageBubble';
 import { ProjectSelectorPage } from '@/pages/ProjectSelectorPage';
@@ -39,35 +39,16 @@ function buildSubAgentMessages(progressEntries: LoadedMessageDto[]): SubAgentMes
 
 interface Props {
   isStreaming: boolean;
-  scrollContainerRef: RefObject<HTMLDivElement | null>;
-  isUserNearBottom: boolean;
-  sentinelRef: RefObject<HTMLDivElement | null>;
 }
 
 export function ChatMessageArea(props: Props) {
-  const { isStreaming, scrollContainerRef, isUserNearBottom, sentinelRef } = props;
+  const { isStreaming } = props;
   const { workingDirectory } = useSessionContext();
   const { messages, retry: onRetry } = useChatStreamContext();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll when user is near bottom (1s interval)
-  useEffect(() => {
-    if (!isUserNearBottom) return;
-
-    const tick = () => {
-      const el = scrollContainerRef.current;
-      if (!el || !sentinelRef.current) return;
-
-      const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
-      if (dist <= 5) return; // already at bottom
-
-      sentinelRef.current.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [isUserNearBottom, scrollContainerRef, sentinelRef]);
+  // Auto-scroll is driven entirely by ChatPage's single poll loop, which scrolls
+  // the container directly — this component only renders the messages.
 
   // Merge tool_result user messages into preceding assistant's tool_use blocks
   const mergedMessages = useMemo(() => {
@@ -186,7 +167,6 @@ export function ChatMessageArea(props: Props) {
       ))}
       {isStreaming && <StreamingIndicator />}
       <StreamErrorBanner />
-      <div ref={sentinelRef as RefObject<HTMLDivElement>} />
     </div>
   );
 }
