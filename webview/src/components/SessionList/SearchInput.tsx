@@ -1,11 +1,13 @@
-import {SessionRefresher} from "./SessionRefresher.tsx";
+import { SessionRefresher } from './SessionRefresher';
 
-interface SearchInputProps {
+interface Props {
   value: string;
   onChange: (value: string) => void;
 }
 
-export function SearchInput({ value, onChange }: SearchInputProps) {
+export function SearchInput(props: Props) {
+  const { value, onChange } = props;
+
   return (
     <div className="p-1.5">
       <div className="relative">
