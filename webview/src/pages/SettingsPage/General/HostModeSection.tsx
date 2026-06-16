@@ -5,8 +5,8 @@ import { SettingKey, HostMode } from '@/types/settings';
 import { isJetBrains } from '@/config/environment';
 
 const HOST_MODE_OPTIONS: SelectOption[] = [
-  { value: HostMode.EDITOR_TAB, label: 'Editor tab' },
-  { value: HostMode.TOOL_WINDOW, label: 'Tool window' },
+  { value: HostMode.TOOL_WINDOW, label: 'sidebar' },
+  { value: HostMode.EDITOR_TAB, label: 'Panel (New Tab)' },
 ];
 
 /**
@@ -26,15 +26,15 @@ export function HostModeSection() {
   const hostMode = settings[SettingKey.HOST_MODE] ?? HostMode.EDITOR_TAB;
 
   return (
-    <SettingSection title="Chat Location">
+    <SettingSection title="Chat">
       <SettingRow
-        label="Open chats in"
-        description="Where new Claude Code chats open. Applies to chats you open next; already-open chats stay where they are."
+        label="Preferred Location"
+        description="Where Claude opens by default."
       >
         <Select
           value={hostMode}
           options={HOST_MODE_OPTIONS}
-          ariaLabel="Open chats in"
+          ariaLabel="Preferred Location"
           className="bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary"
           onChange={(value) => updateSettingWithScope(SettingKey.HOST_MODE, value as HostMode, 'global')}
         />

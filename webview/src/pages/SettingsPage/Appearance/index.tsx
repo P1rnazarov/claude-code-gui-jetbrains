@@ -1,6 +1,5 @@
 import { SettingSection, SettingRow } from '../common';
 import { Select, type SelectOption } from '@/components/Select';
-import { HostModeSection } from './HostModeSection';
 import { useSettings } from '@/contexts/SettingsContext';
 import { SettingKey, ThemeMode } from '@/types/settings';
 import { ROUTE_META, Route } from '@/router/routes';
@@ -122,8 +121,6 @@ export function AppearanceSettings() {
           />
         </SettingRow>
       </SettingSection>
-
-      <HostModeSection />
     </div>
   );
 }

@@ -30,7 +30,7 @@ beforeEach(() => {
 });
 
 const getTrigger = () =>
-  screen.getByRole('button', { name: /Open chats in/i }) as HTMLButtonElement;
+  screen.getByRole('button', { name: /Preferred Location/i }) as HTMLButtonElement;
 
 describe('HostModeSection', () => {
   it('renders nothing in the browser (non-JetBrains) runtime', () => {
@@ -47,26 +47,26 @@ describe('HostModeSection', () => {
   it('reflects the current editor-tab value', () => {
     mockHostMode = HostMode.EDITOR_TAB;
     render(<HostModeSection />);
-    expect(getTrigger().textContent).toContain('Editor tab');
+    expect(getTrigger().textContent).toContain('Panel (New Tab)');
   });
 
   it('reflects the current tool-window value', () => {
     mockHostMode = HostMode.TOOL_WINDOW;
     render(<HostModeSection />);
-    expect(getTrigger().textContent).toContain('Tool window');
+    expect(getTrigger().textContent).toContain('sidebar');
   });
 
   it('offers both host modes', () => {
     render(<HostModeSection />);
     fireEvent.click(getTrigger());
     const labels = screen.getAllByRole('option').map((o) => o.textContent?.replace('✓', '').trim());
-    expect(labels).toEqual(['Editor tab', 'Tool window']);
+    expect(labels).toEqual(['sidebar', 'Panel (New Tab)']);
   });
 
   it('saves the chosen mode to the global scope', () => {
     render(<HostModeSection />);
     fireEvent.click(getTrigger());
-    fireEvent.click(screen.getByRole('option', { name: 'Tool window' }));
+    fireEvent.click(screen.getByRole('option', { name: 'sidebar' }));
 
     expect(updateSettingWithScopeMock).toHaveBeenCalledTimes(1);
     expect(updateSettingWithScopeMock).toHaveBeenCalledWith(
