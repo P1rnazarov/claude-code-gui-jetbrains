@@ -21,6 +21,7 @@ import { applyDiffHandler } from './applyDiff';
 import { rejectDiffHandler } from './rejectDiff';
 import { createSessionHandler } from './createSession';
 import { openNewTabHandler } from './openNewTab';
+import { openSessionHandler } from './openSession';
 import { openSettingsHandler } from './openSettings';
 import { openTerminalHandler } from './openTerminal';
 import { getVersionHandler } from './getVersion';
@@ -123,6 +124,9 @@ export async function handleMessage(
       break;
     case 'OPEN_NEW_TAB':
       await openNewTabHandler(connectionId, message, connections, bridge);
+      break;
+    case 'OPEN_SESSION':
+      await openSessionHandler(connectionId, message, connections, bridge);
       break;
     case 'OPEN_SETTINGS':
       await openSettingsHandler(connectionId, message, connections, bridge);

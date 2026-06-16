@@ -1,0 +1,71 @@
+import { useState, useMemo, useCallback, ReactNode } from 'react';
+import { groupSessionsByDate, GroupedSessions } from './utils';
+import { useSessionContext } from '@/contexts/SessionContext';
+import { useConfirmDialog } from '@/components/ConfirmDialog/useConfirmDialog';
+import { SessionMetaDto } from '@/dto';
+
+interface UseSessionListResult {
+  sessions: SessionMetaDto[];
+  currentSessionId: string | null;
+  searchQuery: string;
+  setSearchQuery: (value: string) => void;
+  filteredSessions: SessionMetaDto[];
+  groupedSessions: GroupedSessions;
+  handleDeleteSession: (sessionId: string) => Promise<void>;
+  renameSession: (sessionId: string, title: string) => Promise<void>;
+  confirmDialog: ReactNode;
+}
+
+/**
+ * 세션 리스트 컨트롤 로직 (검색 필터 · 날짜 그룹핑 · 삭제 확인)을 묶은 훅.
+ * 세션 드롭다운과 좌측 세션 패널이 공유한다. 세션 선택(select) 동작은
+ * 호출 측마다 다르므로(드롭다운=현재 탭 전환, 패널=새 탭 열기) 이 훅에 포함하지 않는다.
+ */
+export function useSessionList(): UseSessionListResult {
+  const { sessions, currentSessionId, deleteSession, renameSession } = useSessionContext();
+  const { confirmDialog, confirm } = useConfirmDialog();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter sessions using regex (falls back to substring match on invalid regex)
+  const filteredSessions = useMemo(() => {
+    if (!searchQuery.trim()) return sessions;
+    try {
+      const regex = new RegExp(searchQuery, 'i');
+      return sessions.filter(s => regex.test(s.title));
+    } catch {
+      return sessions.filter(s =>
+        s.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+  }, [sessions, searchQuery]);
+
+  const groupedSessions = useMemo(() => {
+    return groupSessionsByDate(filteredSessions);
+  }, [filteredSessions]);
+
+  const handleDeleteSession = useCallback(async (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId);
+    const confirmed = await confirm({
+      title: 'Delete Session',
+      message: `Are you sure you want to delete "${session?.title ?? sessionId}"?`,
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
+      variant: 'danger',
+    });
+    if (confirmed) {
+      await deleteSession(sessionId);
+    }
+  }, [sessions, confirm, deleteSession]);
+
+  return {
+    sessions,
+    currentSessionId,
+    searchQuery,
+    setSearchQuery,
+    filteredSessions,
+    groupedSessions,
+    handleDeleteSession,
+    renameSession,
+    confirmDialog,
+  };
+}

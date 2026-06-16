@@ -52,6 +52,10 @@ export class BrowserBridge implements Bridge {
     // no-op: no IDE tab management in browser mode
   }
 
+  async openSession(_sessionId: string, _workingDir?: string): Promise<void> {
+    // no-op: browser mode navigates to the session via URL
+  }
+
   async openSettings(_workingDir?: string): Promise<void> {
     // no-op
   }

@@ -20,6 +20,11 @@ export class JetBrainsAdapter implements IdeAdapter {
     console.log('[JetBrainsAdapter] Sent OPEN_NEW_TAB via WebSocket bridge');
   }
 
+  async openSession(sessionId: string): Promise<void> {
+    await getBridge().request('OPEN_SESSION', { sessionId });
+    console.log('[JetBrainsAdapter] Sent OPEN_SESSION via WebSocket bridge:', sessionId);
+  }
+
   async openSettings(): Promise<void> {
     await getBridge().request('OPEN_SETTINGS');
     console.log('[JetBrainsAdapter] Sent OPEN_SETTINGS via WebSocket bridge');

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { SessionMetaDto } from '@/dto';
 import { getRelativeTime } from './utils';
+import { useSessionListScale } from './scale';
 
 interface Props {
   session: SessionMetaDto;
@@ -12,6 +13,7 @@ interface Props {
 
 export function SessionItem(props: Props) {
   const { session, isSelected, onSelect, onDelete, onRename } = props;
+  const scale = useSessionListScale();
   const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(session.title);
@@ -70,7 +72,7 @@ export function SessionItem(props: Props) {
   if (isEditing) {
     return (
       <div
-        className={`w-full px-2 py-1.5 rounded flex items-center ${
+        className={`w-full ${scale.itemPad} rounded flex items-center ${
           isSelected ? 'bg-[var(--surface-selected)]' : ''
         }`}
       >
@@ -82,7 +84,7 @@ export function SessionItem(props: Props) {
           onKeyDown={handleKeyDown}
           onBlur={commit}
           onClick={(e) => e.stopPropagation()}
-          className="w-full bg-transparent text-xs text-text-primary outline-none border-b border-text-tertiary/40"
+          className={`w-full bg-transparent ${scale.itemText} text-text-primary outline-none border-b border-text-tertiary/40`}
         />
       </div>
     );
@@ -93,7 +95,7 @@ export function SessionItem(props: Props) {
       onClick={onSelect}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`w-full px-2 py-1.5 text-left text-xs rounded transition-colors flex justify-between items-center gap-2 ${
+      className={`w-full ${scale.itemPad} text-left ${scale.itemText} rounded transition-colors flex justify-between items-center gap-2 ${
         isSelected
           ? 'text-text-primary bg-[var(--surface-selected)]'
           : 'text-text-secondary hover:text-text-primary hover:bg-[var(--surface-selected)]'
@@ -155,7 +157,7 @@ export function SessionItem(props: Props) {
           </span>
         </span>
       ) : session.updatedAt ? (
-        <span className="flex-shrink-0 text-[0.8461rem] text-text-tertiary">
+        <span className={`flex-shrink-0 ${scale.itemTime} text-text-tertiary`}>
           {getRelativeTime(session.updatedAt)}
         </span>
       ) : null}

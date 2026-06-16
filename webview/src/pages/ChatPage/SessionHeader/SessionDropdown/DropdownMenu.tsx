@@ -1,6 +1,6 @@
-import { GroupedSessions } from './utils';
-import { SearchInput } from './SearchInput';
-import { SessionList } from './SessionList';
+import { GroupedSessions } from '@/components/SessionList/utils';
+import { SearchInput } from '@/components/SessionList/SearchInput';
+import { SessionList } from '@/components/SessionList';
 
 interface Props {
   searchQuery: string;

@@ -199,6 +199,12 @@ export class JetBrainsBridge implements Bridge {
     await this.request('OPEN_NEW_TAB', workingDir ? { workingDir } : {});
   }
 
+  async openSession(sessionId: string, workingDir?: string): Promise<void> {
+    const params: Record<string, unknown> = { sessionId };
+    if (workingDir) params.workingDir = workingDir;
+    await this.request('OPEN_SESSION', params);
+  }
+
   async openSettings(workingDir?: string): Promise<void> {
     await this.request('OPEN_SETTINGS', workingDir ? { workingDir } : {});
   }
