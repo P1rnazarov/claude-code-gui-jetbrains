@@ -26,6 +26,13 @@ export interface IdeAdapter {
   openNewTab(): Promise<void>;
 
   /**
+   * Open an existing session in a new tab/window
+   * - In JetBrains: Opens a new editor tab navigated to the session via Kotlin bridge
+   * - In Browser: Opens a new browser tab at the session route
+   */
+  openSession(sessionId: string): Promise<void>;
+
+  /**
    * Open settings in a new tab/window
    * - In JetBrains: Opens a new editor tab navigated to settings
    * - In Browser: Opens a new browser tab with settings hash

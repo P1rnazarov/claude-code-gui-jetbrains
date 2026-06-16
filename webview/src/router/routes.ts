@@ -41,6 +41,9 @@ export enum Route {
   PROJECT_SELECTOR = '',
   NEW_SESSION = 'sessions/new',
   SESSION = 'sessions/:current_session_id',
+  // 좌측 세션 패널 전용 뷰. '/sessions/'와 분리된 prefix를 써야
+  // parseSessionIdFromPath가 'panel'을 세션 ID로 오인하지 않는다.
+  SESSION_PANEL = 'session-panel',
   SETTINGS = 'settings',
   SETTINGS_GENERAL = 'settings/general',
   SETTINGS_APPEARANCE = 'settings/appearance',
@@ -81,6 +84,11 @@ export const ROUTE_META: Record<Route, RouteMeta> = {
   [Route.SESSION]: {
     path: '/sessions/:current_session_id',
     label: 'Session',
+    icon: null
+  },
+  [Route.SESSION_PANEL]: {
+    path: '/session-panel',
+    label: 'Sessions',
     icon: null
   },
   [Route.SWITCH_ACCOUNT]: {

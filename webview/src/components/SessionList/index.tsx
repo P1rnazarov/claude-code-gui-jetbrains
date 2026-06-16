@@ -7,13 +7,15 @@ interface Props {
   onSelectSession: (sessionId: string) => void;
   onDeleteSession: (sessionId: string) => void;
   onRenameSession: (sessionId: string, title: string) => void;
+  /** 스크롤 영역 높이 제어. 드롭다운은 max-h-80, 사이드 패널은 flex-1 min-h-0 */
+  className?: string;
 }
 
 export function SessionList(props: Props) {
-  const { groupedSessions, currentSessionId, onSelectSession, onDeleteSession, onRenameSession } = props;
+  const { groupedSessions, currentSessionId, onSelectSession, onDeleteSession, onRenameSession, className = 'max-h-80' } = props;
 
   return (
-    <div className="max-h-80 overflow-y-auto p-1.5 pt-0 flex flex-col gap-0.5">
+    <div className={`${className} overflow-y-auto p-1.5 pt-0 flex flex-col gap-0.5`}>
       {GROUP_ORDER.map((groupKey) => {
         const sessionsInGroup = groupedSessions[groupKey];
         if (sessionsInGroup.length === 0) return null;
