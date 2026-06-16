@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AppProviders } from './contexts';
-import { ChatPage, SettingsPage, SwitchAccountPage, ProjectSelectorPage } from './pages';
+import { ChatPage, SettingsPage, SwitchAccountPage, ProjectSelectorPage, SessionPanelPage } from './pages';
 import { AccountUsageModal } from './components/AccountUsageModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -27,6 +27,7 @@ function AppContent() {
         <Route path="/" element={<ProjectSelectorPage />} />
         <Route path="/sessions/new" element={<ChatPage />} />
         <Route path="/sessions/:current_session_id" element={<ChatPage />} />
+        <Route path="/session-panel" element={<SessionPanelPage />} />
         <Route path="/settings" element={<Navigate to="/settings/general" replace />} />
         <Route path="/settings/*" element={<SettingsPage />} />
         <Route path="/switch-account" element={<SwitchAccountPage />} />

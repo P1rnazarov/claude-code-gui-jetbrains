@@ -7,6 +7,8 @@
     <depends>org.jetbrains.plugins.terminal</depends>
     <depends optional="true" config-file="claudecode-jcef.xml">com.intellij.modules.jcef</depends>
 
+    <resource-bundle>messages.ClaudeCodeBundle</resource-bundle>
+
     <extensions defaultExtensionNs="com.intellij">
         <!-- Sidebar button: opens an editor tab (EDITOR_TAB mode) or hosts chat
              content tabs directly (TOOL_WINDOW mode). canCloseContents enables the
@@ -17,6 +19,13 @@
             icon="/icons/claudeCode.svg"
             canCloseContents="true"
             factoryClass="com.github.yhk1038.claudecodegui.toolwindow.ClaudeCodeToolWindowFactory"/>
+
+        <!-- Left sidebar panel that hosts the session list -->
+        <toolWindow
+            id="Claude Sessions"
+            anchor="left"
+            icon="/icons/claudeSessions.svg"
+            factoryClass="com.github.yhk1038.claudecodegui.toolwindow.ClaudeSessionsToolWindowFactory"/>
 
         <!-- Editor Tab -->
         <fileEditorProvider

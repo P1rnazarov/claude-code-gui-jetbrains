@@ -29,6 +29,19 @@ export class BrowserAdapter implements IdeAdapter {
     console.log('[BrowserAdapter] Opened new browser tab');
   }
 
+  async openSession(sessionId: string): Promise<void> {
+    const url = new URL(window.location.href);
+    url.hash = '';
+    url.pathname = `/sessions/${sessionId}`;
+    const newWindow = window.open(url.toString(), '_blank');
+
+    if (!newWindow) {
+      throw new Error('Failed to open session tab. Pop-up might be blocked.');
+    }
+
+    console.log('[BrowserAdapter] Opened session in new browser tab:', sessionId);
+  }
+
   async openSettings(): Promise<void> {
     const url = new URL(window.location.href);
     url.hash = '';
