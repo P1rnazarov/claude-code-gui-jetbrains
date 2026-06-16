@@ -21,7 +21,7 @@ vi.mock('@/config/environment', () => ({
   isJetBrains: () => mockIsJetBrains,
 }));
 
-import { HostModeSection } from '../HostModeSection';
+import { HostModeRow } from '../HostModeRow';
 
 beforeEach(() => {
   updateSettingWithScopeMock.mockReset();
@@ -32,41 +32,41 @@ beforeEach(() => {
 const getTrigger = () =>
   screen.getByRole('button', { name: /Preferred Location/i }) as HTMLButtonElement;
 
-describe('HostModeSection', () => {
+describe('HostModeRow', () => {
   it('renders nothing in the browser (non-JetBrains) runtime', () => {
     mockIsJetBrains = false;
-    const { container } = render(<HostModeSection />);
+    const { container } = render(<HostModeRow />);
     expect(container).toBeEmptyDOMElement();
   });
 
   it('renders the selector in the JetBrains runtime', () => {
-    render(<HostModeSection />);
+    render(<HostModeRow />);
     expect(getTrigger()).toBeInTheDocument();
   });
 
   it('reflects the current editor-tab value', () => {
     mockHostMode = HostMode.EDITOR_TAB;
-    render(<HostModeSection />);
-    expect(getTrigger().textContent).toContain('Panel (New Tab)');
+    render(<HostModeRow />);
+    expect(getTrigger().textContent).toContain('Panel');
   });
 
   it('reflects the current tool-window value', () => {
     mockHostMode = HostMode.TOOL_WINDOW;
-    render(<HostModeSection />);
-    expect(getTrigger().textContent).toContain('sidebar');
+    render(<HostModeRow />);
+    expect(getTrigger().textContent).toContain('Sidebar');
   });
 
   it('offers both host modes', () => {
-    render(<HostModeSection />);
+    render(<HostModeRow />);
     fireEvent.click(getTrigger());
     const labels = screen.getAllByRole('option').map((o) => o.textContent?.replace('✓', '').trim());
-    expect(labels).toEqual(['sidebar', 'Panel (New Tab)']);
+    expect(labels).toEqual(['Sidebar', 'Panel']);
   });
 
   it('saves the chosen mode to the global scope', () => {
-    render(<HostModeSection />);
+    render(<HostModeRow />);
     fireEvent.click(getTrigger());
-    fireEvent.click(screen.getByRole('option', { name: 'sidebar' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Sidebar' }));
 
     expect(updateSettingWithScopeMock).toHaveBeenCalledTimes(1);
     expect(updateSettingWithScopeMock).toHaveBeenCalledWith(
