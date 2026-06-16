@@ -21,11 +21,35 @@ object EditorTabHost : ChatHost {
     private val logger = Logger.getInstance(EditorTabHost::class.java)
 
     override fun openOrFocus(project: Project, tabId: String, initialPath: String?, initialTitle: String?) {
+        // Must run on the EDT (the platform resolves the active splitter via the
+        // focus owner). requestOpenFile itself does NOT block — see [doOpenOrFocus].
+        ApplicationManager.getApplication().invokeLater {
+            doOpenOrFocus(project, tabId, initialPath, initialTitle)
+        }
+    }
+
+    /**
+     * Opens-or-focuses the tab without freezing the EDT.
+     *
+     * The deprecated synchronous `openFile(file, focusEditor)` ran
+     * `blockingWaitForCompositeFileOpen`, pumping the EDT until the whole
+     * composite (our JCEF panel) was ready — which froze the IDE for 60–85s on
+     * startup tab restore (#110). Merely wrapping that call in `invokeLater` did
+     * NOT help (it still blocked the EDT — the v0.8.3 regression).
+     *
+     * `requestOpenFile` opens with `waitForCompositeOpen = false`, so the EDT
+     * only does the cheap composite creation and never waits for the heavy load.
+     * It is a public `@ApiStatus.Experimental` API, so this stays clear of any
+     * `@ApiStatus.Internal` type (notably `FileEditorOpenOptions`). The tab is
+     * still made current (`selectAsCurrent`); keyboard focus is taken by the
+     * WebView itself in `ClaudeCodePanel` once it is showing.
+     */
+    private fun doOpenOrFocus(project: Project, tabId: String, initialPath: String?, initialTitle: String?) {
         val fileEditorManager = FileEditorManager.getInstance(project)
         val virtualFile = ClaudeCodeVirtualFile.getOrCreate(project, tabId, initialPath, initialTitle)
 
-        // Already-open tab → focus; otherwise open a new one.
-        fileEditorManager.openFile(virtualFile, true)
+        // Already-open tab (same cached virtual file) → focus; otherwise open a new one.
+        fileEditorManager.requestOpenFile(virtualFile)
 
         // Persist tab state.
         EditorTabStateService.getInstance(project).addTab(tabId)
@@ -48,7 +72,7 @@ object EditorTabHost : ChatHost {
         ApplicationManager.getApplication().invokeLater {
             // Inactive tabs first (original order), active tab last so it wins focus.
             for (tabId in restoreOrder) {
-                openOrFocus(
+                doOpenOrFocus(
                     project,
                     tabId,
                     stateService.getRestorePath(tabId),
