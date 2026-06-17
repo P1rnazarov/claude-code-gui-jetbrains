@@ -5,6 +5,8 @@ import { useSessionListScale } from './scale';
 interface Props {
   groupedSessions: GroupedSessions;
   currentSessionId: string | null;
+  /** Session highlighted via keyboard navigation (distinct from the current session). */
+  highlightedSessionId?: string | null;
   onSelectSession: (sessionId: string) => void;
   onDeleteSession: (sessionId: string) => void;
   onRenameSession: (sessionId: string, title: string) => void;
@@ -13,7 +15,7 @@ interface Props {
 }
 
 export function SessionList(props: Props) {
-  const { groupedSessions, currentSessionId, onSelectSession, onDeleteSession, onRenameSession, className = 'max-h-80' } = props;
+  const { groupedSessions, currentSessionId, highlightedSessionId = null, onSelectSession, onDeleteSession, onRenameSession, className = 'max-h-80' } = props;
   const scale = useSessionListScale();
 
   return (
@@ -32,6 +34,7 @@ export function SessionList(props: Props) {
                 key={session.id}
                 session={session}
                 isSelected={session.id === currentSessionId}
+                isHighlighted={session.id === highlightedSessionId}
                 onSelect={() => onSelectSession(session.id)}
                 onDelete={() => onDeleteSession(session.id)}
                 onRename={(title) => onRenameSession(session.id, title)}

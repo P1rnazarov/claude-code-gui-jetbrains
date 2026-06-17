@@ -6,18 +6,30 @@ import { useSessionListScale } from './scale';
 interface Props {
   session: SessionMetaDto;
   isSelected: boolean;
+  /** Keyboard-navigation highlight (distinct from isSelected = current session). */
+  isHighlighted?: boolean;
   onSelect: () => void;
   onDelete: () => void;
   onRename: (title: string) => void;
 }
 
 export function SessionItem(props: Props) {
-  const { session, isSelected, onSelect, onDelete, onRename } = props;
+  const { session, isSelected, isHighlighted = false, onSelect, onDelete, onRename } = props;
   const scale = useSessionListScale();
   const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(session.title);
   const inputRef = useRef<HTMLInputElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Keep the keyboard-highlighted row in view as the user arrows through.
+  // scrollIntoView is absent in jsdom (and some headless environments), so call
+  // it defensively.
+  useEffect(() => {
+    if (isHighlighted) {
+      buttonRef.current?.scrollIntoView?.({ block: 'nearest' });
+    }
+  }, [isHighlighted]);
   // Escape cancels editing by unmounting the input, which can fire a trailing
   // blur. This flag tells the blur handler to skip committing in that case.
   const skipCommitRef = useRef(false);
@@ -92,11 +104,12 @@ export function SessionItem(props: Props) {
 
   return (
     <button
+      ref={buttonRef}
       onClick={onSelect}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={`w-full ${scale.itemPad} text-left ${scale.itemText} rounded transition-colors flex justify-between items-center gap-2 ${
-        isSelected
+        isSelected || isHighlighted
           ? 'text-text-primary bg-[var(--surface-selected)]'
           : 'text-text-secondary hover:text-text-primary hover:bg-[var(--surface-selected)]'
       }`}

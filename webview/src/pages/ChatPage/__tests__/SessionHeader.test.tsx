@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, act } from '@testing-library/react';
+import { OPEN_SESSION_DROPDOWN_EVENT } from '@/commandPalette/sections/context/items';
 import userEvent from '@testing-library/user-event';
 import { SessionHeader } from '../SessionHeader/index';
 import { SessionMetaDto } from '../../../dto';
@@ -112,6 +113,85 @@ describe('SessionHeader', () => {
     // 다시 클릭 → 드롭다운 닫힘
     await user.click(toggleButton);
     expect(screen.queryByPlaceholderText('Search sessions...')).not.toBeInTheDocument();
+  });
+
+  it('/resume 이벤트(open-session-dropdown) 디스패치 시 드롭다운이 열리고 검색창에 포커스', async () => {
+    render(<SessionHeader />);
+
+    // 초기 상태: 드롭다운 닫힘
+    expect(screen.queryByPlaceholderText('Search sessions...')).not.toBeInTheDocument();
+
+    // `/resume` 슬래시 커맨드가 디스패치하는 이벤트
+    act(() => {
+      window.dispatchEvent(new CustomEvent(OPEN_SESSION_DROPDOWN_EVENT));
+    });
+
+    const searchInput = screen.getByPlaceholderText('Search sessions...');
+    expect(searchInput).toBeInTheDocument();
+    expect(searchInput).toHaveFocus();
+  });
+
+  it('방향키(ArrowDown)로 세션을 이동하고 Enter로 진입', async () => {
+    const user = userEvent.setup();
+    render(<SessionHeader />);
+    await user.click(screen.getByRole('button', { name: /First Chat/i }));
+    const searchInput = screen.getByPlaceholderText('Search sessions...');
+
+    // -1 → 0(First Chat) → 1(Second Chat)
+    fireEvent.keyDown(searchInput, { key: 'ArrowDown' });
+    fireEvent.keyDown(searchInput, { key: 'ArrowDown' });
+    fireEvent.keyDown(searchInput, { key: 'Enter' });
+
+    expect(mockSwitchSession).toHaveBeenCalledWith('session-2');
+  });
+
+  it('하이라이트된 세션이 없을 때 Enter는 아무 세션도 진입하지 않음', async () => {
+    const user = userEvent.setup();
+    render(<SessionHeader />);
+    await user.click(screen.getByRole('button', { name: /First Chat/i }));
+    const searchInput = screen.getByPlaceholderText('Search sessions...');
+
+    // 방향키를 누르지 않은 상태(highlightedIndex = -1)
+    fireEvent.keyDown(searchInput, { key: 'Enter' });
+
+    expect(mockSwitchSession).not.toHaveBeenCalled();
+  });
+
+  it('Escape로 드롭다운이 닫힘', async () => {
+    const user = userEvent.setup();
+    render(<SessionHeader />);
+    await user.click(screen.getByRole('button', { name: /First Chat/i }));
+    const searchInput = screen.getByPlaceholderText('Search sessions...');
+    expect(searchInput).toBeInTheDocument();
+
+    fireEvent.keyDown(searchInput, { key: 'Escape' });
+
+    expect(screen.queryByPlaceholderText('Search sessions...')).not.toBeInTheDocument();
+  });
+
+  it('드롭다운이 열린 상태에서 Cmd/Ctrl+Shift+P로 세션 목록을 새로고침', async () => {
+    const user = userEvent.setup();
+    render(<SessionHeader />);
+    await user.click(screen.getByRole('button', { name: /First Chat/i }));
+
+    mockLoadSessions.mockClear();
+    fireEvent.keyDown(window, { key: 'P', ctrlKey: true, shiftKey: true });
+
+    expect(mockLoadSessions).toHaveBeenCalledTimes(1);
+  });
+
+  it('세션 아이디(uuid)로 검색하면 해당 세션이 표시됨', async () => {
+    const user = userEvent.setup();
+    render(<SessionHeader />);
+    await user.click(screen.getByRole('button', { name: /First Chat/i }));
+
+    const searchInput = screen.getByPlaceholderText('Search sessions...');
+    await user.type(searchInput, 'session-3');
+
+    const dropdown = document.querySelector('.max-h-80');
+    expect(within(dropdown as HTMLElement).getByText('API Discussion')).toBeInTheDocument();
+    expect(within(dropdown as HTMLElement).queryByText('First Chat')).not.toBeInTheDocument();
+    expect(within(dropdown as HTMLElement).queryByText('Second Chat')).not.toBeInTheDocument();
   });
 
   it('드롭다운 외부 클릭 시 드롭다운이 닫힘', async () => {

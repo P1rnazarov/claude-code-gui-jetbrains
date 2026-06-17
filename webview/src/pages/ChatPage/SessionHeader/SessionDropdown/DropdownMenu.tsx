@@ -1,3 +1,4 @@
+import { KeyboardEvent } from 'react';
 import { GroupedSessions } from '@/components/SessionList/utils';
 import { SearchInput } from '@/components/SessionList/SearchInput';
 import { SessionList } from '@/components/SessionList';
@@ -5,9 +6,11 @@ import { SessionList } from '@/components/SessionList';
 interface Props {
   searchQuery: string;
   onSearchChange: (value: string) => void;
+  onSearchKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
   groupedSessions: GroupedSessions;
   filteredSessionsCount: number;
   currentSessionId: string | null;
+  highlightedSessionId?: string | null;
   onSelectSession: (sessionId: string) => void;
   onDeleteSession: (sessionId: string) => void;
   onRenameSession: (sessionId: string, title: string) => void;
@@ -17,9 +20,11 @@ export function DropdownMenu(props: Props) {
   const {
     searchQuery,
     onSearchChange,
+    onSearchKeyDown,
     groupedSessions,
     filteredSessionsCount,
     currentSessionId,
+    highlightedSessionId = null,
     onSelectSession,
     onDeleteSession,
     onRenameSession,
@@ -27,12 +32,13 @@ export function DropdownMenu(props: Props) {
 
   return (
     <div className="absolute left-0 top-full mt-1 w-[23rem] bg-surface-raised border border-border-default rounded-md shadow-xl overflow-hidden z-50">
-      <SearchInput value={searchQuery} onChange={onSearchChange} />
+      <SearchInput value={searchQuery} onChange={onSearchChange} onKeyDown={onSearchKeyDown} />
 
       {filteredSessionsCount > 0 ? (
         <SessionList
           groupedSessions={groupedSessions}
           currentSessionId={currentSessionId}
+          highlightedSessionId={highlightedSessionId}
           onSelectSession={onSelectSession}
           onDeleteSession={onDeleteSession}
           onRenameSession={onRenameSession}

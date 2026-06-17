@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useSessionList } from '@/components/SessionList/useSessionList';
+import { useSessionListKeyboard } from '@/components/SessionList/useSessionListKeyboard';
 import { SessionList } from '@/components/SessionList';
 import { SearchInput } from '@/components/SessionList/SearchInput';
 import { SessionListScaleProvider, SessionListScale } from '@/components/SessionList/scale';
@@ -16,7 +17,7 @@ import { ScopeTabs, SessionScope } from './ScopeTabs';
  * 드롭다운과 달리 면적이 넉넉하므로 채팅영역과 동일한 일반 스케일(Regular)을 쓴다.
  */
 export function SessionPanelPage() {
-  const { openNewTab } = useSessionContext();
+  const { openNewTab, loadSessions } = useSessionContext();
   const {
     currentSessionId,
     searchQuery,
@@ -34,6 +35,17 @@ export function SessionPanelPage() {
       console.error('[SessionPanelPage] Failed to open session:', error);
     });
   };
+
+  // Arrow-key navigation + Enter to open + Cmd/Ctrl+Shift+P refresh, shared
+  // with the session dropdown. The side panel is always visible, so there is
+  // no Escape handler. Issue #28.
+  const { highlightedSessionId, handleSearchKeyDown } = useSessionListKeyboard({
+    groupedSessions,
+    searchQuery,
+    isActive: scope === SessionScope.Local,
+    onSelect: handleSelectSession,
+    onRefresh: loadSessions,
+  });
 
   return (
     <SessionListScaleProvider scale={SessionListScale.Regular}>
@@ -55,7 +67,7 @@ export function SessionPanelPage() {
         </div>
 
         <div className="flex-shrink-0">
-          <SearchInput value={searchQuery} onChange={setSearchQuery} />
+          <SearchInput value={searchQuery} onChange={setSearchQuery} onKeyDown={handleSearchKeyDown} />
         </div>
 
         {scope === SessionScope.Local ? (
@@ -64,6 +76,7 @@ export function SessionPanelPage() {
               className="flex-1 min-h-0"
               groupedSessions={groupedSessions}
               currentSessionId={currentSessionId}
+              highlightedSessionId={highlightedSessionId}
               onSelectSession={handleSelectSession}
               onDeleteSession={handleDeleteSession}
               onRenameSession={renameSession}

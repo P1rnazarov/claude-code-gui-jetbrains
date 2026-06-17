@@ -3,9 +3,13 @@ import { DropdownToggle } from './DropdownToggle';
 import { DropdownMenu } from './DropdownMenu';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useSessionList } from '@/components/SessionList/useSessionList';
+import { useSessionListKeyboard } from '@/components/SessionList/useSessionListKeyboard';
+import { useChatInputFocus } from '@/contexts/ChatInputFocusContext';
+import { OPEN_SESSION_DROPDOWN_EVENT } from '@/commandPalette/sections/context/items';
 
 export function SessionDropdown() {
-  const { currentSession, switchSession } = useSessionContext();
+  const { currentSession, switchSession, loadSessions } = useSessionContext();
+  const { focus: focusComposer } = useChatInputFocus();
   const {
     currentSessionId,
     searchQuery,
@@ -21,11 +25,43 @@ export function SessionDropdown() {
 
   const sessionTitle = currentSession?.title || 'Past Conversations';
 
+  const closeDropdown = () => {
+    setIsOpen(false);
+    setSearchQuery('');
+  };
+
+  const handleSelectSession = (sessionId: string) => {
+    switchSession(sessionId);
+    closeDropdown();
+  };
+
+  const { highlightedSessionId, handleSearchKeyDown } = useSessionListKeyboard({
+    groupedSessions,
+    searchQuery,
+    isActive: isOpen,
+    onSelect: handleSelectSession,
+    onRefresh: loadSessions,
+    onEscape: () => {
+      closeDropdown();
+      focusComposer();
+    },
+  });
+
+  // `/resume` slash command opens the dropdown so past conversations can be
+  // browsed and resumed. Issue #28.
+  useEffect(() => {
+    const handleOpenFromPalette = () => {
+      setSearchQuery('');
+      setIsOpen(true);
+    };
+    window.addEventListener(OPEN_SESSION_DROPDOWN_EVENT, handleOpenFromPalette);
+    return () => window.removeEventListener(OPEN_SESSION_DROPDOWN_EVENT, handleOpenFromPalette);
+  }, [setSearchQuery]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-        setSearchQuery('');
+        closeDropdown();
       }
     };
 
@@ -34,12 +70,6 @@ export function SessionDropdown() {
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isOpen, setSearchQuery]);
-
-  const handleSelectSession = (sessionId: string) => {
-    switchSession(sessionId);
-    setIsOpen(false);
-    setSearchQuery('');
-  };
 
   return (
     <div className="relative min-w-0" ref={dropdownRef}>
@@ -53,9 +83,11 @@ export function SessionDropdown() {
         <DropdownMenu
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          onSearchKeyDown={handleSearchKeyDown}
           groupedSessions={groupedSessions}
           filteredSessionsCount={filteredSessions.length}
           currentSessionId={currentSessionId}
+          highlightedSessionId={highlightedSessionId}
           onSelectSession={handleSelectSession}
           onDeleteSession={handleDeleteSession}
           onRenameSession={renameSession}
