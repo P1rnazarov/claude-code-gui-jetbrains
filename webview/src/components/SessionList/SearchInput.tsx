@@ -1,14 +1,15 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, KeyboardEvent } from 'react';
 import { SessionRefresher } from './SessionRefresher';
 import { useSessionListScale } from './scale';
 
 interface Props {
   value: string;
   onChange: (value: string) => void;
+  onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
 }
 
 export function SearchInput(props: Props) {
-  const { value, onChange } = props;
+  const { value, onChange, onKeyDown } = props;
   const scale = useSessionListScale();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -27,6 +28,7 @@ export function SearchInput(props: Props) {
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onKeyDown={onKeyDown}
           className={`w-full ${scale.searchInput} bg-surface-overlay text-text-secondary rounded outline-none placeholder:text-text-tertiary`}
           placeholder="Search sessions..."
         />
