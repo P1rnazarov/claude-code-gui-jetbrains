@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SessionPanelPage } from '../index';
 
-const { mockOpenNewTab, mockOpenSession, mockUseSessionList } = vi.hoisted(() => {
+const { mockOpenNewTab, mockOpenSession, mockLoadSessions, mockUseSessionList } = vi.hoisted(() => {
   const session = {
     id: 's1',
     title: 'My Session',
@@ -14,6 +14,7 @@ const { mockOpenNewTab, mockOpenSession, mockUseSessionList } = vi.hoisted(() =>
   return {
     mockOpenNewTab: vi.fn(),
     mockOpenSession: vi.fn().mockResolvedValue(undefined),
+    mockLoadSessions: vi.fn(),
     mockUseSessionList: vi.fn(() => ({
       currentSessionId: null,
       searchQuery: '',
@@ -34,7 +35,7 @@ const { mockOpenNewTab, mockOpenSession, mockUseSessionList } = vi.hoisted(() =>
 });
 
 vi.mock('@/contexts/SessionContext', () => ({
-  useSessionContext: () => ({ openNewTab: mockOpenNewTab }),
+  useSessionContext: () => ({ openNewTab: mockOpenNewTab, loadSessions: mockLoadSessions }),
 }));
 
 vi.mock('@/adapters', () => ({
@@ -49,6 +50,7 @@ describe('SessionPanelPage', () => {
   beforeEach(() => {
     mockOpenNewTab.mockClear();
     mockOpenSession.mockClear();
+    mockLoadSessions.mockClear();
     mockUseSessionList.mockClear();
   });
 
@@ -61,6 +63,23 @@ describe('SessionPanelPage', () => {
     render(<SessionPanelPage />);
     fireEvent.click(screen.getByRole('button', { name: /My Session/i }));
     expect(mockOpenSession).toHaveBeenCalledWith('s1');
+  });
+
+  it('방향키로 세션을 하이라이트하고 Enter로 새 탭에서 연다', () => {
+    render(<SessionPanelPage />);
+    const searchInput = screen.getByPlaceholderText('Search sessions...');
+
+    // -1 → 0 (My Session)
+    fireEvent.keyDown(searchInput, { key: 'ArrowDown' });
+    fireEvent.keyDown(searchInput, { key: 'Enter' });
+
+    expect(mockOpenSession).toHaveBeenCalledWith('s1');
+  });
+
+  it('Cmd/Ctrl+Shift+P로 세션 목록을 새로고침한다', () => {
+    render(<SessionPanelPage />);
+    fireEvent.keyDown(window, { key: 'P', ctrlKey: true, shiftKey: true });
+    expect(mockLoadSessions).toHaveBeenCalledTimes(1);
   });
 
   it('opens a new session when "New session" is clicked', () => {
