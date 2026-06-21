@@ -25,7 +25,13 @@ export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOp
         const filteredItems = section.items.filter(item => {
           // searchOnly items stay hidden until the user types a matching query.
           if (item.searchOnly && !hasQuery) return false;
-          if (hasQuery) return item.label.toLowerCase().includes(query);
+          if (hasQuery) {
+            const matchesLabel = item.label.toLowerCase().includes(query);
+            const matchesKeyword = item.keywords?.some(keyword =>
+              keyword.toLowerCase().includes(query),
+            );
+            return matchesLabel || (matchesKeyword ?? false);
+          }
           return true;
         });
         if (filteredItems.length === 0) return null;

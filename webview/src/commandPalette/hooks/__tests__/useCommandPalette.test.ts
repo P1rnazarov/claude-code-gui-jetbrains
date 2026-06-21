@@ -326,4 +326,55 @@ describe('useCommandPalette', () => {
       expect(items.find(i => i.id === 'normal')).toBeDefined();
     });
   });
+
+  // ──────────────────────────────────────────────────────
+  // keyword matching — items surface on aliases, not just their label
+  // ──────────────────────────────────────────────────────
+
+  describe('keyword matching', () => {
+    const sectionsWithKeywords: PanelSection[] = [
+      {
+        id: PanelSectionId.Settings,
+        title: 'Settings',
+        showDividerAbove: false,
+        items: [
+          {
+            id: 'switch-account',
+            label: 'Switch account',
+            type: PanelItemType.Action,
+            keywords: ['login'],
+            action: vi.fn(),
+          } as ActionItem,
+        ],
+      },
+    ];
+
+    it('surfaces an item when the query matches a keyword but not the label', () => {
+      setupMockRegistry(sectionsWithKeywords);
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      act(() => {
+        result.current.setFilterQuery('login');
+      });
+
+      const items = result.current.filteredSections.flatMap(s => s.items);
+      expect(items.find(i => i.id === 'switch-account')).toBeDefined();
+    });
+
+    it('still hides the item when the query matches neither label nor keyword', () => {
+      setupMockRegistry(sectionsWithKeywords);
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      act(() => {
+        result.current.setFilterQuery('zzz');
+      });
+
+      const items = result.current.filteredSections.flatMap(s => s.items);
+      expect(items.find(i => i.id === 'switch-account')).toBeUndefined();
+    });
+  });
 });

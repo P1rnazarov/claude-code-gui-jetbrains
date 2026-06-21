@@ -42,6 +42,8 @@ export interface PanelItemBase {
   keepOpen?: boolean;
   /** Hidden from the panel by default; only surfaced when the filter query matches its label. */
   searchOnly?: boolean;
+  /** Extra search terms; the item also matches the filter query when one of these contains it. */
+  keywords?: string[];
   textStyle?: {
     underline?: boolean;
     italic?: boolean;

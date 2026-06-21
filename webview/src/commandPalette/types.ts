@@ -53,6 +53,8 @@ export interface CommandPaletteCommand {
   readonly order?: number;
   /** Hidden from the panel by default; only surfaced when the filter query matches its label. */
   readonly searchOnly?: boolean;
+  /** Extra search terms; the item also matches the filter query when one of these contains it. */
+  readonly keywords?: string[];
 
   execute(): Promise<void>;
   bindKeyboard?(e: KeyboardEvent): boolean;
@@ -137,6 +139,7 @@ export class StaticItem implements CommandPaletteCommand {
   readonly keepOpen?: boolean;
   readonly order?: number;
   readonly searchOnly?: boolean;
+  readonly keywords?: string[];
 
   private action?: () => Promise<void>;
   private serviceAction?: (services: CommandPaletteServices) => Promise<void>;
@@ -152,6 +155,7 @@ export class StaticItem implements CommandPaletteCommand {
       keepOpen?: boolean;
       order?: number;
       searchOnly?: boolean;
+      keywords?: string[];
       action?: () => Promise<void>;
       serviceAction?: (services: CommandPaletteServices) => Promise<void>;
     },
@@ -162,6 +166,7 @@ export class StaticItem implements CommandPaletteCommand {
     this.keepOpen = options?.keepOpen;
     this.order = options?.order;
     this.searchOnly = options?.searchOnly;
+    this.keywords = options?.keywords;
     this.action = options?.action;
     this.serviceAction = options?.serviceAction;
   }
