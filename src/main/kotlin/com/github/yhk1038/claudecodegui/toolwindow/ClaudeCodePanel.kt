@@ -774,6 +774,16 @@ class ClaudeCodePanel(
     }
 
     /**
+     * Invoke FileFlavorProvider.asFileList() reflectively. The interface is
+     * @ApiStatus.Internal (Plugin Verifier flags a direct call on 2026.2+), but its
+     * runtime contract is stable, so we call it by name to keep extracting files from
+     * IDE DnD payloads (project tree, "Find Usages", ...) without a static internal ref.
+     */
+    private fun asFileListReflectively(wrapper: TransferableWrapper): List<*>? =
+        runCatching { wrapper.javaClass.getMethod("asFileList").invoke(wrapper) as? List<*> }
+            .getOrNull()
+
+    /**
      * Walk a DnD payload and append every file/folder path we can recognize into
      * [result]. Handles both raw clipboard values (File, VirtualFile, PsiElement,
      * String paths) and IDE-internal containers (TransferableWrapper for project-
@@ -791,7 +801,7 @@ class ClaudeCodePanel(
                 .forEach { addDroppedPath(result, it.path, it.isDirectory) }
             // IDE DnD payloads (project tree, "Find Usages", etc.) implement TransferableWrapper.
             is TransferableWrapper -> {
-                value.asFileList()?.forEach { addDroppedValue(result, it) }
+                asFileListReflectively(value)?.forEach { addDroppedValue(result, it) }
                 value.psiElements?.forEach { addDroppedValue(result, it) }
             }
             is Array<*> -> value.forEach { addDroppedValue(result, it) }

@@ -106,7 +106,7 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
-            <h3>0.19.1 - Faster session switching & smarter usage hints</h3>
+            <h3>0.19.2 - Faster session switching & smarter usage hints</h3>
             <ul>
                 <li>Jump between conversations faster: open the session dropdown with the new /resume command, navigate it entirely from the keyboard, and search instantly by session ID.</li>
                 <li>Switch accounts in seconds with the new /login command in the command palette.</li>
@@ -144,7 +144,7 @@ intellijPlatform {
             // snapshots repo: IU is published with the build-number-based
             // "<build>-EAP-SNAPSHOT" suffix, while Rider uses the marketing
             // "<version>-EAP<n>-SNAPSHOT" form.
-            ide("IU", "262.6653.22-EAP-SNAPSHOT", false)
+            ide("IU", "262.8117.19-EAP-SNAPSHOT", false)
             ide("RD", "2026.2-EAP4-SNAPSHOT", false)
         }
     }

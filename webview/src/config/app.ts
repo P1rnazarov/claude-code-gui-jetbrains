@@ -10,4 +10,4 @@ export const APP_NAME = 'Claude Code';
  * visitor's locale (e.g. /privacy → /en/privacy). Registered on the JetBrains
  * Marketplace plugin page as well (required when collecting telemetry).
  */
-export const PRIVACY_POLICY_URL = 'https://ccg.01republic.io/privacy';
+export const PRIVACY_POLICY_URL = 'https://claude-code-gui.com/privacy';

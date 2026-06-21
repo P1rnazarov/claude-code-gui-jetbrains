@@ -7,6 +7,7 @@ import io.netty.handler.codec.http.HttpRequest
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.netty.handler.codec.http.QueryStringDecoder
 import org.jetbrains.ide.HttpRequestHandler
+import org.jetbrains.io.response
 import org.jetbrains.io.send
 import java.io.ByteArrayOutputStream
 
@@ -68,15 +69,17 @@ class WebViewRequestHandler : HttpRequestHandler() {
             val extension = resourcePath.substringAfterLast('.', "")
             val contentType = CONTENT_TYPES[extension] ?: "application/octet-stream"
 
-            val response = io.netty.handler.codec.http.DefaultFullHttpResponse(
-                io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
-                HttpResponseStatus.OK,
-                io.netty.buffer.Unpooled.wrappedBuffer(data)
-            )
+            // The whole io.netty.buffer.* package (ByteBuf, ByteBufAllocator, Unpooled)
+            // is marked @ApiStatus.Internal in the bundled platform Netty, so Plugin
+            // Verifier flags any direct ByteBuf handling on 2026.2+. Hand the body to
+            // org.jetbrains.io.response() as a CharSequence and let the platform build
+            // the ByteBuf internally. ISO-8859-1 maps every byte 1:1 to a char, so
+            // binary assets (fonts, images) round-trip losslessly.
+            val response = response(String(data, Charsets.ISO_8859_1), Charsets.ISO_8859_1)
             response.headers().set("Content-Type", contentType)
             response.headers().set("Content-Length", data.size)
             response.headers().set("Cache-Control", "no-cache")
-            context.channel().writeAndFlush(response)
+            response.send(context.channel(), request)
             true
         } catch (e: Exception) {
             logger.error("Error serving WebView resource: $classpathResource", e)
