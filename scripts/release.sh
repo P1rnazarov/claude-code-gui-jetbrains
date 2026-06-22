@@ -7,6 +7,12 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
+# Release builds are always production. Export BUILD_ENV up front so every
+# downstream step resolves the same environment: build.sh honors an explicit
+# BUILD_ENV, and the direct `gradlew verifyPlugin/publishPlugin` calls inherit
+# it too — so the production .env is the one baked into the bundle throughout.
+export BUILD_ENV=production
+
 # --- Load PUBLISH_TOKEN from .envrc ---
 if [[ -f "$ROOT/.envrc" ]]; then
   PUBLISH_TOKEN=$(grep '^export PUBLISH_TOKEN=' "$ROOT/.envrc" | sed 's/^export PUBLISH_TOKEN=//' | tr -d '"' || true)

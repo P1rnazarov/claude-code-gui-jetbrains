@@ -19,6 +19,46 @@ plugins {
 group = "com.github.yhk1038"
 version = providers.gradleProperty("pluginVersion").get()
 
+// ─── Build-time .env injection (mirrors scripts/build.sh) ────────────────────
+// The backend bundle (esbuild) bakes secrets from the root .env in at build
+// time. scripts/build.sh loads the .env and exports the keys when IT is the
+// entry point, but gradle's buildNodeBackend invokes esbuild directly and would
+// otherwise bypass that loading — shipping a backend.mjs with empty secrets
+// (e.g. the Rybbit telemetry key). So we replicate the same .env resolution
+// here and inject the keys (plus the BUILD_INJECT_KEYS list esbuild reads).
+fun loadBuildEnv(baseDir: File): Map<String, String> {
+    // build.sh exports BUILD_ENV (dist→production, run-ide→staging, else
+    // development) and it is inherited here. Plugin artifacts default to
+    // production when gradle runs standalone (the plain .env is the fallback).
+    val buildEnv = System.getenv("BUILD_ENV")?.takeIf { it.isNotBlank() } ?: "production"
+    val result = LinkedHashMap<String, String>()
+    // Environment-specific file first, then plain .env fallback (first wins).
+    listOf(File(baseDir, ".env.$buildEnv"), File(baseDir, ".env")).forEach { file ->
+        if (!file.isFile) return@forEach
+        file.readLines().forEach line@{ raw ->
+            var line = raw.trimStart()
+            if (line.startsWith("export ")) line = line.removePrefix("export ")
+            if (line.isBlank() || line.startsWith("#")) return@line
+            val eq = line.indexOf('=')
+            if (eq < 0) return@line
+            val key = line.substring(0, eq).trimEnd()
+            // Build-time injection is opt-in via a leading underscore (mirrors
+            // scripts/build.sh). Only `_FOO` keys are baked into the bundle;
+            // plain keys stay runtime-only.
+            if (!key.startsWith("_")) return@line
+            var value = line.substring(eq + 1)
+            // Strip one layer of surrounding single or double quotes.
+            if (value.length >= 2 &&
+                ((value.startsWith("\"") && value.endsWith("\"")) ||
+                    (value.startsWith("'") && value.endsWith("'")))) {
+                value = value.substring(1, value.length - 1)
+            }
+            result.putIfAbsent(key, value)
+        }
+    }
+    return result
+}
+
 repositories {
     mavenCentral()
     intellijPlatform {
@@ -240,9 +280,22 @@ tasks {
         description = "Build the Node.js backend bundle (esbuild)"
         dependsOn("pnpmInstallBackend")
         workingDir = file("backend")
+        // Inject root-.env secrets so esbuild bakes them into the bundle even when
+        // gradle (not scripts/build.sh) is the entry point. Without this the
+        // marketplace plugin zip's backend.mjs ships empty secrets. See loadBuildEnv.
+        val injectedEnv = loadBuildEnv(rootDir)
+        injectedEnv.forEach { (k, v) -> environment(k, v) }
+        environment("BUILD_INJECT_KEYS", injectedEnv.keys.joinToString(" "))
         commandLine("pnpm", "run", "build")
         inputs.dir(file("backend/src"))
         inputs.files(file("backend/esbuild.mjs"), file("backend/package.json"))
+        // A .env change must invalidate the bundle, otherwise a key change is
+        // silently skipped as up-to-date. BUILD_ENV selects which file is read.
+        inputs.property("buildEnv", System.getenv("BUILD_ENV") ?: "production")
+        inputs.files(
+            files(".env", ".env.production", ".env.staging", ".env.development")
+                .filter { it.isFile }
+        )
         outputs.file(file("backend/dist/backend.mjs"))
     }
 

@@ -4,10 +4,11 @@ import { readFileSync } from 'fs';
 const pkg = JSON.parse(readFileSync('package.json', 'utf-8'));
 
 // ─── Build-time env injection ───────────────────────────────────────────────
-// The root .env is the single source: every key it defines is baked into the
-// bundle. scripts/build.sh loads the root .env, exports its keys, and passes
-// their names via BUILD_INJECT_KEYS so we know exactly which keys to inject
-// (without sweeping in unrelated ambient env like PATH).
+// Build-time injection is opt-in via a leading underscore: only root-.env keys
+// named `_FOO` are baked into the bundle. scripts/build.sh (and the gradle
+// buildNodeBackend task) collect those `_`-prefixed key names into
+// BUILD_INJECT_KEYS, so esbuild replaces `process.env._FOO` with the literal
+// value. Plain keys stay runtime-only; nothing unrelated (PATH etc.) is swept in.
 const injectKeys = (process.env.BUILD_INJECT_KEYS ?? '')
   .split(/\s+/)
   .filter(Boolean);

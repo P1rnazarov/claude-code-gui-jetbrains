@@ -2,12 +2,26 @@ import { existsSync } from 'fs';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 
+// ── Rybbit 텔레메트리 설정 ──────────────────────────────
+// HOST/SITE_ID는 비밀이 아니다 — 브라우저 추적 스크립트에도 그대로 노출되는
+// 공개 식별자라 소스 상수로 둔다. API 키만 비밀이라 빌드 타임에 박제한다.
+export const RYBBIT_HOST = 'https://ccg-telemetry.01republic.io';
+export const RYBBIT_SITE_ID = '2a8b407c8941';
+// 빌드 타임 박제 (.env의 `_` prefix 키): `_`로 시작하는 .env 키만 빌드 시
+// esbuild define으로 번들에 리터럴 값으로 박힌다(런타임 process.env가 아니라
+// 빌드 산출물에 치환). 언더스코어를 뗀 이름으로 export한다. esbuild가 치환하려면
+// 반드시 `process.env._KEY`를 정적으로 직접 참조해야 한다(구조분해/동적 접근 X).
+export const CCG_RYBBIT_API_KEY = process.env._CCG_RYBBIT_API_KEY ?? '';
+
 // ── 빌드 환경 ──────────────────────────────────────────
 export const isDev = () => process.env.NODE_ENV !== 'production';
 export const isProd = () => process.env.NODE_ENV === 'production';
 
-// ── 실행 환경 ──────────────────────────────────────────
+// ── 실행 환경 (런타임 주입) ─────────────────────────────
+// 실행 주체(JetBrains=Kotlin spawn, standalone=ccg)가 주입한다. 이 키들은
+// .env에 넣지 않는다 — `_`를 붙여 빌드 박제로 만들면 런타임 주입이 무력화된다.
 export const isJetBrainsMode = process.env.JETBRAINS_MODE === 'true';
+export const ccgClientInfo = process.env.CCG_CLIENT_INFO ?? '';
 
 // ── 서버 설정 ──────────────────────────────────────────
 const DEFAULT_PORT = 19836;

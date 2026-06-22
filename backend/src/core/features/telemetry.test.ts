@@ -37,7 +37,9 @@ async function loadTelemetry(
   fetchImpl?: (input: string, init: { body: string }) => Promise<unknown>,
 ) {
   vi.resetModules();
-  vi.stubEnv('CCG_RYBBIT_API_KEY', apiKey);
+  // 빌드 박제 키는 `_` prefix(.env의 _CCG_RYBBIT_API_KEY). environment.ts가
+  // process.env._CCG_RYBBIT_API_KEY를 const로 평가하므로 import 전에 stub한다.
+  vi.stubEnv('_CCG_RYBBIT_API_KEY', apiKey);
   vi.doMock('./profile', () => ({
     readProfile: async () => profile,
     ConsentStatus: CONSENT_ENUM,

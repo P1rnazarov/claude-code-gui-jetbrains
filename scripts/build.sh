@@ -36,9 +36,12 @@ export BUILD_ENV
 # The root .env is the single source of build-time env. We load the resolved
 # environment's file (then plain .env as a fallback) and export its keys into the
 # environment, so the backend (esbuild) and webview (vite) receive them through
-# process.env — the single channel. The names of the loaded keys are collected
-# into BUILD_INJECT_KEYS so esbuild knows exactly which keys to bake into the
-# backend bundle (the webview filters by prefix on its own).
+# process.env — the single channel.
+#
+# Build-time injection is OPT-IN via a leading underscore: only keys named
+# `_FOO` are collected into BUILD_INJECT_KEYS and baked into the backend bundle
+# (esbuild replaces `process.env._FOO` with the literal value). Plain keys stay
+# runtime-only. The webview (vite) filters by its own prefix (VITE_/CCG_PUBLIC_).
 export BUILD_INJECT_KEYS=""
 
 # Load a single .env file: export each KEY=VALUE line (skipping comments/blanks)
@@ -61,12 +64,20 @@ load_env_file() {
     key="${key%"${key##*[![:space:]]}"}"
     val="${val%\"}"; val="${val#\"}"
     val="${val%\'}"; val="${val#\'}"
-    # Record the key name (deduped) so esbuild knows what to inject.
-    case " $BUILD_INJECT_KEYS " in
-      *" $key "*) ;;
-      *) BUILD_INJECT_KEYS="$BUILD_INJECT_KEYS $key" ;;
+    # Only keys with a leading underscore are baked into the backend bundle at
+    # build time (esbuild define). The underscore is the opt-in convention for
+    # build-time injection — everything else stays runtime-only. So adding a
+    # plain key to .env never silently bakes it into the bundle.
+    case "$key" in
+      _*)
+        case " $BUILD_INJECT_KEYS " in
+          *" $key "*) ;;
+          *) BUILD_INJECT_KEYS="$BUILD_INJECT_KEYS $key" ;;
+        esac
+        ;;
     esac
-    # Preserve any value already set (env-specific file or ambient env).
+    # Export every key regardless: vite (loadEnv) reads its prefixed vars
+    # (VITE_/CCG_PUBLIC_) from process.env, so the webview build needs them too.
     if [[ -z "${!key:-}" ]]; then
       export "$key=$val"
     fi

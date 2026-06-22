@@ -2,6 +2,13 @@ import { readProfile, ConsentStatus } from './profile';
 import { homedir, release } from 'os';
 import { getPluginVersion, getCliVersion } from '../handlers/getVersion';
 import { basename } from 'path';
+import {
+  CCG_RYBBIT_API_KEY as RYBBIT_API_KEY,
+  RYBBIT_HOST,
+  RYBBIT_SITE_ID,
+  ccgClientInfo,
+  isJetBrainsMode,
+} from '../../config/environment';
 
 // ─── Telemetry transport (Rybbit) ────────────────────────────────────────────
 // Sends custom events / errors to the self-hosted Rybbit instance, but ONLY when
@@ -20,11 +27,9 @@ import { basename } from 'path';
 // is intentionally NOT sent: Rybbit /api/track caps properties at 4096 chars and has
 // no feature_flags field, so settings will move to our own api+Postgres later.
 
-const RYBBIT_HOST = 'https://ccg-telemetry.01republic.io';
-const RYBBIT_SITE_ID = '2a8b407c8941';
+// RYBBIT_HOST / RYBBIT_SITE_ID / RYBBIT_API_KEY 는 config/environment.ts 단일점에서
+// 가져온다. API 키만 빌드 타임 박제(.env의 `_CCG_RYBBIT_API_KEY`), 나머지는 공개 상수.
 const TRACK_ENDPOINT = `${RYBBIT_HOST}/api/track`;
-// Build-time injected via esbuild define. Empty in dev unless CCG_RYBBIT_API_KEY is set.
-const RYBBIT_API_KEY = process.env.CCG_RYBBIT_API_KEY ?? '';
 // 전송 자체 실패를 보고하는 에러 이벤트 이름. 무한루프 방지용 재귀 가드의 기준이 된다.
 const TRANSPORT_ERROR_EVENT = 'telemetry_transport_error';
 
@@ -105,16 +110,17 @@ export function setBrowserClient(client: string): void {
  * 3) 모드만으로 fallback('jetbrains'/'browser').
  */
 function getClientInfo(): string {
-  const explicit = process.env.CCG_CLIENT_INFO;
-  if (explicit && explicit.length > 0) return explicit;
+  if (ccgClientInfo.length > 0) return ccgClientInfo;
   if (browserClient.length > 0) return browserClient;
-  return process.env.JETBRAINS_MODE === 'true' ? 'jetbrains' : 'browser';
+  return isJetBrainsMode ? 'jetbrains' : 'browser';
 }
 
 /**
  * 사용자의 셸 종류(zsh/bash/powershell 등)를 감지한다. Unix는 $SHELL, Windows는
  * PowerShell(PSModulePath 존재)/cmd($ComSpec)로 판별한다. 미확인이면 빈 문자열.
  */
+// SHELL/ComSpec/PSModulePath 직접 참조는 OS 셸 종류 탐지 목적이다(detectTerminals.ts의
+// OS 경로 탐색과 같은 분류). 설정성 변수가 아니라 environment.ts 단일점 대상에서 제외한다.
 function detectShell(): string {
   if (process.platform === 'win32') {
     if (process.env.PSModulePath) return 'powershell';
