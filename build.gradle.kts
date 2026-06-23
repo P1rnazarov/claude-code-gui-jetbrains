@@ -146,6 +146,12 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+            <h3>0.19.4 - Reliable model switching & one-click restart</h3>
+            <ul>
+                <li>Your model choice now sticks: pick a model and it takes effect on your next message, and the model tag no longer disappears after a response.</li>
+                <li>New "Restart plugin" command in the command palette — restart the backend without reopening the IDE tab. (#119)</li>
+                <li>Sessions now load even when you've pointed Claude Code at a custom data directory via CLAUDE_CONFIG_DIR. (#118)</li>
+            </ul>
             <h3>0.19.2 - Faster session switching & smarter usage hints</h3>
             <ul>
                 <li>Jump between conversations faster: open the session dropdown with the new /resume command, navigate it entirely from the keyboard, and search instantly by session ID.</li>
