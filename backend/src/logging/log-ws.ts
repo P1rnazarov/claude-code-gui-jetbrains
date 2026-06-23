@@ -1,6 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import type { IncomingMessage } from 'http';
 import type { Duplex } from 'stream';
+import { MessageType } from '../shared';
 
 export enum LogLevel {
   LOG = 'log',
@@ -43,7 +44,7 @@ export class LogWebSocketServer {
           return;
         }
 
-        if (parsed.type === 'LOG_BATCH') {
+        if (parsed.type === MessageType.LOG_BATCH) {
           this.onLogBatch(parsed.entries);
         }
       });

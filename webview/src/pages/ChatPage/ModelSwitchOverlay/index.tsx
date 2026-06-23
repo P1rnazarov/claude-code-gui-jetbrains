@@ -7,6 +7,7 @@ import { useCliConfig } from '@/contexts/CliConfigContext';
 import { LoadedMessageType } from '@/types';
 import { DEFAULT_MODEL_ALIAS } from '@/types/models';
 import type { ModelInfo } from '@/types/slashCommand';
+import { MessageType } from '@/shared';
 
 export const SWITCH_MODEL_EVENT = 'switch-model';
 
@@ -61,7 +62,7 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
     });
 
     if (currentSessionId) {
-      await send('SET_MODEL', { model: value });
+      await send(MessageType.SET_MODEL, { model: value });
     }
 
     onClose();

@@ -2,6 +2,7 @@
 
 import type { Connector, RawMessageHandler, ConnectionChangeHandler } from './Connector';
 import { detectRuntime } from '../../config/environment';
+import { MessageType } from '@/shared';
 
 export class WebSocketConnector implements Connector {
   private ws: WebSocket | null = null;
@@ -53,7 +54,7 @@ export class WebSocketConnector implements Connector {
       // 텔레메트리 client 식별용으로 브라우저 UA를 백엔드에 알린다(standalone 모드 의미).
       // JetBrains 모드는 CCG_CLIENT_INFO env가 우선하므로 무해하다.
       try {
-        ws.send(JSON.stringify({ type: 'CLIENT_INFO', payload: { userAgent: navigator.userAgent } }));
+        ws.send(JSON.stringify({ type: MessageType.CLIENT_INFO, payload: { userAgent: navigator.userAgent } }));
       } catch {
         // 전송 실패는 무시 — 텔레메트리는 앱 동작에 영향을 주지 않는다.
       }

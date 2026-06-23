@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useApi } from '@/contexts/ApiContext';
 import { getBridgeClient } from '@/api/bridge/BridgeClient';
 import type { CliControlRequestEvent } from '@/types';
+import { MessageType } from '@/shared';
 
 export interface PendingPlanApproval {
   controlRequestId: string;
@@ -21,7 +22,7 @@ export function usePendingPlanApproval(): {
   // Subscribe to CLI_EVENT for control_request (ExitPlanMode only)
   useEffect(() => {
     const bridge = getBridgeClient();
-    const unsubscribe = bridge.subscribe('CLI_EVENT', (message) => {
+    const unsubscribe = bridge.subscribe(MessageType.CLI_EVENT, (message) => {
       const cliEvent = message.payload as CliControlRequestEvent | undefined;
       if (cliEvent?.type !== 'control_request') return;
 

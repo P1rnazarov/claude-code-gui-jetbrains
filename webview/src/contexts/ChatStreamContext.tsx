@@ -7,6 +7,7 @@ import { useSessionContext } from './SessionContext';
 import { LoadedMessageDto, Context, Attachment, SessionState } from '../types';
 import { toModelAlias } from '@/types/models';
 import { InputMode, InputModeValues } from '../types/chatInput';
+import { MessageType } from '@/shared';
 
 /** 스트리밍 중 큐잉된 메시지의 bridge payload */
 interface QueuedMessage {
@@ -192,13 +193,13 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
   useEffect(() => {
     if (!bridge.isConnected) return;
 
-    const unsubscribeToolUse = bridge.subscribe('TOOL_USE', (message: IPCMessage) => {
+    const unsubscribeToolUse = bridge.subscribe(MessageType.TOOL_USE, (message: IPCMessage) => {
       console.log('[ChatStreamContext] TOOL_USE received:', message.payload);
       toolsRef.current.addToolUse(message.payload as any);
       sessionRef.current.setSessionState(SessionState.WaitingPermission);
     });
 
-    const unsubscribeDiff = bridge.subscribe('DIFF_PROPOSED', (message: IPCMessage) => {
+    const unsubscribeDiff = bridge.subscribe(MessageType.DIFF_PROPOSED, (message: IPCMessage) => {
       console.log('[ChatStreamContext] DIFF_PROPOSED received:', message.payload);
       diffsRef.current.addDiff(message.payload as any);
       sessionRef.current.setSessionState(SessionState.HasDiff);
@@ -245,7 +246,7 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
       }
 
       // 스트리밍 중이 아니면 즉시 전송
-      bridge.send('SEND_MESSAGE', payload).then((response) => {
+      bridge.send(MessageType.SEND_MESSAGE, payload).then((response) => {
         if (response?.status === 'error') {
           console.error('[ChatStreamContext] Backend error:', response.error);
         }
@@ -263,7 +264,7 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
       const queued = queuedMessageRef.current;
       queuedMessageRef.current = null;
       console.log('[ChatStreamContext] Flushing queued message after turn complete');
-      bridge.send('SEND_MESSAGE', queued).then((response) => {
+      bridge.send(MessageType.SEND_MESSAGE, queued).then((response) => {
         if (response?.status === 'error') {
           console.error('[ChatStreamContext] Queued message error:', response.error);
         }
@@ -294,7 +295,7 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
     console.log('[ChatStreamContext] Sending interrupt to backend');
 
     // Send interrupt signal to backend (stdin control_request)
-    bridge.send('STOP_SESSION', {}).catch((error) => {
+    bridge.send(MessageType.STOP_SESSION, {}).catch((error) => {
       console.error('[ChatStreamContext] Failed to send interrupt:', error);
     });
   }, [bridge]);

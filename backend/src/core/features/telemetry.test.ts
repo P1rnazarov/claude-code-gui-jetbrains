@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { MessageType } from '../../shared';
 
 // 동의 상태별 전송 게이팅 검증. profile/settings/version을 주입한 뒤 telemetry 모듈을
 // 동적 import하여(모듈 로드 시 API key를 const로 고정하므로) fetch 호출 여부를 본다.
@@ -147,7 +148,7 @@ describe('trackActivity (활동 단일 진입점)', () => {
 
   it("event_name='activity:<메시지 타입>' 형태로 전송한다", async () => {
     const { trackActivity, fetchMock, flushTelemetry } = await loadTelemetry(accepted, 'test-key');
-    trackActivity('SEND_MESSAGE');
+    trackActivity(MessageType.SEND_MESSAGE);
     await flushTelemetry();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const body = JSON.parse(fetchMock.mock.calls[0][1].body);
@@ -156,9 +157,9 @@ describe('trackActivity (활동 단일 진입점)', () => {
 
   it('디바운스가 없다 — 연속 호출마다 1:1로 전송한다', async () => {
     const { trackActivity, fetchMock, flushTelemetry } = await loadTelemetry(accepted, 'test-key');
-    trackActivity('SEND_MESSAGE');
-    trackActivity('LOAD_SESSION');
-    trackActivity('APPLY_DIFF');
+    trackActivity(MessageType.SEND_MESSAGE);
+    trackActivity(MessageType.LOAD_SESSION);
+    trackActivity(MessageType.APPLY_DIFF);
     await flushTelemetry();
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
@@ -166,11 +167,11 @@ describe('trackActivity (활동 단일 진입점)', () => {
   it('제외 타입(시스템/폴링/자동 조회)은 활동으로 전송하지 않는다', async () => {
     const { trackActivity, fetchMock, flushTelemetry } = await loadTelemetry(accepted, 'test-key');
     const excluded = [
-      'CLIENT_INFO', 'CLIENT_ERROR', 'GET_ACCOUNT', 'GET_USAGE',
-      'GET_TELEMETRY_CONSENT', 'GET_CLI_CONFIG', 'GET_IDE_ROOT', 'GET_VERSION',
-      'GET_PLUGIN_UPDATES', 'GET_TUNNEL_STATUS', 'GET_TUNNEL_PREREQS', 'GET_WORKING_DIR',
-      'GET_AVAILABLE_TERMINALS', 'GET_DETECTED_CLI_PATH', 'GET_DETECTED_NODE_PATH',
-      'GET_SETTINGS', 'GET_CLAUDE_SETTINGS', 'GET_SESSIONS', 'RECLAIM_SESSION', 'LIST_PROJECT_FILES',
+      MessageType.CLIENT_INFO, MessageType.CLIENT_ERROR, MessageType.GET_ACCOUNT, MessageType.GET_USAGE,
+      MessageType.GET_TELEMETRY_CONSENT, MessageType.GET_CLI_CONFIG, MessageType.GET_IDE_ROOT, MessageType.GET_VERSION,
+      MessageType.GET_PLUGIN_UPDATES, MessageType.GET_TUNNEL_STATUS, MessageType.GET_TUNNEL_PREREQS, MessageType.GET_WORKING_DIR,
+      MessageType.GET_AVAILABLE_TERMINALS, MessageType.GET_DETECTED_CLI_PATH, MessageType.GET_DETECTED_NODE_PATH,
+      MessageType.GET_SETTINGS, MessageType.GET_CLAUDE_SETTINGS, MessageType.GET_SESSIONS, MessageType.RECLAIM_SESSION, MessageType.LIST_PROJECT_FILES,
     ];
     excluded.forEach((t) => trackActivity(t));
     await flushTelemetry();
@@ -179,7 +180,7 @@ describe('trackActivity (활동 단일 진입점)', () => {
 
   it('능동 행동·약신호 타입(SEND_MESSAGE/SAVE_SETTINGS/LOAD_SESSION/GET_PROJECTS)은 전송한다', async () => {
     const { trackActivity, fetchMock, flushTelemetry } = await loadTelemetry(accepted, 'test-key');
-    const kept = ['SEND_MESSAGE', 'SAVE_SETTINGS', 'LOAD_SESSION', 'GET_PROJECTS'];
+    const kept = [MessageType.SEND_MESSAGE, MessageType.SAVE_SETTINGS, MessageType.LOAD_SESSION, MessageType.GET_PROJECTS];
     kept.forEach((t) => trackActivity(t));
     await flushTelemetry();
     expect(fetchMock).toHaveBeenCalledTimes(kept.length);
@@ -187,7 +188,7 @@ describe('trackActivity (활동 단일 진입점)', () => {
 
   it('미동의(DENIED)면 활동도 전송하지 않는다(동의 게이팅)', async () => {
     const { trackActivity, fetchMock, flushTelemetry } = await loadTelemetry(denied, 'test-key');
-    trackActivity('SEND_MESSAGE');
+    trackActivity(MessageType.SEND_MESSAGE);
     await flushTelemetry();
     expect(fetchMock).not.toHaveBeenCalled();
   });

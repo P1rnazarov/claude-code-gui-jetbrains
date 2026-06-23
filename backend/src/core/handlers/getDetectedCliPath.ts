@@ -2,6 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { Claude } from '../claude';
+import { MessageType } from '../../shared';
 
 export async function getDetectedCliPathHandler(
   connectionId: string,
@@ -11,7 +12,7 @@ export async function getDetectedCliPathHandler(
 ): Promise<void> {
   const detectedPath = await Claude.which();
 
-  connections.sendTo(connectionId, 'ACK', {
+  connections.sendTo(connectionId, MessageType.ACK, {
     requestId: message.requestId,
     path: detectedPath,
   });

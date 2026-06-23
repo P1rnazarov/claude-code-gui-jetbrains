@@ -1,6 +1,7 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { MessageType } from '../../shared';
 import { sendMessageHandler } from './sendMessage';
 import { stopGenerationHandler } from './stopGeneration';
 import { stopSessionHandler } from './stopSession';
@@ -70,181 +71,181 @@ export async function handleMessage(
   console.error('[node-backend]', `Received: ${message.type}`);
 
   switch (message.type) {
-    case 'SEND_MESSAGE':
+    case MessageType.SEND_MESSAGE:
       await sendMessageHandler(connectionId, message, connections, bridge);
       break;
-    case 'STOP_GENERATION':
+    case MessageType.STOP_GENERATION:
       stopGenerationHandler(connectionId, message, connections, bridge);
       break;
-    case 'STOP_SESSION':
+    case MessageType.STOP_SESSION:
       stopSessionHandler(connectionId, message, connections, bridge);
       break;
-    case 'START_SESSION':
+    case MessageType.START_SESSION:
       await startSessionHandler(connectionId, message, connections, bridge);
       break;
-    case 'SESSION_CHANGE':
+    case MessageType.SESSION_CHANGE:
       sessionChangeHandler(connectionId, message, connections, bridge);
       break;
-    case 'TOOL_RESPONSE':
+    case MessageType.TOOL_RESPONSE:
       toolResponseHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_SESSIONS':
+    case MessageType.GET_SESSIONS:
       await getSessionsHandler(connectionId, message, connections, bridge);
       break;
-    case 'LOAD_SESSION':
+    case MessageType.LOAD_SESSION:
       await loadSessionHandler(connectionId, message, connections, bridge);
       break;
-    case 'DELETE_SESSION':
+    case MessageType.DELETE_SESSION:
       await deleteSessionHandler(connectionId, message, connections, bridge);
       break;
-    case 'RENAME_SESSION':
+    case MessageType.RENAME_SESSION:
       await renameSessionHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_SETTINGS':
+    case MessageType.GET_SETTINGS:
       await getSettingsHandler(connectionId, message, connections, bridge);
       break;
-    case 'SAVE_SETTINGS':
+    case MessageType.SAVE_SETTINGS:
       await saveSettingsHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_TELEMETRY_CONSENT':
+    case MessageType.GET_TELEMETRY_CONSENT:
       await getTelemetryConsentHandler(connectionId, message, connections, bridge);
       break;
-    case 'SET_TELEMETRY_CONSENT':
+    case MessageType.SET_TELEMETRY_CONSENT:
       await setTelemetryConsentHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_PROJECTS':
+    case MessageType.GET_PROJECTS:
       await getProjectsHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_USAGE':
+    case MessageType.GET_USAGE:
       await getUsageHandler(connectionId, message, connections, bridge);
       break;
-    case 'OPEN_FILE':
+    case MessageType.OPEN_FILE:
       await openFileHandler(connectionId, message, connections, bridge);
       break;
-    case 'OPEN_DIFF':
+    case MessageType.OPEN_DIFF:
       await openDiffHandler(connectionId, message, connections, bridge);
       break;
-    case 'APPLY_DIFF':
+    case MessageType.APPLY_DIFF:
       await applyDiffHandler(connectionId, message, connections, bridge);
       break;
-    case 'REJECT_DIFF':
+    case MessageType.REJECT_DIFF:
       await rejectDiffHandler(connectionId, message, connections, bridge);
       break;
-    case 'CREATE_SESSION':
+    case MessageType.CREATE_SESSION:
       await createSessionHandler(connectionId, message, connections, bridge);
       break;
-    case 'OPEN_NEW_TAB':
+    case MessageType.OPEN_NEW_TAB:
       await openNewTabHandler(connectionId, message, connections, bridge);
       break;
-    case 'OPEN_SESSION':
+    case MessageType.OPEN_SESSION:
       await openSessionHandler(connectionId, message, connections, bridge);
       break;
-    case 'OPEN_SETTINGS':
+    case MessageType.OPEN_SETTINGS:
       await openSettingsHandler(connectionId, message, connections, bridge);
       break;
-    case 'RESTART_BACKEND':
+    case MessageType.RESTART_BACKEND:
       restartBackendHandler(connectionId, message, connections, bridge);
       break;
-    case 'OPEN_TERMINAL':
+    case MessageType.OPEN_TERMINAL:
       await openTerminalHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_VERSION':
+    case MessageType.GET_VERSION:
       await getVersionHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_ACCOUNT':
+    case MessageType.GET_ACCOUNT:
       await getAccountHandler(connectionId, message, connections, bridge);
       break;
-    case 'RECLAIM_SESSION':
+    case MessageType.RECLAIM_SESSION:
       await reclaimSessionHandler(connectionId, message, connections, bridge);
       break;
-    case 'LOGIN':
+    case MessageType.LOGIN:
       await loginHandler(connectionId, message, connections, bridge);
       break;
-    case 'SUBMIT_LOGIN_CODE':
+    case MessageType.SUBMIT_LOGIN_CODE:
       submitLoginCodeHandler(connectionId, message, connections, bridge);
       break;
-    case 'OPEN_URL':
+    case MessageType.OPEN_URL:
       await openUrlHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_AVAILABLE_TERMINALS':
+    case MessageType.GET_AVAILABLE_TERMINALS:
       await getAvailableTerminalsHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_DETECTED_CLI_PATH':
+    case MessageType.GET_DETECTED_CLI_PATH:
       await getDetectedCliPathHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_DETECTED_NODE_PATH':
+    case MessageType.GET_DETECTED_NODE_PATH:
       await getDetectedNodePathHandler(connectionId, message, connections, bridge);
       break;
-    case 'PICK_FILES':
+    case MessageType.PICK_FILES:
       await pickFilesHandler(connectionId, message, connections, bridge);
       break;
-    case 'NATIVE_DROP_FLUSH':
+    case MessageType.NATIVE_DROP_FLUSH:
       await nativeDropFlushHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_PLUGIN_UPDATES':
+    case MessageType.GET_PLUGIN_UPDATES:
       await getPluginUpdatesHandler(connectionId, message, connections, bridge);
       break;
-    case 'UPDATE_PLUGIN':
+    case MessageType.UPDATE_PLUGIN:
       await updatePluginHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_CLAUDE_SETTINGS':
+    case MessageType.GET_CLAUDE_SETTINGS:
       await getClaudeSettingsHandler(connectionId, message, connections, bridge);
       break;
-    case 'SAVE_CLAUDE_SETTINGS':
+    case MessageType.SAVE_CLAUDE_SETTINGS:
       await saveClaudeSettingsHandler(connectionId, message, connections, bridge);
       break;
-    case 'SET_MODEL':
+    case MessageType.SET_MODEL:
       setModelHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_WORKING_DIR':
+    case MessageType.GET_WORKING_DIR:
       getWorkingDirHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_IDE_ROOT':
+    case MessageType.GET_IDE_ROOT:
       await getIdeRootHandler(connectionId, message, connections, bridge);
       break;
-    case 'TUNNEL_START':
+    case MessageType.TUNNEL_START:
       await tunnelStartHandler(connectionId, message, connections, bridge);
       break;
-    case 'TUNNEL_STOP':
+    case MessageType.TUNNEL_STOP:
       await tunnelStopHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_TUNNEL_STATUS':
+    case MessageType.GET_TUNNEL_STATUS:
       await getTunnelStatusHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_TUNNEL_PREREQS':
+    case MessageType.GET_TUNNEL_PREREQS:
       await getTunnelPrereqsHandler(connectionId, message, connections, bridge);
       break;
-    case 'INSTALL_CLOUDFLARED':
+    case MessageType.INSTALL_CLOUDFLARED:
       await installCloudflaredHandler(connectionId, message, connections, bridge);
       break;
-    case 'SLEEP_GUARD_ENABLE':
+    case MessageType.SLEEP_GUARD_ENABLE:
       await sleepGuardEnableHandler(connectionId, message, connections, bridge);
       break;
-    case 'SLEEP_GUARD_DISABLE':
+    case MessageType.SLEEP_GUARD_DISABLE:
       await sleepGuardDisableHandler(connectionId, message, connections, bridge);
       break;
-    case 'LIST_PROJECT_FILES':
+    case MessageType.LIST_PROJECT_FILES:
       await listProjectFilesHandler(connectionId, message, connections, bridge);
       break;
-    case 'GET_CLI_CONFIG':
+    case MessageType.GET_CLI_CONFIG:
       await getCliConfigHandler(connectionId, message, connections, bridge);
       break;
-    case 'OPEN_FOLDER_DIALOG':
+    case MessageType.OPEN_FOLDER_DIALOG:
       await openFolderDialogHandler(connectionId, message, connections, bridge);
       break;
-    case 'FIND_BG_TASK_OUTPUT_PATH':
+    case MessageType.FIND_BG_TASK_OUTPUT_PATH:
       await findBackgroundTaskOutputPathHandler(connectionId, message, connections, bridge);
       break;
-    case 'LIST_SYSTEM_SOUNDS':
+    case MessageType.LIST_SYSTEM_SOUNDS:
       await listSystemSoundsHandler(connectionId, message, connections, bridge);
       break;
-    case 'PLAY_SYSTEM_SOUND':
+    case MessageType.PLAY_SYSTEM_SOUND:
       await playSystemSoundHandler(connectionId, message, connections, bridge);
       break;
-    case 'CLIENT_INFO':
+    case MessageType.CLIENT_INFO:
       clientInfoHandler(connectionId, message, connections, bridge);
       break;
-    case 'CLIENT_ERROR':
+    case MessageType.CLIENT_ERROR:
       clientErrorHandler(connectionId, message, connections, bridge);
       break;
     default:

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useBridgeContext } from '@/contexts/BridgeContext';
+import { MessageType } from '@/shared';
 
 interface PluginUpdate {
   id: number;
@@ -32,7 +33,7 @@ export function usePluginUpdates(): UsePluginUpdatesReturn {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await send('GET_PLUGIN_UPDATES', {});
+      const result = await send(MessageType.GET_PLUGIN_UPDATES, {});
       if (result.status === 'ok') {
         const fetched: PluginUpdate[] = result.updates ?? [];
         cachedUpdates = fetched;

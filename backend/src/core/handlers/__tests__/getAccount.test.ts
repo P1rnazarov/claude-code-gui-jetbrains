@@ -12,6 +12,7 @@ import { Claude } from '../../claude';
 import type { ConnectionManager } from '../../../ws/connection-manager';
 import type { Bridge } from '../../../bridge/bridge-interface';
 import type { IPCMessage } from '../../types';
+import { MessageType } from '../../../shared';
 
 const mockExec = vi.mocked(Claude.exec);
 
@@ -40,7 +41,7 @@ describe('getAccountHandler', () => {
 
   it('should send ACK with status ok and parsed account on success', async () => {
     const connections = createMockConnections();
-    const message: IPCMessage = { type: 'GET_ACCOUNT', payload: {}, timestamp: 0, requestId: 'req-1' };
+    const message: IPCMessage = { type: MessageType.GET_ACCOUNT, payload: {}, timestamp: 0, requestId: 'req-1' };
 
     mockExec.mockResolvedValue({
       stdout: JSON.stringify(validAccountPayload),
@@ -49,7 +50,7 @@ describe('getAccountHandler', () => {
 
     await getAccountHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
       requestId: 'req-1',
       status: 'ok',
       account: validAccountPayload,
@@ -58,7 +59,7 @@ describe('getAccountHandler', () => {
 
   it('should send ACK with status error when stdout is empty', async () => {
     const connections = createMockConnections();
-    const message: IPCMessage = { type: 'GET_ACCOUNT', payload: {}, timestamp: 0, requestId: 'req-1' };
+    const message: IPCMessage = { type: MessageType.GET_ACCOUNT, payload: {}, timestamp: 0, requestId: 'req-1' };
 
     mockExec.mockResolvedValue({
       stdout: '',
@@ -67,7 +68,7 @@ describe('getAccountHandler', () => {
 
     await getAccountHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
       requestId: 'req-1',
       status: 'error',
       error: 'Claude Code credentials not found. Please log in with Claude Code CLI first.',
@@ -76,13 +77,13 @@ describe('getAccountHandler', () => {
 
   it('should send ACK with status error when Claude.exec throws', async () => {
     const connections = createMockConnections();
-    const message: IPCMessage = { type: 'GET_ACCOUNT', payload: {}, timestamp: 0, requestId: 'req-1' };
+    const message: IPCMessage = { type: MessageType.GET_ACCOUNT, payload: {}, timestamp: 0, requestId: 'req-1' };
 
     mockExec.mockRejectedValue(new Error('spawn error'));
 
     await getAccountHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
       requestId: 'req-1',
       status: 'error',
       error: 'Claude Code credentials not found. Please log in with Claude Code CLI first.',
@@ -91,7 +92,7 @@ describe('getAccountHandler', () => {
 
   it('should call Claude.exec with auth status args and timeout 8000', async () => {
     const connections = createMockConnections();
-    const message: IPCMessage = { type: 'GET_ACCOUNT', payload: {}, timestamp: 0, requestId: 'req-1' };
+    const message: IPCMessage = { type: MessageType.GET_ACCOUNT, payload: {}, timestamp: 0, requestId: 'req-1' };
 
     mockExec.mockResolvedValue({
       stdout: JSON.stringify(validAccountPayload),

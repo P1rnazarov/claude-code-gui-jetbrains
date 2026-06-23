@@ -3,6 +3,7 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { readMergedSettings, readSettingsFile, readProjectSettings } from '../features/settings';
 import { getSettingsWatcher } from '../features/settings-watcher';
+import { MessageType } from '../../shared';
 
 export async function getSettingsHandler(
   connectionId: string,
@@ -31,7 +32,7 @@ export async function getSettingsHandler(
     overrides = result.overrides;
   }
 
-  connections.sendTo(connectionId, 'ACK', {
+  connections.sendTo(connectionId, MessageType.ACK, {
     requestId: message.requestId,
     status: 'ok',
     settings,

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useBridgeContext } from '@/contexts/BridgeContext';
+import { MessageType } from '@/shared';
 
 interface VersionInfo {
   pluginVersion: string;
@@ -26,7 +27,7 @@ export function useVersionInfo(): UseVersionInfoReturn {
   const fetchVersion = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await send('GET_VERSION', {});
+      const result = await send(MessageType.GET_VERSION, {});
       if (result.status === 'ok') {
         const info: VersionInfo = {
           pluginVersion: result.pluginVersion ?? 'unknown',

@@ -2,6 +2,7 @@ import { execFile } from 'child_process';
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { MessageType } from '../../shared';
 
 interface UsageBucket {
   utilization: number;
@@ -144,13 +145,13 @@ export async function getUsageHandler(
 
   if (!force && Date.now() - cachedAt < CACHE_TTL_MS && (cachedUsage !== null || lastErrorInfo !== null)) {
     if (cachedUsage !== null) {
-      connections.sendTo(connectionId, 'ACK', {
+      connections.sendTo(connectionId, MessageType.ACK, {
         requestId: message.requestId,
         status: 'ok',
         usage: cachedUsage,
       });
     } else {
-      connections.sendTo(connectionId, 'ACK', {
+      connections.sendTo(connectionId, MessageType.ACK, {
         requestId: message.requestId,
         status: 'error',
         usage: null,
@@ -173,13 +174,13 @@ export async function getUsageHandler(
         // absorb inflight rejection; respond based on cachedUsage
       }
       if (cachedUsage !== null) {
-        connections.sendTo(connectionId, 'ACK', {
+        connections.sendTo(connectionId, MessageType.ACK, {
           requestId: message.requestId,
           status: 'ok',
           usage: cachedUsage,
         });
       } else {
-        connections.sendTo(connectionId, 'ACK', {
+        connections.sendTo(connectionId, MessageType.ACK, {
           requestId: message.requestId,
           status: 'error',
           usage: null,
@@ -204,7 +205,7 @@ export async function getUsageHandler(
 
     const usage = await runPromise;
 
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'ok',
       usage,
@@ -214,7 +215,7 @@ export async function getUsageHandler(
     const info = classifyError(err instanceof Error ? err.message : String(err), code);
     lastErrorInfo = info;
     cachedAt = Date.now();
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'error',
       usage: cachedUsage,

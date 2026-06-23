@@ -4,6 +4,7 @@ import { useChatStream, type LoadedMessage } from '../useChatStream';
 import type { LoadedMessageDto } from '../../types';
 import { ContextType } from '../../types';
 import { LoadedMessageType, MessageRole } from '../../dto/common';
+import { MessageType } from '@/shared';
 
 // Mock requestAnimationFrame and cancelAnimationFrame
 const rafCallbacks: ((time: number) => void)[] = [];
@@ -147,7 +148,7 @@ describe('useChatStream', () => {
 
       // Emit text_delta without prior message
       act(() => {
-        emit('CLI_EVENT', {
+        emit(MessageType.CLI_EVENT, {
           type: 'stream_event',
           event: { delta: { type: 'text_delta', text: 'Hello' } },
         });
@@ -165,17 +166,17 @@ describe('useChatStream', () => {
       const { result } = renderHook(() => useChatStream({ bridge }));
 
       act(() => {
-        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'Hello' } } });
+        emit(MessageType.CLI_EVENT, { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'Hello' } } });
         flushRAF();
       });
 
       act(() => {
-        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: ' world' } } });
+        emit(MessageType.CLI_EVENT, { type: 'stream_event', event: { delta: { type: 'text_delta', text: ' world' } } });
         flushRAF();
       });
 
       act(() => {
-        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: '!' } } });
+        emit(MessageType.CLI_EVENT, { type: 'stream_event', event: { delta: { type: 'text_delta', text: '!' } } });
         flushRAF();
       });
 
@@ -189,7 +190,7 @@ describe('useChatStream', () => {
       expect(result.current.isStreaming).toBe(false);
 
       act(() => {
-        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'Test' } } });
+        emit(MessageType.CLI_EVENT, { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'Test' } } });
       });
 
       expect(result.current.isStreaming).toBe(true);
@@ -201,7 +202,7 @@ describe('useChatStream', () => {
       renderHook(() => useChatStream({ bridge, onSystemMessage }));
 
       act(() => {
-        emit('CLI_EVENT', {
+        emit(MessageType.CLI_EVENT, {
           type: 'system',
           subtype: 'init',
           sessionId: 'session-123',
@@ -222,7 +223,7 @@ describe('useChatStream', () => {
       const { result } = renderHook(() => useChatStream({ bridge }));
 
       act(() => {
-        emit('CLI_EVENT', {
+        emit(MessageType.CLI_EVENT, {
           type: 'system',
           subtype: 'init',
           sessionId: 'session-123',
@@ -243,14 +244,14 @@ describe('useChatStream', () => {
 
       // Start streaming
       act(() => {
-        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'Hello' } } });
+        emit(MessageType.CLI_EVENT, { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'Hello' } } });
       });
 
       expect(result.current.isStreaming).toBe(true);
 
       // End streaming
       act(() => {
-        emit('CLI_EVENT', { type: 'result' });
+        emit(MessageType.CLI_EVENT, { type: 'result' });
       });
 
       expect(result.current.isStreaming).toBe(false);
@@ -261,13 +262,13 @@ describe('useChatStream', () => {
       const { result } = renderHook(() => useChatStream({ bridge }));
 
       act(() => {
-        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'Hello' } } });
+        emit(MessageType.CLI_EVENT, { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'Hello' } } });
       });
 
       expect(result.current.streamingMessageId).not.toBeNull();
 
       act(() => {
-        emit('CLI_EVENT', { type: 'result' });
+        emit(MessageType.CLI_EVENT, { type: 'result' });
       });
 
       expect(result.current.streamingMessageId).toBeNull();
@@ -279,11 +280,11 @@ describe('useChatStream', () => {
       const { result } = renderHook(() => useChatStream({ bridge, onError }));
 
       act(() => {
-        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'Hello' } } });
+        emit(MessageType.CLI_EVENT, { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'Hello' } } });
       });
 
       act(() => {
-        emit('CLI_EVENT', {
+        emit(MessageType.CLI_EVENT, {
           type: 'result',
           error: { code: 'ERR_001', message: 'Test error', details: 'Details' },
         });
@@ -306,7 +307,7 @@ describe('useChatStream', () => {
       const streamingId = result.current.streamingMessageId;
 
       act(() => {
-        emit('CLI_EVENT', { type: 'result' });
+        emit(MessageType.CLI_EVENT, { type: 'result' });
       });
 
       expect(onStreamEnd).toHaveBeenCalledWith(streamingId);
@@ -327,7 +328,7 @@ describe('useChatStream', () => {
 
       // Receive complete assistant message
       act(() => {
-        emit('CLI_EVENT', {
+        emit(MessageType.CLI_EVENT, {
           type: 'assistant',
           message: {
             id: 'msg_123',
@@ -364,7 +365,7 @@ describe('useChatStream', () => {
       ];
 
       act(() => {
-        emit('CLI_EVENT', {
+        emit(MessageType.CLI_EVENT, {
           type: 'assistant',
           message: {
             id: 'msg_123',
@@ -392,7 +393,7 @@ describe('useChatStream', () => {
       ];
 
       act(() => {
-        emit('CLI_EVENT', {
+        emit(MessageType.CLI_EVENT, {
           type: 'assistant',
           message: {
             id: 'msg_123',
@@ -411,7 +412,7 @@ describe('useChatStream', () => {
 
       // Emit without prior streaming
       act(() => {
-        emit('CLI_EVENT', {
+        emit(MessageType.CLI_EVENT, {
           type: 'assistant',
           message: {
             id: 'msg_123',
@@ -436,7 +437,7 @@ describe('useChatStream', () => {
       const { result } = renderHook(() => useChatStream({ bridge }));
 
       act(() => {
-        emit('SERVICE_ERROR', {
+        emit(MessageType.SERVICE_ERROR, {
           type: 'CONNECTION_ERROR',
           reason: 'Network timeout',
         });
@@ -458,7 +459,7 @@ describe('useChatStream', () => {
       expect(result.current.isStreaming).toBe(true);
 
       act(() => {
-        emit('SERVICE_ERROR', {
+        emit(MessageType.SERVICE_ERROR, {
           type: 'API_ERROR',
           reason: 'Invalid request',
         });
@@ -473,7 +474,7 @@ describe('useChatStream', () => {
       renderHook(() => useChatStream({ bridge, onError }));
 
       act(() => {
-        emit('SERVICE_ERROR', {
+        emit(MessageType.SERVICE_ERROR, {
           type: 'API_ERROR',
           reason: 'Test error',
         });
@@ -506,8 +507,8 @@ describe('useChatStream', () => {
       const { result } = renderHook(() => useChatStream({ bridge }));
 
       act(() => {
-        emit('SERVICE_ERROR', {
-          type: 'ERROR',
+        emit(MessageType.SERVICE_ERROR, {
+          type: MessageType.ERROR,
           reason: 'Test',
         });
       });
@@ -679,7 +680,7 @@ describe('useChatStream', () => {
       });
 
       // Should have sent message via bridge
-      expect(bridge.send).toHaveBeenCalledWith('SEND_MESSAGE', {
+      expect(bridge.send).toHaveBeenCalledWith(MessageType.SEND_MESSAGE, {
         content: 'Test message',
         context: [],
       });
@@ -736,7 +737,7 @@ describe('useChatStream', () => {
       const streamingId = result.current.streamingMessageId;
 
       act(() => {
-        emit('CLI_EVENT', { type: 'result' });
+        emit(MessageType.CLI_EVENT, { type: 'result' });
       });
 
       expect(onStreamEnd).toHaveBeenCalledWith(streamingId);
@@ -749,9 +750,9 @@ describe('useChatStream', () => {
       const { result } = renderHook(() => useChatStream({ bridge }));
 
       act(() => {
-        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'A' } } });
-        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'B' } } });
-        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'C' } } });
+        emit(MessageType.CLI_EVENT, { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'A' } } });
+        emit(MessageType.CLI_EVENT, { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'B' } } });
+        emit(MessageType.CLI_EVENT, { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'C' } } });
       });
 
       // Before RAF flush, content should not be updated yet

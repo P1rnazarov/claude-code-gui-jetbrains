@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { basename } from './basename';
+import { MessageType } from '@/shared';
 
 interface Props {
   addImageAttachment: (file: File) => Promise<void>;
@@ -43,7 +44,7 @@ export function AttachMenu(props: Props) {
 
   const handleAttachFiles = useCallback(async () => {
     onClose();
-    const response = await bridge.send('PICK_FILES', { mode: 'files', multiple: true }) as { paths: string[] } | null;
+    const response = await bridge.send(MessageType.PICK_FILES, { mode: 'files', multiple: true }) as { paths: string[] } | null;
     if (!response?.paths) return;
     for (const p of response.paths) {
       addFileAttachment(p, basename(p));
@@ -52,7 +53,7 @@ export function AttachMenu(props: Props) {
 
   const handleAttachFolders = useCallback(async () => {
     onClose();
-    const response = await bridge.send('PICK_FILES', { mode: 'folders', multiple: true }) as { paths: string[] } | null;
+    const response = await bridge.send(MessageType.PICK_FILES, { mode: 'folders', multiple: true }) as { paths: string[] } | null;
     if (!response?.paths) return;
     for (const p of response.paths) {
       addFolderAttachment(p, basename(p));

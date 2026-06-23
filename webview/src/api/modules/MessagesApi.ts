@@ -1,4 +1,5 @@
 import { BridgeClient } from '../bridge/BridgeClient';
+import { MessageType } from '@/shared';
 
 /**
  * Messages API module
@@ -17,14 +18,14 @@ export class MessagesApi {
    * Note: Stream subscriptions are managed by useChatStream hook
    */
   async create(sessionId: string, content: string): Promise<void> {
-    await this.bridge.request('SEND_MESSAGE', { sessionId, content });
+    await this.bridge.request(MessageType.SEND_MESSAGE, { sessionId, content });
   }
 
   /**
    * Subscribe to service errors (global, not session-specific)
    */
   onError(callback: (error: { type: string; message: string }) => void): () => void {
-    return this.bridge.subscribe('SERVICE_ERROR', (message) => {
+    return this.bridge.subscribe(MessageType.SERVICE_ERROR, (message) => {
       callback({
         type: (message.payload?.type as string) || 'unknown',
         message: (message.payload?.message as string) || 'Unknown error',

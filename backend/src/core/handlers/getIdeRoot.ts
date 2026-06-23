@@ -1,6 +1,7 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { MessageType } from '../../shared';
 
 export async function getIdeRootHandler(
   connectionId: string,
@@ -21,6 +22,6 @@ export async function getIdeRootHandler(
     ideRoot = null;
   }
 
-  connections.sendTo(connectionId, 'IDE_ROOT', { ideRoot });
-  connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+  connections.sendTo(connectionId, MessageType.IDE_ROOT, { ideRoot });
+  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
 }

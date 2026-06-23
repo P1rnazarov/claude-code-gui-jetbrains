@@ -2,6 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { findBackgroundTaskOutputPath } from './findBackgroundTaskOutputPath';
+import { MessageType } from '../../shared';
 
 export async function findBackgroundTaskOutputPathHandler(
   connectionId: string,
@@ -17,7 +18,7 @@ export async function findBackgroundTaskOutputPathHandler(
     workingDir: workingDir ?? '',
   });
 
-  connections.sendTo(connectionId, 'ACK', {
+  connections.sendTo(connectionId, MessageType.ACK, {
     requestId: message.requestId,
     ...result,
   });

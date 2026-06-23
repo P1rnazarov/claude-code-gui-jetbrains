@@ -3,6 +3,7 @@ import { SessionsApi } from '../SessionsApi';
 import type { BridgeClient } from '../../bridge/BridgeClient';
 import type { ApiConfig } from '../../ClaudeCodeApi';
 import { SessionMetaDto } from '../../../dto';
+import { MessageType } from '@/shared';
 
 const createMockBridge = () => ({
   request: vi.fn(),
@@ -53,7 +54,7 @@ describe('SessionsApi', () => {
 
       const result = await api.index();
 
-      expect(mockBridge.request).toHaveBeenCalledWith('GET_SESSIONS', {
+      expect(mockBridge.request).toHaveBeenCalledWith(MessageType.GET_SESSIONS, {
         workingDir: '/test/path',
       });
       expect(result).toHaveLength(2);
@@ -156,7 +157,7 @@ describe('SessionsApi', () => {
 
       await api.load('session-1');
 
-      expect(mockBridge.request).toHaveBeenCalledWith('LOAD_SESSION', {
+      expect(mockBridge.request).toHaveBeenCalledWith(MessageType.LOAD_SESSION, {
         sessionId: 'session-1',
         workingDir: '/test/path',
       });
@@ -169,7 +170,7 @@ describe('SessionsApi', () => {
 
       await api.activate('session-1');
 
-      expect(mockBridge.request).toHaveBeenCalledWith('SESSION_CHANGE', {
+      expect(mockBridge.request).toHaveBeenCalledWith(MessageType.SESSION_CHANGE, {
         sessionId: 'session-1',
       });
     });
@@ -181,7 +182,7 @@ describe('SessionsApi', () => {
 
       await api.create();
 
-      expect(mockBridge.request).toHaveBeenCalledWith('CREATE_SESSION', {});
+      expect(mockBridge.request).toHaveBeenCalledWith(MessageType.CREATE_SESSION, {});
     });
   });
 
@@ -191,7 +192,7 @@ describe('SessionsApi', () => {
 
       await api.destroy('session-1');
 
-      expect(mockBridge.request).toHaveBeenCalledWith('DELETE_SESSION', {
+      expect(mockBridge.request).toHaveBeenCalledWith(MessageType.DELETE_SESSION, {
         sessionId: 'session-1',
         workingDir: '/test/path',
       });
@@ -202,7 +203,7 @@ describe('SessionsApi', () => {
 
       await api.destroy('session-2', '/explicit/path');
 
-      expect(mockBridge.request).toHaveBeenCalledWith('DELETE_SESSION', {
+      expect(mockBridge.request).toHaveBeenCalledWith(MessageType.DELETE_SESSION, {
         sessionId: 'session-2',
         workingDir: '/explicit/path',
       });

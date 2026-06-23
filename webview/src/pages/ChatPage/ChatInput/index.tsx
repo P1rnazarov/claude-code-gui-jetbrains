@@ -35,6 +35,7 @@ import { RichInput } from './RichInput';
 import { TelemetryConsentBanner } from '../TelemetryConsentBanner';
 import { useTelemetryConsent, ConsentStatus, ConsentSource } from '@/hooks/useTelemetryConsent';
 import { getCaretOffset, setCaretOffset, getSelectionRange } from '@/utils/domSelection';
+import { MessageType } from '@/shared';
 
 interface NativeDropEntry {
   path: string;
@@ -89,7 +90,7 @@ export function ChatInput() {
   // Currently unused (CefDragHandler forwards drops to the page as HTML5 events instead),
   // but kept as a fallback path for sources that don't surface paths in dataTransfer.
   useEffect(() => {
-    return subscribe('NATIVE_DROP_ENTRIES', (message) => {
+    return subscribe(MessageType.NATIVE_DROP_ENTRIES, (message) => {
       const entries = (message.payload?.entries as NativeDropEntry[] | undefined) ?? [];
       for (const entry of entries) {
         if (!entry.path) continue;
@@ -132,7 +133,7 @@ export function ChatInput() {
       setIsDragOver(false);
       // Image drops are handled here; file/folder paths are released by NATIVE_DROP_FLUSH.
       handleDrop(e as unknown as ReactDragEvent);
-      void bridge.send('NATIVE_DROP_FLUSH', {});
+      void bridge.send(MessageType.NATIVE_DROP_FLUSH, {});
     };
     window.addEventListener('dragover', handleWindowDragOver);
     window.addEventListener('dragleave', handleWindowDragLeave);

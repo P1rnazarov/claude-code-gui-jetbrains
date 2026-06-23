@@ -8,6 +8,7 @@ import { SessionState } from '@/types';
 import { classifyWorkingDirs, WorkingDirEntry } from './classifyWorkingDirs';
 import { WorkingDirToggle } from './WorkingDirToggle';
 import { WorkingDirMenu } from './WorkingDirMenu';
+import { MessageType } from '@/shared';
 
 export function WorkingDirDropdown() {
   const { isConnected, send, subscribe } = useBridgeContext();
@@ -40,14 +41,14 @@ export function WorkingDirDropdown() {
     if (!isOpen || !isConnected) return;
     let cancelled = false;
     setIsLoading(true);
-    const unsubscribe = subscribe('PROJECTS_LIST', (message) => {
+    const unsubscribe = subscribe(MessageType.PROJECTS_LIST, (message) => {
       if (cancelled) return;
       const list = (message.payload?.projects as WorkingDirEntry[]) ?? [];
       setEntries(list);
       setIsLoading(false);
       unsubscribe();
     });
-    void send('GET_PROJECTS', {});
+    void send(MessageType.GET_PROJECTS, {});
     return () => {
       cancelled = true;
       unsubscribe();
@@ -72,7 +73,7 @@ export function WorkingDirDropdown() {
   // PROJECT_SELECTOR (or when leaving with a null dir), and we are sitting on
   // NEW_SESSION. Navigate explicitly the same way our <Link> rows do.
   const onAddWorkingDir = useCallback(() => {
-    const unsubscribe = subscribe('FOLDER_SELECTED', (message) => {
+    const unsubscribe = subscribe(MessageType.FOLDER_SELECTED, (message) => {
       unsubscribe();
       const selectedPath = message.payload?.path;
       if (typeof selectedPath === 'string' && selectedPath.length > 0) {
@@ -83,7 +84,7 @@ export function WorkingDirDropdown() {
         navigate(withWorkingDir(routeToPath(Route.NEW_SESSION), normalized));
       }
     });
-    void send('OPEN_FOLDER_DIALOG', {});
+    void send(MessageType.OPEN_FOLDER_DIALOG, {});
   }, [send, subscribe, navigate]);
 
   return (

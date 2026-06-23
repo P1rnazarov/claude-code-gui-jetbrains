@@ -3,6 +3,7 @@ import { LoadedMessageDto } from '@/types';
 import { LoadedMessageType, ToolUseBlockDto } from '@/dto';
 import { getBridgeClient } from '@/api/bridge/BridgeClient';
 import type { CliControlRequestEvent } from '@/types';
+import { MessageType } from '@/shared';
 
 interface AskUserQuestionOption {
   label: string;
@@ -38,7 +39,7 @@ export function usePendingAskUserQuestion(
   // CLI_EVENT에서 control_request 이벤트 구독
   useEffect(() => {
     const bridge = getBridgeClient();
-    const unsubscribe = bridge.subscribe('CLI_EVENT', (message) => {
+    const unsubscribe = bridge.subscribe(MessageType.CLI_EVENT, (message) => {
       const cliEvent = message.payload as CliControlRequestEvent | undefined;
       if (cliEvent?.type !== 'control_request') return;
 

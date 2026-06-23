@@ -1,6 +1,7 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { MessageType } from '../../shared';
 
 export async function applyDiffHandler(
   connectionId: string,
@@ -14,13 +15,13 @@ export async function applyDiffHandler(
 
   try {
     const result = await bridge.applyDiff({ filePath, newContent, toolUseId });
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'ok',
       applied: result.applied,
     });
   } catch (err) {
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'error',
       error: err instanceof Error ? err.message : String(err),

@@ -5,6 +5,7 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { getProjectSessionsPath } from '../features/getProjectSessionsPath';
 import { removeSessionTitleOverride } from '../features/sessionTitleOverrides';
+import { MessageType } from '../../shared';
 
 export async function deleteSessionHandler(
   connectionId: string,
@@ -15,7 +16,7 @@ export async function deleteSessionHandler(
   const sessionId = message.payload?.sessionId as string | undefined;
 
   if (!sessionId) {
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'error',
       error: 'Missing sessionId',
@@ -26,7 +27,7 @@ export async function deleteSessionHandler(
   try {
     // Validate sessionId to prevent path traversal (must be a simple filename component)
     if (sessionId !== basename(sessionId) || sessionId.includes('..')) {
-      connections.sendTo(connectionId, 'ACK', {
+      connections.sendTo(connectionId, MessageType.ACK, {
         requestId: message.requestId,
         status: 'error',
         error: 'Invalid sessionId',
@@ -36,7 +37,7 @@ export async function deleteSessionHandler(
 
     const workingDir = message.payload?.workingDir as string | undefined;
     if (!workingDir) {
-      connections.sendTo(connectionId, 'ACK', {
+      connections.sendTo(connectionId, MessageType.ACK, {
         requestId: message.requestId,
         status: 'error',
         error: 'workingDir is required',
@@ -52,7 +53,7 @@ export async function deleteSessionHandler(
     // (matches the guard in renameSession).
     const relativeSessionFile = relative(resolve(sessionsDir), sessionFile);
     if (relativeSessionFile.startsWith('..') || isAbsolute(relativeSessionFile)) {
-      connections.sendTo(connectionId, 'ACK', {
+      connections.sendTo(connectionId, MessageType.ACK, {
         requestId: message.requestId,
         status: 'error',
         error: 'Invalid sessionId',
@@ -66,14 +67,14 @@ export async function deleteSessionHandler(
     // inherit a stale custom title.
     await removeSessionTitleOverride(sessionsDir, sessionId);
 
-    connections.broadcastToAll('SESSIONS_UPDATED', {
+    connections.broadcastToAll(MessageType.SESSIONS_UPDATED, {
       action: 'delete',
       session: { sessionId },
     });
 
-    connections.sendTo(connectionId, 'ACK', { requestId: message.requestId, status: 'ok' });
+    connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId, status: 'ok' });
   } catch (err) {
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'error',
       error: err instanceof Error ? err.message : String(err),

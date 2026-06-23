@@ -3,6 +3,7 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { startTunnel, getTunnelStatus, TunnelError } from '../features/tunnel-manager';
 import { serverPort } from '../../config/environment';
+import { MessageType } from '../../shared';
 
 export async function tunnelStartHandler(
   connectionId: string,
@@ -13,7 +14,7 @@ export async function tunnelStartHandler(
   const port = typeof message.payload?.port === 'number' ? message.payload.port : serverPort;
 
   // ACK immediately so the frontend doesn't hit the 30s Bridge timeout
-  connections.sendTo(connectionId, 'ACK', {
+  connections.sendTo(connectionId, MessageType.ACK, {
     requestId: message.requestId,
     status: 'ok',
   });
@@ -24,7 +25,7 @@ export async function tunnelStartHandler(
       // Guard: tunnel may have been stopped while waiting for readiness
       const status = getTunnelStatus();
       if (status.enabled && status.url) {
-        connections.broadcastToAll('TUNNEL_STATUS', { enabled: true, url: tunnelUrl });
+        connections.broadcastToAll(MessageType.TUNNEL_STATUS, { enabled: true, url: tunnelUrl });
       }
     })
     .catch((err) => {
@@ -33,6 +34,6 @@ export async function tunnelStartHandler(
       if (status.url !== null) return;
       const error = err instanceof Error ? err.message : String(err);
       const errorCode = err instanceof TunnelError ? err.code : 'unknown';
-      connections.broadcastToAll('TUNNEL_STATUS', { enabled: false, url: null, error, errorCode });
+      connections.broadcastToAll(MessageType.TUNNEL_STATUS, { enabled: false, url: null, error, errorCode });
     });
 }

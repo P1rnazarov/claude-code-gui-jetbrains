@@ -2,6 +2,7 @@ import { plainToInstance } from 'class-transformer';
 import { BridgeClient } from '../bridge/BridgeClient';
 import { SessionMetaDto } from '../../dto';
 import type { ApiConfig } from '../ClaudeCodeApi';
+import { MessageType } from '@/shared';
 
 interface GetSessionsResponse {
   sessions: {
@@ -36,7 +37,7 @@ export class SessionsApi {
   async index(workingDir?: string): Promise<SessionMetaDto[]> {
     const dir = workingDir ?? this.getConfig().workingDir;
     const response = await this.bridge.request<GetSessionsResponse>(
-      'GET_SESSIONS',
+      MessageType.GET_SESSIONS,
       { workingDir: dir }
     );
 
@@ -54,7 +55,7 @@ export class SessionsApi {
    */
   async load(sessionId: string, workingDir?: string): Promise<void> {
     const dir = workingDir ?? this.getConfig().workingDir;
-    await this.bridge.request('LOAD_SESSION', { sessionId, workingDir: dir });
+    await this.bridge.request(MessageType.LOAD_SESSION, { sessionId, workingDir: dir });
   }
 
   /**
@@ -62,7 +63,7 @@ export class SessionsApi {
    * POST /sessions
    */
   async create(): Promise<void> {
-    await this.bridge.request('CREATE_SESSION', {});
+    await this.bridge.request(MessageType.CREATE_SESSION, {});
   }
 
   /**
@@ -71,7 +72,7 @@ export class SessionsApi {
    */
   async destroy(sessionId: string, workingDir?: string): Promise<void> {
     const dir = workingDir ?? this.getConfig().workingDir;
-    await this.bridge.request('DELETE_SESSION', { sessionId, workingDir: dir });
+    await this.bridge.request(MessageType.DELETE_SESSION, { sessionId, workingDir: dir });
   }
 
   /**
@@ -80,7 +81,7 @@ export class SessionsApi {
    */
   async rename(sessionId: string, title: string, workingDir?: string): Promise<void> {
     const dir = workingDir ?? this.getConfig().workingDir;
-    await this.bridge.request('RENAME_SESSION', { sessionId, title, workingDir: dir });
+    await this.bridge.request(MessageType.RENAME_SESSION, { sessionId, title, workingDir: dir });
   }
 
   /**
@@ -88,7 +89,7 @@ export class SessionsApi {
    * POST /sessions/:id/activate
    */
   async activate(sessionId: string): Promise<void> {
-    await this.bridge.request('SESSION_CHANGE', { sessionId });
+    await this.bridge.request(MessageType.SESSION_CHANGE, { sessionId });
   }
 
   /**
@@ -98,6 +99,6 @@ export class SessionsApi {
    */
   async reclaim(sessionId: string, workingDir?: string): Promise<void> {
     const dir = workingDir ?? this.getConfig().workingDir;
-    await this.bridge.request('RECLAIM_SESSION', { sessionId, workingDir: dir });
+    await this.bridge.request(MessageType.RECLAIM_SESSION, { sessionId, workingDir: dir });
   }
 }

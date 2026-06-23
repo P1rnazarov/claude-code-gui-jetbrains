@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { getCaretOffset, setCaretOffset } from '@/utils/domSelection';
+import { MessageType } from '@/shared';
 
 /**
  * Payload pushed by the backend over the `EDITOR_CONTEXT` IPC message.
@@ -120,7 +121,7 @@ export function useEditorContext(params: UseEditorContextParams): void {
   const lastTimeRef = useRef<number>(0);
 
   useEffect(() => {
-    return subscribe('EDITOR_CONTEXT', (message) => {
+    return subscribe(MessageType.EDITOR_CONTEXT, (message) => {
       const payload = parseEditorContextPayload(message.payload);
       if (!payload) return;
 

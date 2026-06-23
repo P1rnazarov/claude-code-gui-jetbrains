@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
+import { MessageType } from '@/shared';
 
 // ---------------------------------------------------------------------------
 // BridgeContext mock — LIST_PROJECT_FILES resolves with a fixed file/dir set so
@@ -14,7 +15,7 @@ interface ProjectFile {
 let projectFiles: ProjectFile[] = [];
 
 const sendMock = vi.fn((type: string) => {
-  if (type === 'LIST_PROJECT_FILES') {
+  if (type === MessageType.LIST_PROJECT_FILES) {
     return Promise.resolve({ requestId: 'r', files: projectFiles });
   }
   return Promise.resolve({});

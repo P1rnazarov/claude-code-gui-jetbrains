@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useRef } from 'react';
 import { setCaretOffset } from '@/utils/domSelection';
+import { MessageType } from '@/shared';
 
 // ---------------------------------------------------------------------------
 // BridgeContext mock — captures the EDITOR_CONTEXT handler so tests can
@@ -19,9 +20,9 @@ const subscribeMock = vi.fn((type: string, handler: Handler) => {
 });
 
 function emitEditorContext(payload: Record<string, unknown>) {
-  const handler = handlers.get('EDITOR_CONTEXT');
+  const handler = handlers.get(MessageType.EDITOR_CONTEXT);
   if (!handler) throw new Error('EDITOR_CONTEXT handler not registered');
-  handler({ type: 'EDITOR_CONTEXT', payload, timestamp: Date.now() });
+  handler({ type: MessageType.EDITOR_CONTEXT, payload, timestamp: Date.now() });
 }
 
 vi.mock('@/contexts/BridgeContext', () => ({
@@ -174,7 +175,7 @@ describe('useEditorContext — handler', () => {
       { value: '', currentWorkingDir: '/work' },
       onChange,
     );
-    expect(subscribeMock).toHaveBeenCalledWith('EDITOR_CONTEXT', expect.any(Function));
+    expect(subscribeMock).toHaveBeenCalledWith(MessageType.EDITOR_CONTEXT, expect.any(Function));
     unmount();
     expect(unsubscribeMock).toHaveBeenCalled();
   });

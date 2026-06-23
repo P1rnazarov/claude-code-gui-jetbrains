@@ -1,4 +1,4 @@
-import { ClientEnv } from '../shared';
+import { MessageType, ClientEnv } from '../shared';
 import type { IdeAdapter } from './IdeAdapter';
 import { getBridge } from '../api/bridge/Bridge';
 
@@ -16,37 +16,37 @@ export class JetBrainsAdapter implements IdeAdapter {
   }
 
   async openNewTab(): Promise<void> {
-    await getBridge().request('OPEN_NEW_TAB');
+    await getBridge().request(MessageType.OPEN_NEW_TAB);
     console.log('[JetBrainsAdapter] Sent OPEN_NEW_TAB via WebSocket bridge');
   }
 
   async openSession(sessionId: string): Promise<void> {
-    await getBridge().request('OPEN_SESSION', { sessionId });
+    await getBridge().request(MessageType.OPEN_SESSION, { sessionId });
     console.log('[JetBrainsAdapter] Sent OPEN_SESSION via WebSocket bridge:', sessionId);
   }
 
   async openSettings(): Promise<void> {
-    await getBridge().request('OPEN_SETTINGS');
+    await getBridge().request(MessageType.OPEN_SETTINGS);
     console.log('[JetBrainsAdapter] Sent OPEN_SETTINGS via WebSocket bridge');
   }
 
   async openFile(filePath: string): Promise<void> {
-    await getBridge().request('OPEN_FILE', { filePath });
+    await getBridge().request(MessageType.OPEN_FILE, { filePath });
     console.log('[JetBrainsAdapter] Sent OPEN_FILE via WebSocket bridge:', filePath);
   }
 
   async openTerminal(workingDir: string): Promise<void> {
-    await getBridge().request('OPEN_TERMINAL', { workingDir });
+    await getBridge().request(MessageType.OPEN_TERMINAL, { workingDir });
     console.log('[JetBrainsAdapter] Sent OPEN_TERMINAL via WebSocket bridge:', workingDir);
   }
 
   async openUrl(url: string): Promise<void> {
-    await getBridge().request('OPEN_URL', { url });
+    await getBridge().request(MessageType.OPEN_URL, { url });
     console.log('[JetBrainsAdapter] Sent OPEN_URL via WebSocket bridge:', url);
   }
 
   async restartBackend(): Promise<void> {
-    await getBridge().request('RESTART_BACKEND');
+    await getBridge().request(MessageType.RESTART_BACKEND);
     console.log('[JetBrainsAdapter] Sent RESTART_BACKEND via WebSocket bridge');
   }
 }

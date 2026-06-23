@@ -19,6 +19,7 @@ import { removeSessionTitleOverride } from '../../features/sessionTitleOverrides
 import type { ConnectionManager } from '../../../ws/connection-manager';
 import type { Bridge } from '../../../bridge/bridge-interface';
 import type { IPCMessage } from '../../types';
+import { MessageType } from '../../../shared';
 
 const mockUnlink = vi.mocked(unlink);
 const mockGetPath = vi.mocked(getProjectSessionsPath);
@@ -41,11 +42,11 @@ describe('deleteSessionHandler', () => {
 
   it('should return error when sessionId is missing', async () => {
     const connections = createMockConnections();
-    const message: IPCMessage = { type: 'DELETE_SESSION', payload: {}, timestamp: 0, requestId: 'req-1' };
+    const message: IPCMessage = { type: MessageType.DELETE_SESSION, payload: {}, timestamp: 0, requestId: 'req-1' };
 
     await deleteSessionHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
       status: 'error',
       error: 'Missing sessionId',
     }));
@@ -54,7 +55,7 @@ describe('deleteSessionHandler', () => {
   it('should reject path traversal with .. in sessionId', async () => {
     const connections = createMockConnections();
     const message: IPCMessage = {
-      type: 'DELETE_SESSION',
+      type: MessageType.DELETE_SESSION,
       payload: { sessionId: '../../../etc/passwd', workingDir: '/test' },
       timestamp: 0,
       requestId: 'req-1',
@@ -62,7 +63,7 @@ describe('deleteSessionHandler', () => {
 
     await deleteSessionHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
       status: 'error',
       error: 'Invalid sessionId',
     }));
@@ -72,7 +73,7 @@ describe('deleteSessionHandler', () => {
   it('should reject sessionId with path separator', async () => {
     const connections = createMockConnections();
     const message: IPCMessage = {
-      type: 'DELETE_SESSION',
+      type: MessageType.DELETE_SESSION,
       payload: { sessionId: 'subdir/file', workingDir: '/test' },
       timestamp: 0,
       requestId: 'req-1',
@@ -80,7 +81,7 @@ describe('deleteSessionHandler', () => {
 
     await deleteSessionHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
       status: 'error',
       error: 'Invalid sessionId',
     }));
@@ -89,7 +90,7 @@ describe('deleteSessionHandler', () => {
   it('should return error when workingDir is missing', async () => {
     const connections = createMockConnections();
     const message: IPCMessage = {
-      type: 'DELETE_SESSION',
+      type: MessageType.DELETE_SESSION,
       payload: { sessionId: 'valid-session-id' },
       timestamp: 0,
       requestId: 'req-1',
@@ -97,7 +98,7 @@ describe('deleteSessionHandler', () => {
 
     await deleteSessionHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
       status: 'error',
       error: 'workingDir is required',
     }));
@@ -107,7 +108,7 @@ describe('deleteSessionHandler', () => {
     const connections = createMockConnections();
     mockUnlink.mockResolvedValue(undefined);
     const message: IPCMessage = {
-      type: 'DELETE_SESSION',
+      type: MessageType.DELETE_SESSION,
       payload: { sessionId: 'abc123', workingDir: '/test' },
       timestamp: 0,
       requestId: 'req-1',
@@ -117,11 +118,11 @@ describe('deleteSessionHandler', () => {
 
     expect(mockUnlink).toHaveBeenCalled();
     expect(mockRemoveOverride).toHaveBeenCalledWith('/home/user/.claude/projects/-test', 'abc123');
-    expect(connections.broadcastToAll).toHaveBeenCalledWith('SESSIONS_UPDATED', {
+    expect(connections.broadcastToAll).toHaveBeenCalledWith(MessageType.SESSIONS_UPDATED, {
       action: 'delete',
       session: { sessionId: 'abc123' },
     });
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
       status: 'ok',
     }));
   });
@@ -130,7 +131,7 @@ describe('deleteSessionHandler', () => {
     const connections = createMockConnections();
     mockUnlink.mockRejectedValue(new Error('ENOENT'));
     const message: IPCMessage = {
-      type: 'DELETE_SESSION',
+      type: MessageType.DELETE_SESSION,
       payload: { sessionId: 'abc123', workingDir: '/test' },
       timestamp: 0,
       requestId: 'req-1',
@@ -138,7 +139,7 @@ describe('deleteSessionHandler', () => {
 
     await deleteSessionHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
       status: 'error',
       error: 'ENOENT',
     }));

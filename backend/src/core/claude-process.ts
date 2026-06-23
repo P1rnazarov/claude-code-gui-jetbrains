@@ -6,6 +6,7 @@ import { getStrippableAuthEnvKeys } from './features/claude-settings';
 import { EditedFileTracker } from './features/editedFileTracker';
 import { isWslUncPath } from './wsl-path';
 import { reportBackendError } from './features/telemetry';
+import { MessageType } from '../shared';
 
 // Tracks files Claude edits so the IDE can be told to reload them once the
 // edit completes on disk. Shared across sessions — tool_use ids are unique.
@@ -57,12 +58,12 @@ export async function ensureClaudeProcess(
       '(run `ccg` in a WSL terminal) so Claude runs with bash and a Linux working ' +
       'directory instead of failing on the Windows UNC path.';
     console.error('[node-backend]', msg);
-    connections.broadcastToSession(targetSessionId, 'SERVICE_ERROR', {
-      type: 'WSL_HOST_MISMATCH',
+    connections.broadcastToSession(targetSessionId, MessageType.SERVICE_ERROR, {
+      type: MessageType.WSL_HOST_MISMATCH,
       reason: msg,
       error: msg,
     });
-    connections.broadcastToSession(targetSessionId, 'STREAM_END');
+    connections.broadcastToSession(targetSessionId, MessageType.STREAM_END);
     return;
   }
 
@@ -139,12 +140,12 @@ export async function ensureClaudeProcess(
       // up through ensureClaudeProcess → sendMessageHandler → the ws-server handler
       // boundary, which reports it once via reportBackendError. Reporting here too
       // would double-count.
-      connections.broadcastToSession(targetSessionId, 'SERVICE_ERROR', {
-        type: 'SPAWN_ERROR',
+      connections.broadcastToSession(targetSessionId, MessageType.SERVICE_ERROR, {
+        type: MessageType.SPAWN_ERROR,
         reason: err.message,
         error: err.message,
       });
-      connections.broadcastToSession(targetSessionId, 'STREAM_END');
+      connections.broadcastToSession(targetSessionId, MessageType.STREAM_END);
 
       const session = connections.getSession(targetSessionId);
       if (session) {
@@ -162,7 +163,7 @@ export async function ensureClaudeProcess(
   connections.setBuffer(targetSessionId, '');
 
   // 모든 구독자에게 스트림 시작 알림
-  connections.broadcastToSession(targetSessionId, 'STREAM_START');
+  connections.broadcastToSession(targetSessionId, MessageType.STREAM_START);
 
   proc.stdout?.on('data', (data: Buffer) => {
     // claude CLI stdout streaming runs outside the handleMessage flow, so the ws-server
@@ -231,8 +232,8 @@ export async function ensureClaudeProcess(
       // 비정상 종료 + result 미수신 → 에러 전파
       if (code !== 0 && !sessionsWithResult.has(targetSessionId)) {
         const errorMessage = stderrBuffer.trim() || `Claude CLI exited with code ${code}`;
-        connections.broadcastToSession(targetSessionId, 'SERVICE_ERROR', {
-          type: 'CLI_EXIT_ERROR',
+        connections.broadcastToSession(targetSessionId, MessageType.SERVICE_ERROR, {
+          type: MessageType.CLI_EXIT_ERROR,
           reason: errorMessage,
           error: errorMessage,
           exitCode: code,
@@ -244,7 +245,7 @@ export async function ensureClaudeProcess(
       // 추적 정리
       sessionsWithResult.delete(targetSessionId);
 
-      connections.broadcastToSession(targetSessionId, 'STREAM_END');
+      connections.broadcastToSession(targetSessionId, MessageType.STREAM_END);
 
       // 프로세스 참조만 해제 (세션 레코드는 유지 — 구독자가 아직 있을 수 있음)
       connections.setProcess(targetSessionId, null);
@@ -458,7 +459,7 @@ function handleStreamEvent(
   // 백엔드 고유 사이드이펙트 (WebView 전달과 무관한 서버 내부 로직)
   if (eventType === 'result') {
     sessionsWithResult.add(targetSessionId);
-    connections.broadcastToAll('SESSIONS_UPDATED', {
+    connections.broadcastToAll(MessageType.SESSIONS_UPDATED, {
       action: 'upsert',
       session: {
         sessionId: event.session_id ?? targetSessionId,
@@ -473,5 +474,5 @@ function handleStreamEvent(
   }
 
   // 모든 CLI 이벤트를 있는 그대로 전달 — 타입별 분기/가공 없음
-  connections.broadcastToSession(targetSessionId, 'CLI_EVENT', event);
+  connections.broadcastToSession(targetSessionId, MessageType.CLI_EVENT, event);
 }

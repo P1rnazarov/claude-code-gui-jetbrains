@@ -1,6 +1,7 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { MessageType } from '../../shared';
 
 export async function openSettingsHandler(
   connectionId: string,
@@ -15,5 +16,5 @@ export async function openSettingsHandler(
     const msg = err instanceof Error ? err.message : JSON.stringify(err);
     console.error('[node-backend]', `bridge.openSettings() failed: ${msg}`);
   }
-  connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
 }

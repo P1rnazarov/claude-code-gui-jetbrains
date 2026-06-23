@@ -2,6 +2,7 @@
 
 import type { Connector, ConnectionChangeHandler } from './Connector';
 import { WebSocketConnector } from './WebSocketConnector';
+import { MessageType } from '@/shared';
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 export const LOGIN_REQUEST_TIMEOUT_MS = 300_000;
@@ -202,7 +203,7 @@ export class Bridge {
     console.log('[Bridge] Received message:', message.type, message);
 
     // ACK 처리 (기존 useBridge.ts 33-43행)
-    if (message.type === 'ACK') {
+    if (message.type === MessageType.ACK) {
       const requestId = (message.requestId || message.payload?.requestId) as string;
       if (requestId) {
         const pending = this.pending.get(requestId);
@@ -216,7 +217,7 @@ export class Bridge {
     }
 
     // ERROR 처리 (기존 useBridge.ts 46-53행)
-    if (message.type === 'ERROR' && message.requestId) {
+    if (message.type === MessageType.ERROR && message.requestId) {
       const pending = this.pending.get(message.requestId);
       if (pending) {
         clearTimeout(pending.timeoutId);

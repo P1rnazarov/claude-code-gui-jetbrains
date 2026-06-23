@@ -3,6 +3,7 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { loadSessionMessages } from '../features/loadSessionMessages';
 import { markSessionAsSpawned } from '../claude-process';
+import { MessageType } from '../../shared';
 
 export async function loadSessionHandler(
   connectionId: string,
@@ -14,7 +15,7 @@ export async function loadSessionHandler(
   const sessionId = message.payload?.sessionId as string;
 
   if (!workingDir) {
-    connections.sendTo(connectionId, 'ERROR', {
+    connections.sendTo(connectionId, MessageType.ERROR, {
       requestId: message.requestId,
       error: 'workingDir is required',
     });
@@ -26,10 +27,10 @@ export async function loadSessionHandler(
     markSessionAsSpawned(sessionId);
     connections.subscribe(connectionId, sessionId);
     const messages = await loadSessionMessages(workingDir, sessionId);
-    connections.sendTo(connectionId, 'SESSION_LOADED', {
+    connections.sendTo(connectionId, MessageType.SESSION_LOADED, {
       sessionId,
       messages,
     });
   }
-  connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
 }

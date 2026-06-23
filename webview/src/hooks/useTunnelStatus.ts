@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useBridge } from './useBridge';
 import type { TunnelErrorCode } from './tunnelError';
+import { MessageType } from '@/shared';
 
 interface TunnelStatus {
   tunnelEnabled: boolean;
@@ -41,7 +42,7 @@ export function useTunnelStatus(): TunnelStatus {
   const startTunnelNow = useCallback(async () => {
     setTunnelLoading(true);
     try {
-      const res = await send('TUNNEL_START', { port: Number(window.location.port) || 80 });
+      const res = await send(MessageType.TUNNEL_START, { port: Number(window.location.port) || 80 });
       if (res.status === 'error') {
         setError(res.error as string);
         setErrorCode('unknown');
@@ -54,7 +55,7 @@ export function useTunnelStatus(): TunnelStatus {
 
   // Fetch initial status
   useEffect(() => {
-    send('GET_TUNNEL_STATUS', {}).then((res) => {
+    send(MessageType.GET_TUNNEL_STATUS, {}).then((res) => {
       const p = res.payload ?? res;
       if (p.status === 'ok') {
         setTunnelEnabled(p.tunnel.enabled);
@@ -66,7 +67,7 @@ export function useTunnelStatus(): TunnelStatus {
 
   // Probe prerequisites (cloudflared availability) so the UI can warn/ask upfront
   useEffect(() => {
-    send('GET_TUNNEL_PREREQS', {}).then((res) => {
+    send(MessageType.GET_TUNNEL_PREREQS, {}).then((res) => {
       const p = res.payload ?? res;
       if (p.status === 'ok') setCloudflaredAvailable(Boolean(p.cloudflaredAvailable));
     }).catch(() => {});
@@ -74,7 +75,7 @@ export function useTunnelStatus(): TunnelStatus {
 
   // Subscribe to broadcast updates
   useEffect(() => {
-    const unsubTunnel = subscribe('TUNNEL_STATUS', (msg) => {
+    const unsubTunnel = subscribe(MessageType.TUNNEL_STATUS, (msg) => {
       const p = msg.payload as Record<string, unknown>;
       setTunnelEnabled(p.enabled as boolean);
       setTunnelUrl(p.url as string | null);
@@ -84,7 +85,7 @@ export function useTunnelStatus(): TunnelStatus {
         setErrorCode((p.errorCode as TunnelErrorCode) ?? 'unknown');
       }
     });
-    const unsubInstall = subscribe('CLOUDFLARED_INSTALL_STATUS', (msg) => {
+    const unsubInstall = subscribe(MessageType.CLOUDFLARED_INSTALL_STATUS, (msg) => {
       const p = msg.payload as Record<string, unknown>;
       setInstalling(false);
       if (p.status === 'installed') {
@@ -95,7 +96,7 @@ export function useTunnelStatus(): TunnelStatus {
         setErrorCode('cloudflared-missing');
       }
     });
-    const unsubSleep = subscribe('SLEEP_GUARD_STATUS', (msg) => {
+    const unsubSleep = subscribe(MessageType.SLEEP_GUARD_STATUS, (msg) => {
       const p = msg.payload as Record<string, unknown>;
       setPreventSleep(p.enabled as boolean);
       setSleepLoading(false);
@@ -116,9 +117,9 @@ export function useTunnelStatus(): TunnelStatus {
     } else {
       setAwaitingInstallConsent(false);
       if (preventSleep) {
-        await send('SLEEP_GUARD_DISABLE', {}).catch(() => {});
+        await send(MessageType.SLEEP_GUARD_DISABLE, {}).catch(() => {});
       }
-      await send('TUNNEL_STOP', {}).catch(() => {});
+      await send(MessageType.TUNNEL_STOP, {}).catch(() => {});
     }
   }, [cloudflaredAvailable, startTunnelNow, preventSleep, send]);
 
@@ -129,7 +130,7 @@ export function useTunnelStatus(): TunnelStatus {
     setInstalling(true);
     // Outcome arrives via the CLOUDFLARED_INSTALL_STATUS broadcast, which then
     // starts the tunnel on success.
-    await send('INSTALL_CLOUDFLARED', {}).catch(() => {
+    await send(MessageType.INSTALL_CLOUDFLARED, {}).catch(() => {
       setInstalling(false);
       setError('Installation failed');
       setErrorCode('cloudflared-missing');
@@ -145,7 +146,7 @@ export function useTunnelStatus(): TunnelStatus {
     if (checked) {
       setSleepLoading(true);
       try {
-        const res = await send('SLEEP_GUARD_ENABLE', {});
+        const res = await send(MessageType.SLEEP_GUARD_ENABLE, {});
         if (res.status === 'error') {
           setError(res.error as string);
           setSleepLoading(false);
@@ -154,7 +155,7 @@ export function useTunnelStatus(): TunnelStatus {
         setSleepLoading(false);
       }
     } else {
-      await send('SLEEP_GUARD_DISABLE', {}).catch(() => {});
+      await send(MessageType.SLEEP_GUARD_DISABLE, {}).catch(() => {});
     }
   }, [send]);
 

@@ -4,6 +4,7 @@ import type { IPCMessage } from '../types';
 import { setTelemetryConsent, readProfile, ConsentStatus } from '../features/profile';
 import { trackEvent } from '../features/telemetry';
 import { getPluginVersion } from './getVersion';
+import { MessageType } from '../../shared';
 
 /**
  * 텔레메트리 수락(accept)/거부(deny)를 profile.json에 기록하고, 'telemetry_consent'
@@ -41,7 +42,7 @@ export async function setTelemetryConsentHandler(
   }
 
   const profile = await readProfile();
-  connections.sendTo(connectionId, 'ACK', {
+  connections.sendTo(connectionId, MessageType.ACK, {
     requestId: message.requestId,
     status: 'ok',
     consentStatus: profile.telemetryConsent.status,

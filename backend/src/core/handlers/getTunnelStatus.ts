@@ -3,6 +3,7 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { getTunnelStatus, validateTunnelStatus } from '../features/tunnel-manager';
 import { getSleepGuardStatus } from '../features/sleep-guard';
+import { MessageType } from '../../shared';
 
 export async function getTunnelStatusHandler(
   connectionId: string,
@@ -16,7 +17,7 @@ export async function getTunnelStatusHandler(
 
     const tunnel = getTunnelStatus();
     const sleepGuard = getSleepGuardStatus();
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'ok',
       tunnel,
@@ -25,11 +26,11 @@ export async function getTunnelStatusHandler(
 
     // Broadcast corrected status so all subscribers (e.g. TunnelButton) update
     if (stateChanged) {
-      connections.broadcastToAll('TUNNEL_STATUS', { enabled: tunnel.enabled, url: tunnel.url });
+      connections.broadcastToAll(MessageType.TUNNEL_STATUS, { enabled: tunnel.enabled, url: tunnel.url });
     }
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'error',
       error,

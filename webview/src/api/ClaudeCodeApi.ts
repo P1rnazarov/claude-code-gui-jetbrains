@@ -3,6 +3,7 @@ import { SessionsApi } from './modules/SessionsApi';
 import { MessagesApi } from './modules/MessagesApi';
 import { ToolsApi } from './modules/ToolsApi';
 import { SoundsApi } from './modules/SoundsApi';
+import { MessageType } from '@/shared';
 
 /**
  * API configuration options
@@ -88,14 +89,14 @@ export class ClaudeCodeApi {
    * Start the CLI service
    */
   async startService(): Promise<void> {
-    await this.bridge.request('START_SESSION', {});
+    await this.bridge.request(MessageType.START_SESSION, {});
   }
 
   /**
    * Stop the CLI service
    */
   async stopService(): Promise<void> {
-    await this.bridge.request('STOP_SESSION', {});
+    await this.bridge.request(MessageType.STOP_SESSION, {});
   }
 
   /**
@@ -104,7 +105,7 @@ export class ClaudeCodeApi {
   onStateChange(
     callback: (state: string) => void
   ): () => void {
-    return this.bridge.subscribe('STATE_CHANGE', (message) => {
+    return this.bridge.subscribe(MessageType.STATE_CHANGE, (message) => {
       callback(message.payload?.state as string);
     });
   }

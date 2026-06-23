@@ -2,6 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { loadCliConfig } from '../features/loadCliConfig';
+import { MessageType } from '../../shared';
 
 export async function getCliConfigHandler(
   connectionId: string,
@@ -24,14 +25,14 @@ export async function getCliConfigHandler(
       console.error('[node-backend]', 'CLI config: null (CLI may not be available)');
     }
 
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'ok',
       controlResponse,
     });
   } catch (err) {
     console.error('[node-backend]', 'Failed to load CLI config:', err);
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'error',
       error: err instanceof Error ? err.message : String(err),

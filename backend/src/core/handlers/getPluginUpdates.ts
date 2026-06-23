@@ -1,6 +1,7 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { MessageType } from '../../shared';
 
 const CACHE_TTL_MS = 60_000;
 let cachedUpdates: unknown = null;
@@ -14,7 +15,7 @@ export async function getPluginUpdatesHandler(
   _bridge: Bridge,
 ): Promise<void> {
   if (cachedUpdates !== null && Date.now() - cachedAt < CACHE_TTL_MS) {
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'ok',
       updates: cachedUpdates,
@@ -29,7 +30,7 @@ export async function getPluginUpdatesHandler(
       } catch {
         // absorb inflight rejection; respond based on cachedUpdates
       }
-      connections.sendTo(connectionId, 'ACK', {
+      connections.sendTo(connectionId, MessageType.ACK, {
         requestId: message.requestId,
         status: cachedUpdates !== null ? 'ok' : 'error',
         ...(cachedUpdates !== null
@@ -57,13 +58,13 @@ export async function getPluginUpdatesHandler(
 
     const updates = await inflightPromise;
 
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'ok',
       updates,
     });
   } catch (err) {
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'error',
       error: err instanceof Error ? err.message : String(err),

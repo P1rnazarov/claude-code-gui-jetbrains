@@ -5,6 +5,7 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { getProjectSessionsPath } from '../features/getProjectSessionsPath';
 import { writeSessionTitleOverride } from '../features/sessionTitleOverrides';
+import { MessageType } from '../../shared';
 
 export async function renameSessionHandler(
   connectionId: string,
@@ -17,7 +18,7 @@ export async function renameSessionHandler(
   const workingDir = message.payload?.workingDir as string | undefined;
 
   if (!sessionId || !title || !workingDir) {
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'error',
       error: 'sessionId, title, and workingDir are required',
@@ -27,7 +28,7 @@ export async function renameSessionHandler(
 
   try {
     if (sessionId !== basename(sessionId) || sessionId.includes('..')) {
-      connections.sendTo(connectionId, 'ACK', {
+      connections.sendTo(connectionId, MessageType.ACK, {
         requestId: message.requestId,
         status: 'error',
         error: 'Invalid sessionId',
@@ -39,7 +40,7 @@ export async function renameSessionHandler(
     const sessionFile = resolve(sessionsDir, `${sessionId}.jsonl`);
     const relativeSessionFile = relative(resolve(sessionsDir), sessionFile);
     if (relativeSessionFile.startsWith('..') || isAbsolute(relativeSessionFile) || !existsSync(sessionFile)) {
-      connections.sendTo(connectionId, 'ACK', {
+      connections.sendTo(connectionId, MessageType.ACK, {
         requestId: message.requestId,
         status: 'error',
         error: 'Session not found',
@@ -49,14 +50,14 @@ export async function renameSessionHandler(
 
     await writeSessionTitleOverride(sessionsDir, sessionId, title);
 
-    connections.broadcastToAll('SESSIONS_UPDATED', {
+    connections.broadcastToAll(MessageType.SESSIONS_UPDATED, {
       action: 'rename',
       session: { sessionId, title },
     });
 
-    connections.sendTo(connectionId, 'ACK', { requestId: message.requestId, status: 'ok' });
+    connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId, status: 'ok' });
   } catch (err) {
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'error',
       error: err instanceof Error ? err.message : String(err),

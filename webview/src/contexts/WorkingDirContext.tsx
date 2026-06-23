@@ -3,6 +3,7 @@ import {NavigateOptions, useNavigate, useSearchParams} from 'react-router-dom';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { useApi } from '@/contexts/ApiContext';
 import { Route, routeToPath, withWorkingDir } from '@/router/routes';
+import { MessageType } from '@/shared';
 
 interface WorkingDirContextValue {
   workingDirectory: string | null;
@@ -72,12 +73,12 @@ export function WorkingDirProvider(props: Props) {
   useEffect(() => {
     if (!isConnected) return;
     let cancelled = false;
-    const unsubscribe = subscribe('IDE_ROOT', (message) => {
+    const unsubscribe = subscribe(MessageType.IDE_ROOT, (message) => {
       if (cancelled) return;
       const next = message.payload?.ideRoot;
       setIdeRoot(typeof next === 'string' && next.length > 0 ? next : null);
     });
-    void send('GET_IDE_ROOT', workingDirectory ? { workingDir: workingDirectory } : {});
+    void send(MessageType.GET_IDE_ROOT, workingDirectory ? { workingDir: workingDirectory } : {});
     return () => {
       cancelled = true;
       unsubscribe();

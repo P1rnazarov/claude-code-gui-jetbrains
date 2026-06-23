@@ -2,6 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { sendInterruptToProcess } from '../claude-process';
+import { MessageType } from '../../shared';
 
 export function stopSessionHandler(
   connectionId: string,
@@ -25,5 +26,5 @@ export function stopSessionHandler(
       }
     }
   }
-  connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
 }

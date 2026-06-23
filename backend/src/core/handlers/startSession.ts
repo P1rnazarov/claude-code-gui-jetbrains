@@ -2,6 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { ensureClaudeProcess } from '../claude-process';
+import { MessageType } from '../../shared';
 
 export async function startSessionHandler(
   connectionId: string,
@@ -13,7 +14,7 @@ export async function startSessionHandler(
   const sessionId = message.payload?.sessionId as string | undefined;
 
   if (!workingDir) {
-    connections.sendTo(connectionId, 'ERROR', {
+    connections.sendTo(connectionId, MessageType.ERROR, {
       requestId: message.requestId,
       error: 'workingDir is required',
     });
@@ -31,5 +32,5 @@ export async function startSessionHandler(
     console.error('[node-backend]', 'startSession failed:', err);
   }
 
-  connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
 }

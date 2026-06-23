@@ -1,6 +1,7 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { MessageType } from '../../shared';
 
 /**
  * Report the `node` executable currently running this backend.
@@ -18,7 +19,7 @@ export async function getDetectedNodePathHandler(
   connections: ConnectionManager,
   _bridge: Bridge,
 ): Promise<void> {
-  connections.sendTo(connectionId, 'ACK', {
+  connections.sendTo(connectionId, MessageType.ACK, {
     requestId: message.requestId,
     path: process.execPath || null,
   });

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { Route } from '@/router/routes';
+import { MessageType } from '@/shared';
 
 const { mockNavigate, mockRequest, mockRefetch, mockSubscribe, mockSendRaw, mockOpenUrl } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
@@ -96,9 +97,9 @@ describe('SwitchAccountPage', () => {
     render(<SwitchAccountPage />);
     fireEvent.click(screen.getByText('Claude.ai Subscription'));
 
-    await waitFor(() => expect(handlers['LOGIN_URL_AVAILABLE']).toBeDefined());
+    await waitFor(() => expect(handlers[MessageType.LOGIN_URL_AVAILABLE]).toBeDefined());
     act(() => {
-      handlers['LOGIN_URL_AVAILABLE']({ type: 'LOGIN_URL_AVAILABLE', payload: { url: 'https://claude.ai/oauth/authorize?a=1' } });
+      handlers[MessageType.LOGIN_URL_AVAILABLE]({ type: MessageType.LOGIN_URL_AVAILABLE, payload: { url: 'https://claude.ai/oauth/authorize?a=1' } });
     });
 
     // The modal is open but the code field is collapsed by default.
@@ -113,7 +114,7 @@ describe('SwitchAccountPage', () => {
     fireEvent.click(screen.getByText('Submit code'));
 
     expect(mockSendRaw).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'SUBMIT_LOGIN_CODE', payload: { code: 'my-code' } }),
+      expect.objectContaining({ type: MessageType.SUBMIT_LOGIN_CODE, payload: { code: 'my-code' } }),
     );
 
     // Completing the login navigates as usual.
@@ -131,14 +132,14 @@ describe('SwitchAccountPage', () => {
     render(<SwitchAccountPage />);
     fireEvent.click(screen.getByText('Claude.ai Subscription'));
 
-    await waitFor(() => expect(handlers['LOGIN_URL_AVAILABLE']).toBeDefined());
+    await waitFor(() => expect(handlers[MessageType.LOGIN_URL_AVAILABLE]).toBeDefined());
     // No modal, nothing opened until the URL arrives.
     expect(screen.queryByText('Open sign-in page')).toBeNull();
     expect(mockOpenUrl).not.toHaveBeenCalled();
 
     const url = 'https://claude.ai/oauth/authorize?code=abc&state=xyz';
     act(() => {
-      handlers['LOGIN_URL_AVAILABLE']({ type: 'LOGIN_URL_AVAILABLE', payload: { url } });
+      handlers[MessageType.LOGIN_URL_AVAILABLE]({ type: MessageType.LOGIN_URL_AVAILABLE, payload: { url } });
     });
 
     const openBtn = await screen.findByText('Open sign-in page');

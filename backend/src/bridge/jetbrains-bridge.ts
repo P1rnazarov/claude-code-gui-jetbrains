@@ -1,12 +1,7 @@
 import type { Bridge } from './bridge-interface';
 import type { WebSocket } from 'ws';
 import { extractRoutingPath, selectRpcClientIndex } from './rpc-routing';
-
-/**
- * Notification (IDE → backend) by which each IDE host advertises the project
- * roots it serves, so cross-IDE requests can be routed to the right client.
- */
-const REGISTER_PROJECT_ROOTS = 'REGISTER_PROJECT_ROOTS';
+import { MessageType } from '../shared';
 
 interface JsonRpcRequest {
   jsonrpc: '2.0';
@@ -81,7 +76,7 @@ export class JetBrainsBridge implements Bridge {
         const notification = parsed as JsonRpcNotification;
         // Built-in: an IDE advertising the project roots it serves. Handled here
         // (not via notificationHandlers) because it is bound to *this* socket.
-        if (notification.method === REGISTER_PROJECT_ROOTS) {
+        if (notification.method === MessageType.REGISTER_PROJECT_ROOTS) {
           this.clientRoots.set(ws, parseProjectRoots(notification.params));
           return;
         }
@@ -162,7 +157,7 @@ export class JetBrainsBridge implements Bridge {
   }
 
   async openFile(path: string): Promise<void> {
-    await this.request('OPEN_FILE', { path });
+    await this.request(MessageType.OPEN_FILE, { path });
   }
 
   async openDiff(params: {
@@ -171,7 +166,7 @@ export class JetBrainsBridge implements Bridge {
     newContent: string;
     toolUseId?: string;
   }): Promise<void> {
-    await this.request('OPEN_DIFF', params);
+    await this.request(MessageType.OPEN_DIFF, params);
   }
 
   async applyDiff(params: {
@@ -179,64 +174,64 @@ export class JetBrainsBridge implements Bridge {
     newContent: string;
     toolUseId?: string;
   }): Promise<{ applied: boolean }> {
-    const result = await this.request('APPLY_DIFF', params);
+    const result = await this.request(MessageType.APPLY_DIFF, params);
     return { applied: result['applied'] === true };
   }
 
   async rejectDiff(params: { toolUseId?: string }): Promise<void> {
-    await this.request('REJECT_DIFF', params ?? {});
+    await this.request(MessageType.REJECT_DIFF, params ?? {});
   }
 
   async refreshFiles(params: { paths: string[] }): Promise<void> {
-    await this.request('REFRESH_FILES', { paths: params.paths });
+    await this.request(MessageType.REFRESH_FILES, { paths: params.paths });
   }
 
   async createSession(workingDir?: string): Promise<void> {
-    await this.request('CREATE_SESSION', workingDir ? { workingDir } : {});
+    await this.request(MessageType.CREATE_SESSION, workingDir ? { workingDir } : {});
   }
 
   async openNewTab(workingDir?: string): Promise<void> {
-    await this.request('OPEN_NEW_TAB', workingDir ? { workingDir } : {});
+    await this.request(MessageType.OPEN_NEW_TAB, workingDir ? { workingDir } : {});
   }
 
   async openSession(sessionId: string, workingDir?: string): Promise<void> {
     const params: Record<string, unknown> = { sessionId };
     if (workingDir) params.workingDir = workingDir;
-    await this.request('OPEN_SESSION', params);
+    await this.request(MessageType.OPEN_SESSION, params);
   }
 
   async openSettings(workingDir?: string): Promise<void> {
-    await this.request('OPEN_SETTINGS', workingDir ? { workingDir } : {});
+    await this.request(MessageType.OPEN_SETTINGS, workingDir ? { workingDir } : {});
   }
 
   async openTerminal(workingDir: string): Promise<void> {
-    await this.request('OPEN_TERMINAL', { workingDir });
+    await this.request(MessageType.OPEN_TERMINAL, { workingDir });
   }
 
   async openUrl(url: string): Promise<void> {
-    await this.request('OPEN_URL', { url });
+    await this.request(MessageType.OPEN_URL, { url });
   }
 
   async pickFiles(options: {
     mode: 'files' | 'folders' | 'both';
     multiple?: boolean;
   }): Promise<{ paths: string[] }> {
-    const result = await this.request('PICK_FILES', options as unknown as Record<string, unknown>);
+    const result = await this.request(MessageType.PICK_FILES, options as unknown as Record<string, unknown>);
     const paths = result['paths'];
     return { paths: Array.isArray(paths) ? (paths as string[]) : [] };
   }
 
   async updatePlugin(): Promise<void> {
-    await this.request('UPDATE_PLUGIN', {});
+    await this.request(MessageType.UPDATE_PLUGIN, {});
   }
 
   async requiresRestart(): Promise<boolean> {
-    const result = await this.request('REQUIRES_RESTART', {});
+    const result = await this.request(MessageType.REQUIRES_RESTART, {});
     return result['requiresRestart'] === true;
   }
 
   async getIdeRoot(workingDir?: string): Promise<string | null> {
-    const result = await this.request('GET_IDE_ROOT', workingDir ? { workingDir } : {});
+    const result = await this.request(MessageType.GET_IDE_ROOT, workingDir ? { workingDir } : {});
     const ideRoot = result['ideRoot'];
     return typeof ideRoot === 'string' && ideRoot.length > 0 ? ideRoot : null;
   }

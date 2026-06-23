@@ -11,6 +11,7 @@ const mockExecFile = vi.mocked(execFile);
 import type { ConnectionManager } from '../../../ws/connection-manager';
 import type { Bridge } from '../../../bridge/bridge-interface';
 import type { IPCMessage } from '../../types';
+import { MessageType } from '../../../shared';
 
 function createMockConnections() {
   return {
@@ -60,7 +61,7 @@ describe('getUsageHandler', () => {
 
   it('should return usage data on successful ccb execution', async () => {
     const connections = createMockConnections();
-    const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+    const message: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
     setupExecFileSuccess(SAMPLE_USAGE);
 
     await getUsageHandler('conn-1', message, connections, mockBridge);
@@ -74,7 +75,7 @@ describe('getUsageHandler', () => {
       expect.objectContaining({ timeout: 15000 }),
       expect.any(Function),
     );
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', {
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, {
       requestId: 'req-1',
       status: 'ok',
       usage: SAMPLE_USAGE,
@@ -83,7 +84,7 @@ describe('getUsageHandler', () => {
 
   it('should not include error_kind on successful response', async () => {
     const connections = createMockConnections();
-    const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+    const message: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
     setupExecFileSuccess(SAMPLE_USAGE);
 
     await getUsageHandler('conn-1', message, connections, mockBridge);
@@ -95,15 +96,15 @@ describe('getUsageHandler', () => {
 
   it('should return cached data on second call within TTL', async () => {
     const connections = createMockConnections();
-    const message1: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
-    const message2: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-2' };
+    const message1: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
+    const message2: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-2' };
     setupExecFileSuccess(SAMPLE_USAGE);
 
     await getUsageHandler('conn-1', message1, connections, mockBridge);
     await getUsageHandler('conn-1', message2, connections, mockBridge);
 
     expect(mockExecFile).toHaveBeenCalledTimes(1);
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', {
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, {
       requestId: 'req-2',
       status: 'ok',
       usage: SAMPLE_USAGE,
@@ -113,12 +114,12 @@ describe('getUsageHandler', () => {
   describe('error classification', () => {
     it('should classify "ccb: command not found" as ccb_missing', async () => {
       const connections = createMockConnections();
-      const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+      const message: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
       setupExecFileError(new Error('ccb: command not found'));
 
       await getUsageHandler('conn-1', message, connections, mockBridge);
 
-      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
         requestId: 'req-1',
         status: 'error',
         error_kind: 'ccb_missing',
@@ -132,7 +133,7 @@ describe('getUsageHandler', () => {
     // by an English regex, but the exit code is always 127. (issue #114)
     it('should classify exit code 127 as ccb_missing regardless of shell locale', async () => {
       const connections = createMockConnections();
-      const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+      const message: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
       const err = Object.assign(
         new Error('Command failed: /bin/bash -l -i -c ccb oauth usage --json\nbash: no job control in this shell\nbash: ccb: команда не найдена'),
         { code: 127 },
@@ -141,7 +142,7 @@ describe('getUsageHandler', () => {
 
       await getUsageHandler('conn-1', message, connections, mockBridge);
 
-      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
         requestId: 'req-1',
         status: 'error',
         error_kind: 'ccb_missing',
@@ -154,7 +155,7 @@ describe('getUsageHandler', () => {
     // A broken-shell environment must not be mislabeled as "ccb not installed". (issue #114)
     it('should NOT classify ENOENT (missing shell binary) as ccb_missing', async () => {
       const connections = createMockConnections();
-      const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+      const message: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
       const enoentErr = Object.assign(new Error('spawn /bin/bash ENOENT'), { code: 'ENOENT' });
       setupExecFileError(enoentErr);
 
@@ -166,14 +167,14 @@ describe('getUsageHandler', () => {
 
     it('should classify npm "could not determine executable" as ccb_missing', async () => {
       const connections = createMockConnections();
-      const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+      const message: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
       setupExecFileError(new Error(
         'Command failed: npx ccb oauth usage --json\nnpm error could not determine executable to run\nnpm error A complete log of this run can be found in: /tmp/npm.log',
       ));
 
       await getUsageHandler('conn-1', message, connections, mockBridge);
 
-      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
         requestId: 'req-1',
         status: 'error',
         error_kind: 'ccb_missing',
@@ -183,12 +184,12 @@ describe('getUsageHandler', () => {
 
     it('should classify "npm: command not found" as npm_missing', async () => {
       const connections = createMockConnections();
-      const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+      const message: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
       setupExecFileError(new Error('npm: command not found'));
 
       await getUsageHandler('conn-1', message, connections, mockBridge);
 
-      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
         requestId: 'req-1',
         status: 'error',
         error_kind: 'npm_missing',
@@ -197,14 +198,14 @@ describe('getUsageHandler', () => {
 
     it('should classify auth error from JSON in error message', async () => {
       const connections = createMockConnections();
-      const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+      const message: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
       setupExecFileError(new Error(
         'Command failed: npx ccb oauth usage --json\n{"error":{"message":"OAuth token expired"}}',
       ));
 
       await getUsageHandler('conn-1', message, connections, mockBridge);
 
-      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
         requestId: 'req-1',
         status: 'error',
         error_kind: 'auth',
@@ -214,12 +215,12 @@ describe('getUsageHandler', () => {
 
     it('should classify ENOTFOUND as network error', async () => {
       const connections = createMockConnections();
-      const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+      const message: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
       setupExecFileError(new Error('getaddrinfo ENOTFOUND api.anthropic.com'));
 
       await getUsageHandler('conn-1', message, connections, mockBridge);
 
-      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
         requestId: 'req-1',
         status: 'error',
         error_kind: 'network',
@@ -228,12 +229,12 @@ describe('getUsageHandler', () => {
 
     it('should classify unknown errors as unknown', async () => {
       const connections = createMockConnections();
-      const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+      const message: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
       setupExecFileError(new Error('something weird happened'));
 
       await getUsageHandler('conn-1', message, connections, mockBridge);
 
-      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
         requestId: 'req-1',
         status: 'error',
         error_kind: 'unknown',
@@ -244,12 +245,12 @@ describe('getUsageHandler', () => {
 
   it('should return error when ccb returns empty stdout', async () => {
     const connections = createMockConnections();
-    const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+    const message: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
     setupExecFileStdout('');
 
     await getUsageHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
       requestId: 'req-1',
       status: 'error',
       error_kind: expect.any(String),
@@ -258,12 +259,12 @@ describe('getUsageHandler', () => {
 
   it('should return error when ccb returns invalid JSON', async () => {
     const connections = createMockConnections();
-    const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+    const message: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
     setupExecFileStdout('not valid json {{{');
 
     await getUsageHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
       requestId: 'req-1',
       status: 'error',
       error_kind: expect.any(String),
@@ -275,12 +276,12 @@ describe('getUsageHandler', () => {
   // and trim() cannot strip the ESC control char, so JSON.parse fails.
   it('should parse JSON despite a leading bracketed-paste escape sequence (issue #62)', async () => {
     const connections = createMockConnections();
-    const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+    const message: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
     setupExecFileStdout(`\x1b[?2004l${JSON.stringify(SAMPLE_USAGE)}`);
 
     await getUsageHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', {
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, {
       requestId: 'req-1',
       status: 'ok',
       usage: SAMPLE_USAGE,
@@ -289,12 +290,12 @@ describe('getUsageHandler', () => {
 
   it('should parse JSON despite surrounding shell noise on stdout', async () => {
     const connections = createMockConnections();
-    const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+    const message: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
     setupExecFileStdout(`\x1b[?2004l\n${JSON.stringify(SAMPLE_USAGE)}\n\x1b[?2004h`);
 
     await getUsageHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', {
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, {
       requestId: 'req-1',
       status: 'ok',
       usage: SAMPLE_USAGE,
@@ -384,8 +385,8 @@ describe('getUsageHandler', () => {
   describe('force refresh', () => {
     it('force=true bypasses successful cache', async () => {
       const connections = createMockConnections();
-      const message1: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
-      const message2: IPCMessage = { type: 'GET_USAGE', payload: { force: true }, timestamp: 0, requestId: 'req-2' };
+      const message1: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
+      const message2: IPCMessage = { type: MessageType.GET_USAGE, payload: { force: true }, timestamp: 0, requestId: 'req-2' };
       setupExecFileSuccess(SAMPLE_USAGE);
 
       await getUsageHandler('conn-1', message1, connections, mockBridge);
@@ -394,7 +395,7 @@ describe('getUsageHandler', () => {
       await getUsageHandler('conn-1', message2, connections, mockBridge);
       expect(mockExecFile).toHaveBeenCalledTimes(2);
 
-      expect(connections.sendTo).toHaveBeenLastCalledWith('conn-1', 'ACK', {
+      expect(connections.sendTo).toHaveBeenLastCalledWith('conn-1', MessageType.ACK, {
         requestId: 'req-2',
         status: 'ok',
         usage: SAMPLE_USAGE,
@@ -403,12 +404,12 @@ describe('getUsageHandler', () => {
 
     it('force=true bypasses error cache and returns fresh success', async () => {
       const connections = createMockConnections();
-      const message1: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
-      const message2: IPCMessage = { type: 'GET_USAGE', payload: { force: true }, timestamp: 0, requestId: 'req-2' };
+      const message1: IPCMessage = { type: MessageType.GET_USAGE, payload: {}, timestamp: 0, requestId: 'req-1' };
+      const message2: IPCMessage = { type: MessageType.GET_USAGE, payload: { force: true }, timestamp: 0, requestId: 'req-2' };
 
       setupExecFileError(new Error('ccb: command not found'));
       await getUsageHandler('conn-1', message1, connections, mockBridge);
-      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
         status: 'error',
         error_kind: 'ccb_missing',
       }));
@@ -416,7 +417,7 @@ describe('getUsageHandler', () => {
       setupExecFileSuccess(SAMPLE_USAGE);
       await getUsageHandler('conn-1', message2, connections, mockBridge);
       expect(mockExecFile).toHaveBeenCalledTimes(2);
-      expect(connections.sendTo).toHaveBeenLastCalledWith('conn-1', 'ACK', {
+      expect(connections.sendTo).toHaveBeenLastCalledWith('conn-1', MessageType.ACK, {
         requestId: 'req-2',
         status: 'ok',
         usage: SAMPLE_USAGE,

@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react';
 import {MarqueeText} from './MarqueeText';
 import {useBridgeContext} from '../../contexts/BridgeContext';
 import {useWorkingDir} from "@/contexts";
+import { MessageType } from '@/shared';
 
 interface Project {
   name: string;
@@ -18,14 +19,14 @@ export function ProjectSelectorPage() {
   const { setWorkingDirectory } = useWorkingDir();
 
   const handleOpenFolderDialog = () => {
-    const unsubscribe = subscribe('FOLDER_SELECTED', (message) => {
+    const unsubscribe = subscribe(MessageType.FOLDER_SELECTED, (message) => {
       const selectedPath = message.payload?.path as string | null;
       unsubscribe();
       if (selectedPath) {
         setWorkingDirectory(selectedPath, { replace: false });
       }
     });
-    send('OPEN_FOLDER_DIALOG', {});
+    send(MessageType.OPEN_FOLDER_DIALOG, {});
   };
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export function ProjectSelectorPage() {
         setError(null);
 
         // Subscribe to PROJECTS_LIST response
-        const unsubscribe = subscribe('PROJECTS_LIST', (message) => {
+        const unsubscribe = subscribe(MessageType.PROJECTS_LIST, (message) => {
           const projectsList = message.payload?.projects as Project[] || [];
           setProjects(projectsList);
           setIsLoading(false);
@@ -47,7 +48,7 @@ export function ProjectSelectorPage() {
         });
 
         // Request projects list
-        await send('GET_PROJECTS', {});
+        await send(MessageType.GET_PROJECTS, {});
       } catch (err) {
         setError('Failed to load projects');
         setIsLoading(false);

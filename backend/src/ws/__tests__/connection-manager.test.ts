@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ConnectionManager } from '../connection-manager';
 import { ClientEnv } from '../../shared';
+import { MessageType } from '../../shared';
 
 function createMockWs(readyState = 1) {
   return {
@@ -220,7 +221,7 @@ describe('ConnectionManager', () => {
 
       expect(ws.send).toHaveBeenCalledTimes(1);
       const sent = JSON.parse((ws.send as ReturnType<typeof vi.fn>).mock.calls[0][0]);
-      expect(sent.type).toBe('EDITOR_CONTEXT');
+      expect(sent.type).toBe(MessageType.EDITOR_CONTEXT);
       expect(sent.payload).toEqual(payload);
     });
 

@@ -2,6 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { Claude } from '../claude';
+import { MessageType } from '../../shared';
 
 interface ClaudeAuthStatus {
   loggedIn?: boolean;
@@ -31,7 +32,7 @@ export async function getAccountHandler(
   const authStatus = await runClaudeAuthStatus();
 
   if (!authStatus) {
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'error',
       error: 'Claude Code credentials not found. Please log in with Claude Code CLI first.',
@@ -39,7 +40,7 @@ export async function getAccountHandler(
     return;
   }
 
-  connections.sendTo(connectionId, 'ACK', {
+  connections.sendTo(connectionId, MessageType.ACK, {
     requestId: message.requestId,
     status: 'ok',
     account: authStatus,

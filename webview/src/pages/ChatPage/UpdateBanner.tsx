@@ -1,6 +1,7 @@
 import { useUpdateAvailable } from '@/hooks/useUpdateAvailable';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { isBrowser } from '@/config/environment';
+import { MessageType } from '@/shared';
 
 function extractTitle(latestVersion: string | null, notes: string): string {
   const match = notes.match(/<h[1-3][^>]*>(.*?)<\/h[1-3]>/i);
@@ -18,7 +19,7 @@ export function UpdateBanner() {
   if (!hasUpdate || !latestVersion) return null;
 
   const handleUpdate = () => {
-    send('UPDATE_PLUGIN', {});
+    send(MessageType.UPDATE_PLUGIN, {});
   };
 
   const title = latestNotes ? extractTitle(latestVersion, latestNotes) : '';

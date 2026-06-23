@@ -3,6 +3,7 @@ import { useApi } from '@/contexts/ApiContext';
 import { getBridgeClient } from '@/api/bridge/BridgeClient';
 import { useSessionContext } from '@/contexts/SessionContext';
 import type { CliControlRequestEvent } from '@/types';
+import { MessageType } from '@/shared';
 
 export type PermissionRiskLevel = 'low' | 'medium' | 'high';
 
@@ -80,7 +81,7 @@ export function usePendingPermissions(): UsePendingPermissionsReturn {
   // Subscribe to CLI_EVENT for control_request (non-AskUserQuestion tools)
   useEffect(() => {
     const bridge = getBridgeClient();
-    const unsubscribe = bridge.subscribe('CLI_EVENT', (message) => {
+    const unsubscribe = bridge.subscribe(MessageType.CLI_EVENT, (message) => {
       const cliEvent = message.payload as CliControlRequestEvent | undefined;
       if (cliEvent?.type !== 'control_request') return;
 

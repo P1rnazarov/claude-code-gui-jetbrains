@@ -3,6 +3,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { Claude } from '../claude';
+import { MessageType } from '../../shared';
 
 // In-flight `claude auth login` processes, keyed by the webview connection that
 // started them. Kept so a later SUBMIT_LOGIN_CODE message can write the pasted
@@ -80,7 +81,7 @@ export function loginHandler(
         if (url) {
           urlForwarded = true;
           console.error('[login] OAuth URL available, forwarding to webview:', url);
-          connections.sendTo(connectionId, 'LOGIN_URL_AVAILABLE', {
+          connections.sendTo(connectionId, MessageType.LOGIN_URL_AVAILABLE, {
             requestId: message.requestId,
             url,
           });
@@ -98,7 +99,7 @@ export function loginHandler(
 
     child.on('close', (code) => {
       cleanup();
-      connections.sendTo(connectionId, 'ACK', {
+      connections.sendTo(connectionId, MessageType.ACK, {
         requestId: message.requestId,
         status: code === 0 ? 'ok' : 'error',
         ...(code !== 0 && { error: 'Login failed or cancelled' }),
@@ -108,7 +109,7 @@ export function loginHandler(
 
     child.on('error', (err) => {
       cleanup();
-      connections.sendTo(connectionId, 'ACK', {
+      connections.sendTo(connectionId, MessageType.ACK, {
         requestId: message.requestId,
         status: 'error',
         error: err.message,

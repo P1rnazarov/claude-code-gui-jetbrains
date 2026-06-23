@@ -1,6 +1,7 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { MessageType } from '../../shared';
 
 export async function openUrlHandler(
   connectionId: string,
@@ -16,5 +17,5 @@ export async function openUrlHandler(
   } catch (err) {
     console.error('[node-backend]', 'bridge.openUrl() failed:', err);
   }
-  connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
 }

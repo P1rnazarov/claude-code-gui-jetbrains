@@ -3,6 +3,7 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { readMergedClaudeSettings, readClaudeSettings, readProjectClaudeSettings } from '../features/claude-settings';
 import { getSettingsWatcher } from '../features/settings-watcher';
+import { MessageType } from '../../shared';
 
 export async function getClaudeSettingsHandler(
   connectionId: string,
@@ -30,7 +31,7 @@ export async function getClaudeSettingsHandler(
     overrides = result.overrides;
   }
 
-  connections.sendTo(connectionId, 'ACK', {
+  connections.sendTo(connectionId, MessageType.ACK, {
     requestId: message.requestId,
     status: 'ok',
     settings,

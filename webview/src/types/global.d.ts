@@ -84,29 +84,6 @@ interface SendMessagePayload {
   inputMode: string;
 }
 
-/**
- * Message type constants for type safety
- */
-declare const MessageTypes: {
-  // WebView -> Kotlin
-  readonly SEND_MESSAGE: 'SEND_MESSAGE';
-  readonly SESSION_CHANGE: 'SESSION_CHANGE';
-  readonly TOOL_RESPONSE: 'TOOL_RESPONSE';
-  readonly APPLY_DIFF: 'APPLY_DIFF';
-  readonly REJECT_DIFF: 'REJECT_DIFF';
-  readonly START_SESSION: 'START_SESSION';
-  readonly STOP_SESSION: 'STOP_SESSION';
-  readonly CREATE_SESSION: 'CREATE_SESSION';
-  readonly OPEN_SETTINGS: 'OPEN_SETTINGS';
-  readonly OPEN_FILE: 'OPEN_FILE';
-
-  // Kotlin -> WebView
-  readonly ACK: 'ACK';
-  readonly ERROR: 'ERROR';
-  readonly STREAM_EVENT: 'STREAM_EVENT';
-  readonly ASSISTANT_MESSAGE: 'ASSISTANT_MESSAGE';
-  readonly RESULT_MESSAGE: 'RESULT_MESSAGE';
-  readonly SERVICE_ERROR: 'SERVICE_ERROR';
-  readonly THEME_CHANGE: 'THEME_CHANGE';
-  readonly UNKNOWN_MESSAGE: 'UNKNOWN_MESSAGE';
-};
+// NOTE: The legacy `MessageTypes` ambient constant was removed. The single
+// source of truth for IPC message types is the `MessageType` enum in
+// `@/shared` (src/shared/message-type.ts).

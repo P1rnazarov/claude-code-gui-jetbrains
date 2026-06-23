@@ -2,6 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { sendToolResultToProcess, sendControlResponseToProcess } from '../claude-process';
+import { MessageType } from '../../shared';
 
 /** WebView -> Backend TOOL_RESPONSE payload */
 interface ToolResponsePayload {
@@ -24,7 +25,7 @@ export function toolResponseHandler(
 
   if (!sessionId) {
     console.error('[node-backend]', 'TOOL_RESPONSE received but no subscribed session');
-    connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+    connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
     return;
   }
 
@@ -60,5 +61,5 @@ export function toolResponseHandler(
     console.error('[node-backend]', `TOOL_RESPONSE sent for tool ${toolUseId} (approved: ${approved})`);
   }
 
-  connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
 }

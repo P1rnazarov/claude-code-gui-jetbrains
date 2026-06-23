@@ -4,6 +4,7 @@ import { ArrowPathIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { usePluginUpdates } from '@/hooks/usePluginUpdates';
 import { useVersionInfo } from '@/hooks/useVersionInfo';
 import { useBridgeContext } from '@/contexts/BridgeContext';
+import { MessageType } from '@/shared';
 
 /**
  * Sanitize HTML by stripping all tags except a safe allowlist.
@@ -207,7 +208,7 @@ export function ReleasesSettings() {
     latestUpdate != null && latestUpdate.version !== pluginVersion;
 
   const handleUpdate = () => {
-    send('UPDATE_PLUGIN', {});
+    send(MessageType.UPDATE_PLUGIN, {});
   };
 
   return (

@@ -2,6 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { scanSystemSounds } from '../../system-sounds';
+import { MessageType } from '../../shared';
 
 export async function listSystemSoundsHandler(
   connectionId: string,
@@ -13,7 +14,7 @@ export async function listSystemSoundsHandler(
     const sounds = await scanSystemSounds();
     // Strip absolute path before sending to client; expose id/label only.
     const safe = sounds.map(({ id, label }) => ({ id, label }));
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'ok',
       sounds: safe,
@@ -21,7 +22,7 @@ export async function listSystemSoundsHandler(
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
     console.error('[node-backend]', 'listSystemSounds failed:', err);
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'error',
       error,

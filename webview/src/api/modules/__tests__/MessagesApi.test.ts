@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MessagesApi } from '../MessagesApi';
+import { MessageType } from '@/shared';
 
 function createMockBridge() {
   return {
@@ -20,7 +21,7 @@ describe('MessagesApi', () => {
   describe('create()', () => {
     it('should send SEND_MESSAGE with sessionId and content', async () => {
       await api.create('sess-1', 'Hello world');
-      expect(bridge.request).toHaveBeenCalledWith('SEND_MESSAGE', {
+      expect(bridge.request).toHaveBeenCalledWith(MessageType.SEND_MESSAGE, {
         sessionId: 'sess-1',
         content: 'Hello world',
       });
@@ -28,7 +29,7 @@ describe('MessagesApi', () => {
 
     it('should handle empty content', async () => {
       await api.create('sess-1', '');
-      expect(bridge.request).toHaveBeenCalledWith('SEND_MESSAGE', {
+      expect(bridge.request).toHaveBeenCalledWith(MessageType.SEND_MESSAGE, {
         sessionId: 'sess-1',
         content: '',
       });
@@ -39,7 +40,7 @@ describe('MessagesApi', () => {
     it('should subscribe to SERVICE_ERROR events', () => {
       const callback = vi.fn();
       api.onError(callback);
-      expect(bridge.subscribe).toHaveBeenCalledWith('SERVICE_ERROR', expect.any(Function));
+      expect(bridge.subscribe).toHaveBeenCalledWith(MessageType.SERVICE_ERROR, expect.any(Function));
     });
 
     it('should return unsubscribe function', () => {

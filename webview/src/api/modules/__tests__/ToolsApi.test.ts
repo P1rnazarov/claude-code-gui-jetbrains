@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ToolsApi } from '../ToolsApi';
 import { PermissionType, RiskLevel } from '../../../dto/common';
+import { MessageType } from '@/shared';
 
 function createMockBridge() {
   return {
@@ -21,7 +22,7 @@ describe('ToolsApi', () => {
   describe('approve()', () => {
     it('should send TOOL_RESPONSE with approved=true', async () => {
       await api.approve('tool-1');
-      expect(bridge.request).toHaveBeenCalledWith('TOOL_RESPONSE', {
+      expect(bridge.request).toHaveBeenCalledWith(MessageType.TOOL_RESPONSE, {
         toolUseId: 'tool-1',
         approved: true,
       });
@@ -29,7 +30,7 @@ describe('ToolsApi', () => {
 
     it('should include controlRequestId when provided', async () => {
       await api.approve('tool-1', 'ctrl-1');
-      expect(bridge.request).toHaveBeenCalledWith('TOOL_RESPONSE', {
+      expect(bridge.request).toHaveBeenCalledWith(MessageType.TOOL_RESPONSE, {
         toolUseId: 'tool-1',
         approved: true,
         controlRequestId: 'ctrl-1',
@@ -38,7 +39,7 @@ describe('ToolsApi', () => {
 
     it('should include updatedInput when provided', async () => {
       await api.approve('tool-1', undefined, { command: 'ls -la' });
-      expect(bridge.request).toHaveBeenCalledWith('TOOL_RESPONSE', {
+      expect(bridge.request).toHaveBeenCalledWith(MessageType.TOOL_RESPONSE, {
         toolUseId: 'tool-1',
         approved: true,
         updatedInput: { command: 'ls -la' },
@@ -49,7 +50,7 @@ describe('ToolsApi', () => {
   describe('deny()', () => {
     it('should send TOOL_RESPONSE with approved=false', async () => {
       await api.deny('tool-1');
-      expect(bridge.request).toHaveBeenCalledWith('TOOL_RESPONSE', {
+      expect(bridge.request).toHaveBeenCalledWith(MessageType.TOOL_RESPONSE, {
         toolUseId: 'tool-1',
         approved: false,
       });
@@ -57,7 +58,7 @@ describe('ToolsApi', () => {
 
     it('should include reason when provided', async () => {
       await api.deny('tool-1', undefined, 'Too dangerous');
-      expect(bridge.request).toHaveBeenCalledWith('TOOL_RESPONSE', {
+      expect(bridge.request).toHaveBeenCalledWith(MessageType.TOOL_RESPONSE, {
         toolUseId: 'tool-1',
         approved: false,
         reason: 'Too dangerous',
@@ -68,7 +69,7 @@ describe('ToolsApi', () => {
   describe('respond()', () => {
     it('should send TOOL_RESPONSE with approved=true and result', async () => {
       await api.respond('tool-1', 'custom result');
-      expect(bridge.request).toHaveBeenCalledWith('TOOL_RESPONSE', {
+      expect(bridge.request).toHaveBeenCalledWith(MessageType.TOOL_RESPONSE, {
         toolUseId: 'tool-1',
         approved: true,
         result: 'custom result',
@@ -79,7 +80,7 @@ describe('ToolsApi', () => {
   describe('openDiff()', () => {
     it('should send OPEN_DIFF with file details', async () => {
       await api.openDiff('/path/file.ts', 'old content', 'new content');
-      expect(bridge.request).toHaveBeenCalledWith('OPEN_DIFF', {
+      expect(bridge.request).toHaveBeenCalledWith(MessageType.OPEN_DIFF, {
         filePath: '/path/file.ts',
         oldContent: 'old content',
         newContent: 'new content',
@@ -90,14 +91,14 @@ describe('ToolsApi', () => {
   describe('applyDiff()', () => {
     it('should send APPLY_DIFF with toolUseId', async () => {
       await api.applyDiff('tool-1');
-      expect(bridge.request).toHaveBeenCalledWith('APPLY_DIFF', { toolUseId: 'tool-1' });
+      expect(bridge.request).toHaveBeenCalledWith(MessageType.APPLY_DIFF, { toolUseId: 'tool-1' });
     });
   });
 
   describe('rejectDiff()', () => {
     it('should send REJECT_DIFF with toolUseId', async () => {
       await api.rejectDiff('tool-1');
-      expect(bridge.request).toHaveBeenCalledWith('REJECT_DIFF', { toolUseId: 'tool-1' });
+      expect(bridge.request).toHaveBeenCalledWith(MessageType.REJECT_DIFF, { toolUseId: 'tool-1' });
     });
   });
 

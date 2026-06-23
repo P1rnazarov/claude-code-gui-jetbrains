@@ -6,6 +6,7 @@ import { Claude } from '../claude';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { resolve, dirname } from 'path';
+import { MessageType } from '../../shared';
 
 declare const __PLUGIN_VERSION__: string;
 
@@ -49,7 +50,7 @@ export async function getVersionHandler(
     ]);
     const pluginVersion = getPluginVersion();
 
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'ok',
       pluginVersion,
@@ -57,7 +58,7 @@ export async function getVersionHandler(
       requiresRestart,
     });
   } catch (err) {
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'error',
       error: err instanceof Error ? err.message : String(err),

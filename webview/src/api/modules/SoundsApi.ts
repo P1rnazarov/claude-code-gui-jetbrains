@@ -1,5 +1,6 @@
 import { BridgeClient } from '../bridge/BridgeClient';
 import type { SystemSound } from '../../notifications/types';
+import { MessageType } from '@/shared';
 
 interface ListSystemSoundsResponse {
   sounds?: SystemSound[];
@@ -24,7 +25,7 @@ export class SoundsApi {
    */
   async list(): Promise<SystemSound[]> {
     const response = await this.bridge.request<ListSystemSoundsResponse>(
-      'LIST_SYSTEM_SOUNDS',
+      MessageType.LIST_SYSTEM_SOUNDS,
       {},
     );
     return response?.sounds ?? [];
@@ -37,6 +38,6 @@ export class SoundsApi {
    * and ACKs immediately, so callers should treat this as fire-and-forget.
    */
   async play(soundId: string): Promise<void> {
-    await this.bridge.request('PLAY_SYSTEM_SOUND', { soundId });
+    await this.bridge.request(MessageType.PLAY_SYSTEM_SOUND, { soundId });
   }
 }

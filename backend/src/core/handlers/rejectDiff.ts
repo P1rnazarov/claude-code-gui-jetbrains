@@ -1,6 +1,7 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { MessageType } from '../../shared';
 
 export async function rejectDiffHandler(
   connectionId: string,
@@ -12,9 +13,9 @@ export async function rejectDiffHandler(
 
   try {
     await bridge.rejectDiff({ toolUseId });
-    connections.sendTo(connectionId, 'ACK', { requestId: message.requestId, status: 'ok' });
+    connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId, status: 'ok' });
   } catch (err) {
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'error',
       error: err instanceof Error ? err.message : String(err),

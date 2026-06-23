@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { isAuthError, diagnoseAuthError } from '../auth-diagnosis';
+import { MessageType } from '../../../shared';
 
 // getEnvApiKeys를 mock
 vi.mock('../claude-settings', () => ({
@@ -69,7 +70,7 @@ describe('auth-diagnosis', () => {
       await diagnoseAuthError('session-1', 'invalid api key', mockConnections as never);
       expect(mockConnections.broadcastToSession).toHaveBeenCalledWith(
         'session-1',
-        'AUTH_ERROR_DIAGNOSIS',
+        MessageType.AUTH_ERROR_DIAGNOSIS,
         expect.objectContaining({
           envApiKeys: ['ANTHROPIC_API_KEY'],
           message: expect.stringContaining('ANTHROPIC_API_KEY'),
@@ -94,7 +95,7 @@ describe('auth-diagnosis', () => {
       await diagnoseAuthError('session-1', 'Authentication failed', mockConnections as never);
       expect(mockConnections.broadcastToSession).toHaveBeenCalledWith(
         'session-1',
-        'AUTH_ERROR_DIAGNOSIS',
+        MessageType.AUTH_ERROR_DIAGNOSIS,
         expect.objectContaining({
           envApiKeys: ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'],
           message: expect.stringContaining('ANTHROPIC_API_KEY'),

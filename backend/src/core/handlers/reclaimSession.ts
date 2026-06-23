@@ -3,6 +3,7 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { loadSessionMessages } from '../features/loadSessionMessages';
 import { markSessionAsSpawned } from '../claude-process';
+import { MessageType } from '../../shared';
 
 export async function reclaimSessionHandler(
   connectionId: string,
@@ -14,12 +15,12 @@ export async function reclaimSessionHandler(
   const workingDir = message.payload?.workingDir as string | undefined;
 
   if (!sessionId) {
-    connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+    connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
     return;
   }
 
   if (!workingDir) {
-    connections.sendTo(connectionId, 'ERROR', {
+    connections.sendTo(connectionId, MessageType.ERROR, {
       requestId: message.requestId,
       error: 'workingDir is required',
     });
@@ -43,11 +44,11 @@ export async function reclaimSessionHandler(
   // 3. 세션 메시지 로딩 & 전송
   connections.subscribe(connectionId, sessionId);
   const messages = await loadSessionMessages(workingDir, sessionId);
-  connections.sendTo(connectionId, 'SESSION_LOADED', {
+  connections.sendTo(connectionId, MessageType.SESSION_LOADED, {
     sessionId,
     messages,
   });
 
   console.error('[node-backend]', `Session ${sessionId} reclaimed successfully`);
-  connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
 }

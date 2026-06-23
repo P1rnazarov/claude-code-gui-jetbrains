@@ -2,6 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { getSessionsList } from '../features/getSessionsList';
+import { MessageType } from '../../shared';
 
 export async function getSessionsHandler(
   connectionId: string,
@@ -12,7 +13,7 @@ export async function getSessionsHandler(
   const workingDir = message.payload?.workingDir as string | undefined;
 
   if (!workingDir) {
-    connections.sendTo(connectionId, 'ERROR', {
+    connections.sendTo(connectionId, MessageType.ERROR, {
       requestId: message.requestId,
       error: 'workingDir is required',
     });
@@ -25,5 +26,5 @@ export async function getSessionsHandler(
 
   console.error('[getSessions]', 'returning sessions:', sessions.length);
 
-  connections.sendTo(connectionId, 'ACK', { requestId: message.requestId, sessions });
+  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId, sessions });
 }

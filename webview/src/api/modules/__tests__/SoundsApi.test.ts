@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SoundsApi } from '../SoundsApi';
 import type { BridgeClient } from '../../bridge/BridgeClient';
+import { MessageType } from '@/shared';
 
 function createMockBridge() {
   return {
@@ -24,7 +25,7 @@ describe('SoundsApi', () => {
 
       await api.list();
 
-      expect(bridge.request).toHaveBeenCalledWith('LIST_SYSTEM_SOUNDS', {});
+      expect(bridge.request).toHaveBeenCalledWith(MessageType.LIST_SYSTEM_SOUNDS, {});
     });
 
     it('returns the sounds array from the response', async () => {
@@ -68,7 +69,7 @@ describe('SoundsApi', () => {
 
       await api.play('Glass');
 
-      expect(bridge.request).toHaveBeenCalledWith('PLAY_SYSTEM_SOUND', {
+      expect(bridge.request).toHaveBeenCalledWith(MessageType.PLAY_SYSTEM_SOUND, {
         soundId: 'Glass',
       });
     });

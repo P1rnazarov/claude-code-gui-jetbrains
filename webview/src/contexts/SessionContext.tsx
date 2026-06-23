@@ -12,6 +12,7 @@ import { toTitle } from '../mappers/sessionTransformer';
 import { Route, routeToPath, sessionToPath, parseSessionIdFromPath, withWorkingDir } from '../router/routes';
 import { InputMode, getAvailableModes } from '../types/chatInput';
 import {isJetBrains} from "@/config/environment.ts";
+import { MessageType } from '@/shared';
 
 
 interface SessionContextValue {
@@ -167,7 +168,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
 
   // Listen for state changes from Kotlin
   useEffect(() => {
-    const unsubscribe = subscribe('STATE_CHANGE', (message) => {
+    const unsubscribe = subscribe(MessageType.STATE_CHANGE, (message) => {
       const state = message.payload?.state as SessionState;
       if (state) {
         setSessionState(state);
@@ -178,7 +179,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
 
   // Subscribe to SESSIONS_UPDATED for cross-tab session list sync
   useEffect(() => {
-    const unsubscribe = subscribe('SESSIONS_UPDATED', (message) => {
+    const unsubscribe = subscribe(MessageType.SESSIONS_UPDATED, (message) => {
       const { action, session } = message.payload as { action: string; session: { sessionId: string; title?: string } };
       if (action === 'rename' && session?.sessionId && session.title) {
         setSessions(prev => prev.map(s =>

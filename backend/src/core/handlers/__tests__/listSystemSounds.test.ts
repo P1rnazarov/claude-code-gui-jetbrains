@@ -9,6 +9,7 @@ import { listSystemSoundsHandler } from '../listSystemSounds';
 import type { ConnectionManager } from '../../../ws/connection-manager';
 import type { Bridge } from '../../../bridge/bridge-interface';
 import type { IPCMessage } from '../../types';
+import { MessageType } from '../../../shared';
 
 const mockScan = vi.mocked(scanSystemSounds);
 
@@ -33,7 +34,7 @@ describe('listSystemSoundsHandler', () => {
       { id: 'Ping', label: 'Ping', path: '/System/Library/Sounds/Ping.aiff' },
     ]);
     const message: IPCMessage = {
-      type: 'LIST_SYSTEM_SOUNDS',
+      type: MessageType.LIST_SYSTEM_SOUNDS,
       payload: {},
       timestamp: 0,
       requestId: 'req-1',
@@ -41,7 +42,7 @@ describe('listSystemSoundsHandler', () => {
 
     await listSystemSoundsHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', {
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, {
       requestId: 'req-1',
       status: 'ok',
       sounds: [
@@ -60,7 +61,7 @@ describe('listSystemSoundsHandler', () => {
     const connections = createMockConnections();
     mockScan.mockResolvedValue([]);
     const message: IPCMessage = {
-      type: 'LIST_SYSTEM_SOUNDS',
+      type: MessageType.LIST_SYSTEM_SOUNDS,
       payload: {},
       timestamp: 0,
       requestId: 'req-1',
@@ -68,7 +69,7 @@ describe('listSystemSoundsHandler', () => {
 
     await listSystemSoundsHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', {
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, {
       requestId: 'req-1',
       status: 'ok',
       sounds: [],
@@ -79,7 +80,7 @@ describe('listSystemSoundsHandler', () => {
     const connections = createMockConnections();
     mockScan.mockRejectedValue(new Error('disk on fire'));
     const message: IPCMessage = {
-      type: 'LIST_SYSTEM_SOUNDS',
+      type: MessageType.LIST_SYSTEM_SOUNDS,
       payload: {},
       timestamp: 0,
       requestId: 'req-1',
@@ -87,7 +88,7 @@ describe('listSystemSoundsHandler', () => {
 
     await listSystemSoundsHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', {
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, {
       requestId: 'req-1',
       status: 'error',
       error: 'disk on fire',

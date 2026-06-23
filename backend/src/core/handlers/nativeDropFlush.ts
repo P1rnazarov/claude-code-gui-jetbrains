@@ -1,6 +1,7 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { MessageType } from '../../shared';
 
 /**
  * Webview-side trigger that releases the paths CefDragHandler stashed on drag-enter.
@@ -22,7 +23,7 @@ export async function nativeDropFlushHandler(
 ): Promise<void> {
   const entries = connections.takeNativeDropStash(connectionId);
   if (entries && entries.length > 0) {
-    connections.sendTo(connectionId, 'NATIVE_DROP_ENTRIES', { entries });
+    connections.sendTo(connectionId, MessageType.NATIVE_DROP_ENTRIES, { entries });
   }
-  connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
 }

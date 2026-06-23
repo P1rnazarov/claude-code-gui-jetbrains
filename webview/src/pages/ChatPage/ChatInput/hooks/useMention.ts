@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { useBridgeContext } from '@/contexts/BridgeContext';
+import { MessageType } from '@/shared';
 
 export enum MentionItemType {
   File = 'file',
@@ -115,7 +116,7 @@ export function useMention(params: UseMentionParams): UseMentionReturn {
       setState(prev => ({ ...prev, isLoading: true }));
 
       bridge
-        .send('LIST_PROJECT_FILES', {
+        .send(MessageType.LIST_PROJECT_FILES, {
           query,
           workingDir: workingDirectory,
           limit: 20,

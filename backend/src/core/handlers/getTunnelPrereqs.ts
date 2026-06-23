@@ -2,6 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { isCloudflaredAvailable } from '../features/tunnel-manager';
+import { MessageType } from '../../shared';
 
 /**
  * Report whether the tunnel's prerequisites are met (currently: cloudflared is
@@ -15,7 +16,7 @@ export async function getTunnelPrereqsHandler(
   _bridge: Bridge,
 ): Promise<void> {
   const cloudflaredAvailable = await isCloudflaredAvailable();
-  connections.sendTo(connectionId, 'ACK', {
+  connections.sendTo(connectionId, MessageType.ACK, {
     requestId: message.requestId,
     status: 'ok',
     cloudflaredAvailable,

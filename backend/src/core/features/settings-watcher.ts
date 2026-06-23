@@ -4,6 +4,7 @@ import { homedir } from 'os';
 import { readMergedSettings } from './settings';
 import { readMergedClaudeSettings } from './claude-settings';
 import { getClaudeConfigDir } from './claudeConfigDir';
+import { MessageType } from '../../shared';
 
 const DEBOUNCE_MS = 300;
 
@@ -12,7 +13,7 @@ interface WatchEntry {
   debounceTimer: NodeJS.Timeout | null;
 }
 
-type SettingsEvent = 'SETTINGS_CHANGED' | 'CLAUDE_SETTINGS_CHANGED';
+type SettingsEvent = MessageType.SETTINGS_CHANGED | MessageType.CLAUDE_SETTINGS_CHANGED;
 type SettingsChangedCallback = (
   event: SettingsEvent,
   data: { settings: Record<string, unknown>; overrides: string[] },
@@ -37,17 +38,17 @@ export class SettingsFileWatcher {
 
     this.watchDir(claudeDir, 'settings.json', async () => {
       const result = await readMergedClaudeSettings();
-      this.onSettingsChanged('CLAUDE_SETTINGS_CHANGED', result);
+      this.onSettingsChanged(MessageType.CLAUDE_SETTINGS_CHANGED, result);
     });
 
     this.watchDir(claudeDir, 'settings.local.json', async () => {
       const result = await readMergedClaudeSettings();
-      this.onSettingsChanged('CLAUDE_SETTINGS_CHANGED', result);
+      this.onSettingsChanged(MessageType.CLAUDE_SETTINGS_CHANGED, result);
     });
 
     this.watchDir(appDir, 'settings.js', async () => {
       const result = await readMergedSettings();
-      this.onSettingsChanged('SETTINGS_CHANGED', result);
+      this.onSettingsChanged(MessageType.SETTINGS_CHANGED, result);
     });
   }
 
@@ -66,17 +67,17 @@ export class SettingsFileWatcher {
 
     this.watchDir(claudeDir, 'settings.json', async () => {
       const result = await readMergedClaudeSettings(projectPath);
-      this.onSettingsChanged('CLAUDE_SETTINGS_CHANGED', result);
+      this.onSettingsChanged(MessageType.CLAUDE_SETTINGS_CHANGED, result);
     });
 
     this.watchDir(claudeDir, 'settings.local.json', async () => {
       const result = await readMergedClaudeSettings(projectPath);
-      this.onSettingsChanged('CLAUDE_SETTINGS_CHANGED', result);
+      this.onSettingsChanged(MessageType.CLAUDE_SETTINGS_CHANGED, result);
     });
 
     this.watchDir(appDir, 'settings.json', async () => {
       const result = await readMergedSettings(projectPath);
-      this.onSettingsChanged('SETTINGS_CHANGED', result);
+      this.onSettingsChanged(MessageType.SETTINGS_CHANGED, result);
     });
   }
 

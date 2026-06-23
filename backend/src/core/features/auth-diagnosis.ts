@@ -1,5 +1,6 @@
 import { getEnvApiKeys } from './claude-settings';
 import type { ConnectionManager } from '../../ws/connection-manager';
+import { MessageType } from '../../shared';
 
 const AUTH_ERROR_PATTERNS = [
   /invalid.?api.?key/i,
@@ -35,7 +36,7 @@ export async function diagnoseAuthError(
   const envApiKeys = await getEnvApiKeys();
   if (envApiKeys.length === 0) return;
 
-  connections.broadcastToSession(sessionId, 'AUTH_ERROR_DIAGNOSIS', {
+  connections.broadcastToSession(sessionId, MessageType.AUTH_ERROR_DIAGNOSIS, {
     envApiKeys,
     message: `Authentication error detected. The following API keys are set in ~/.claude/settings.json env: ${envApiKeys.join(', ')}. These keys may be expired or invalid.`,
   });

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useBridgeContext } from '@/contexts/BridgeContext';
+import { MessageType } from '@/shared';
 
 /**
  * 텔레메트리 동의 상태. 백엔드 `profile.ts`의 ConsentStatus와 값이 일치해야 한다
@@ -33,7 +34,7 @@ export function useTelemetryConsent() {
 
   const refresh = useCallback(async () => {
     try {
-      const res = (await send('GET_TELEMETRY_CONSENT', {})) as ConsentResponse | null;
+      const res = (await send(MessageType.GET_TELEMETRY_CONSENT, {})) as ConsentResponse | null;
       setStatus(res?.consentStatus ?? null);
     } catch {
       setStatus(null);
@@ -46,7 +47,7 @@ export function useTelemetryConsent() {
 
   const accept = useCallback(
     async (source: ConsentSource) => {
-      const res = (await send('SET_TELEMETRY_CONSENT', { accepted: true, source })) as ConsentResponse | null;
+      const res = (await send(MessageType.SET_TELEMETRY_CONSENT, { accepted: true, source })) as ConsentResponse | null;
       setStatus(res?.consentStatus ?? ConsentStatus.ACCEPTED);
     },
     [send],
@@ -54,7 +55,7 @@ export function useTelemetryConsent() {
 
   const deny = useCallback(
     async (source: ConsentSource) => {
-      const res = (await send('SET_TELEMETRY_CONSENT', { accepted: false, source })) as ConsentResponse | null;
+      const res = (await send(MessageType.SET_TELEMETRY_CONSENT, { accepted: false, source })) as ConsentResponse | null;
       setStatus(res?.consentStatus ?? ConsentStatus.DENIED);
     },
     [send],

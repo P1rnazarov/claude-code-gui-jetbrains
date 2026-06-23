@@ -3,6 +3,7 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { saveSettingToScope, readMergedSettings } from '../features/settings';
 import { Claude } from '../claude';
+import { MessageType } from '../../shared';
 
 export async function saveSettingsHandler(
   connectionId: string,
@@ -24,10 +25,10 @@ export async function saveSettingsHandler(
   // Broadcast merged settings after save
   if (result.status === 'ok') {
     const { settings, overrides } = await readMergedSettings(workingDir);
-    connections.broadcastToAll('SETTINGS_CHANGED', { settings, overrides });
+    connections.broadcastToAll(MessageType.SETTINGS_CHANGED, { settings, overrides });
   }
 
-  connections.sendTo(connectionId, 'ACK', {
+  connections.sendTo(connectionId, MessageType.ACK, {
     requestId: message.requestId,
     ...result,
   });

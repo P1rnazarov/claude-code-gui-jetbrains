@@ -4,6 +4,7 @@ import { act } from 'react';
 import React from 'react';
 import { ChatStreamProvider, useChatStreamContext } from '../contexts/ChatStreamContext';
 import { ChatInputStateProvider, useChatInputState } from '../contexts/ChatInputStateContext';
+import { MessageType } from '@/shared';
 
 // Mock requestAnimationFrame/cancelAnimationFrame
 global.requestAnimationFrame = vi.fn((cb) => {
@@ -197,7 +198,7 @@ describe('채팅 스트리밍 통합 테스트', () => {
     });
 
     expect(screen.getByTestId('msg-user')).toHaveTextContent('Hello');
-    expect(mockBridge.send).toHaveBeenCalledWith('SEND_MESSAGE', expect.objectContaining({
+    expect(mockBridge.send).toHaveBeenCalledWith(MessageType.SEND_MESSAGE, expect.objectContaining({
       content: 'Hello',
       context: [],
       inputMode: 'ask_before_edit',
@@ -227,7 +228,7 @@ describe('채팅 스트리밍 통합 테스트', () => {
       expect(screen.getByTestId('messages-count')).toHaveTextContent('2');
     });
 
-    expect(mockBridge.send).toHaveBeenCalledWith('SEND_MESSAGE', expect.objectContaining({
+    expect(mockBridge.send).toHaveBeenCalledWith(MessageType.SEND_MESSAGE, expect.objectContaining({
       content: 'Hello with mode',
       inputMode: 'plan',
     }));
@@ -257,7 +258,7 @@ describe('채팅 스트리밍 통합 테스트', () => {
 
     // Simulate stream deltas via CLI_EVENT channel
     await act(async () => {
-      emitBridgeEvent('CLI_EVENT', {
+      emitBridgeEvent(MessageType.CLI_EVENT, {
         type: 'stream_event',
         event: {
           type: 'content_block_delta',
@@ -278,7 +279,7 @@ describe('채팅 스트리밍 통합 테스트', () => {
 
     // Simulate more stream chunks
     await act(async () => {
-      emitBridgeEvent('CLI_EVENT', {
+      emitBridgeEvent(MessageType.CLI_EVENT, {
         type: 'stream_event',
         event: {
           type: 'content_block_delta',
@@ -306,7 +307,7 @@ describe('채팅 스트리밍 통합 테스트', () => {
 
     // Start streaming
     await act(async () => {
-      emitBridgeEvent('CLI_EVENT', {
+      emitBridgeEvent(MessageType.CLI_EVENT, {
         type: 'stream_event',
         event: {
           type: 'content_block_delta',
@@ -324,7 +325,7 @@ describe('채팅 스트리밍 통합 테스트', () => {
 
     // End streaming via result event
     await act(async () => {
-      emitBridgeEvent('CLI_EVENT', {
+      emitBridgeEvent(MessageType.CLI_EVENT, {
         type: 'result',
       });
     });
@@ -346,7 +347,7 @@ describe('채팅 스트리밍 통합 테스트', () => {
     );
 
     await act(async () => {
-      emitBridgeEvent('SERVICE_ERROR', {
+      emitBridgeEvent(MessageType.SERVICE_ERROR, {
         type: 'ERROR_TYPE',
         reason: 'API error message',
       });
@@ -370,7 +371,7 @@ describe('채팅 스트리밍 통합 테스트', () => {
 
     // Start streaming
     await act(async () => {
-      emitBridgeEvent('CLI_EVENT', {
+      emitBridgeEvent(MessageType.CLI_EVENT, {
         type: 'stream_event',
         event: {
           type: 'content_block_delta',
@@ -392,11 +393,11 @@ describe('채팅 스트리밍 통합 테스트', () => {
       fireEvent.click(stopButton);
     });
 
-    expect(mockBridge.send).toHaveBeenCalledWith('STOP_SESSION', {});
+    expect(mockBridge.send).toHaveBeenCalledWith(MessageType.STOP_SESSION, {});
 
     // CLI responds with result event to end streaming
     await act(async () => {
-      emitBridgeEvent('CLI_EVENT', {
+      emitBridgeEvent(MessageType.CLI_EVENT, {
         type: 'result',
       });
     });
@@ -432,7 +433,7 @@ describe('채팅 스트리밍 통합 테스트', () => {
 
     // 2. Start streaming via CLI_EVENT
     await act(async () => {
-      emitBridgeEvent('CLI_EVENT', {
+      emitBridgeEvent(MessageType.CLI_EVENT, {
         type: 'stream_event',
         event: {
           type: 'content_block_delta',
@@ -453,7 +454,7 @@ describe('채팅 스트리밍 통합 테스트', () => {
 
     // 3. More stream chunks
     await act(async () => {
-      emitBridgeEvent('CLI_EVENT', {
+      emitBridgeEvent(MessageType.CLI_EVENT, {
         type: 'stream_event',
         event: {
           type: 'content_block_delta',
@@ -471,7 +472,7 @@ describe('채팅 스트리밍 통합 테스트', () => {
 
     // 4. Complete streaming via result
     await act(async () => {
-      emitBridgeEvent('CLI_EVENT', {
+      emitBridgeEvent(MessageType.CLI_EVENT, {
         type: 'result',
       });
     });

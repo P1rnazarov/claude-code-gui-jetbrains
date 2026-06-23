@@ -5,6 +5,7 @@ import * as path from 'path';
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { MessageType } from '../../shared';
 
 const execFileAsync = promisify(execFile);
 
@@ -163,12 +164,12 @@ export async function listProjectFilesHandler(
       result = [...matchedDirs, ...matchedFiles].slice(0, limit);
     }
 
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       files: result,
     });
   } catch {
-    connections.sendTo(connectionId, 'ACK', {
+    connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       files: [],
     });

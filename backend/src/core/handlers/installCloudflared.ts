@@ -2,6 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { installCloudflared } from '../features/tunnel-manager';
+import { MessageType } from '../../shared';
 
 /**
  * Explicitly install cloudflared after the user consented in the UI. ACK
@@ -15,16 +16,16 @@ export async function installCloudflaredHandler(
   connections: ConnectionManager,
   _bridge: Bridge,
 ): Promise<void> {
-  connections.sendTo(connectionId, 'ACK', {
+  connections.sendTo(connectionId, MessageType.ACK, {
     requestId: message.requestId,
     status: 'ok',
   });
 
   try {
     await installCloudflared();
-    connections.broadcastToAll('CLOUDFLARED_INSTALL_STATUS', { status: 'installed' });
+    connections.broadcastToAll(MessageType.CLOUDFLARED_INSTALL_STATUS, { status: 'installed' });
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
-    connections.broadcastToAll('CLOUDFLARED_INSTALL_STATUS', { status: 'failed', error });
+    connections.broadcastToAll(MessageType.CLOUDFLARED_INSTALL_STATUS, { status: 'failed', error });
   }
 }

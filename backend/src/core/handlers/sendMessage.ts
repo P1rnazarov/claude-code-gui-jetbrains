@@ -4,6 +4,7 @@ import type { IPCMessage } from '../types';
 import { generateSessionId } from '../features/generateSessionId';
 import { ensureClaudeProcess, sendMessageToProcess } from '../claude-process';
 import { trackEvent } from '../features/telemetry';
+import { MessageType } from '../../shared';
 
 export async function sendMessageHandler(
   connectionId: string,
@@ -16,7 +17,7 @@ export async function sendMessageHandler(
   const msgSessionId = message.payload?.sessionId as string | undefined;
 
   if (!workingDir) {
-    connections.sendTo(connectionId, 'ERROR', {
+    connections.sendTo(connectionId, MessageType.ERROR, {
       requestId: message.requestId,
       error: 'workingDir is required',
     });
@@ -43,7 +44,7 @@ export async function sendMessageHandler(
       sendMessageToProcess(connections, resolvedSessionId, content, attachments);
 
       // Broadcast user message to other subscribers (excluding sender)
-      connections.broadcastToSession(resolvedSessionId, 'USER_MESSAGE_BROADCAST', {
+      connections.broadcastToSession(resolvedSessionId, MessageType.USER_MESSAGE_BROADCAST, {
         content: content.trim(),
         sessionId: resolvedSessionId,
       }, connectionId);
@@ -61,9 +62,9 @@ export async function sendMessageHandler(
     // first (the request is acknowledged regardless of outcome), then rethrow so the
     // single backend error boundary reports it via reportBackendError.
     console.error('[node-backend]', 'sendMessage failed:', err);
-    connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+    connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
     throw err;
   }
   // ACK on the success path. (The catch path ACKs before rethrowing.)
-  connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
 }

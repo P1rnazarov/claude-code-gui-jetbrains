@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { JetBrainsAdapter } from '../JetBrainsAdapter';
 import { BrowserAdapter } from '../BrowserAdapter';
 import * as BridgeModule from '@/api/bridge/Bridge';
+import { MessageType } from '@/shared';
 
 describe('restartBackend', () => {
   let request: ReturnType<typeof vi.fn>;
@@ -19,11 +20,11 @@ describe('restartBackend', () => {
 
   it('JetBrainsAdapter sends RESTART_BACKEND request', async () => {
     await new JetBrainsAdapter().restartBackend();
-    expect(request).toHaveBeenCalledWith('RESTART_BACKEND');
+    expect(request).toHaveBeenCalledWith(MessageType.RESTART_BACKEND);
   });
 
   it('BrowserAdapter sends RESTART_BACKEND request', async () => {
     await new BrowserAdapter().restartBackend();
-    expect(request).toHaveBeenCalledWith('RESTART_BACKEND');
+    expect(request).toHaveBeenCalledWith(MessageType.RESTART_BACKEND);
   });
 });

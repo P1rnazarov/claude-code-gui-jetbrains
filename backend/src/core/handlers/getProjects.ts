@@ -2,6 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { getProjectsList } from '../features/getProjectsList';
+import { MessageType } from '../../shared';
 
 export async function getProjectsHandler(
   connectionId: string,
@@ -10,6 +11,6 @@ export async function getProjectsHandler(
   _bridge: Bridge,
 ): Promise<void> {
   const projects = await getProjectsList();
-  connections.sendTo(connectionId, 'PROJECTS_LIST', { projects });
-  connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+  connections.sendTo(connectionId, MessageType.PROJECTS_LIST, { projects });
+  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
 }

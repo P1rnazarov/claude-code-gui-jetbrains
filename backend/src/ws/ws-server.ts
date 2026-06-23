@@ -6,7 +6,7 @@ import { ConnectionManager } from './connection-manager';
 import { handleEditorContextRequest } from './editor-context-route';
 import type { Bridge } from '../bridge/bridge-interface';
 import type { IPCMessage } from '../core/types';
-import { ClientEnv } from '../shared';
+import { ClientEnv, MessageType } from '../shared';
 import { getPluginVersion } from '../core/handlers/getVersion';
 import { cancelLogin } from '../core/handlers/login';
 import { reportBackendError, trackActivity } from '../core/features/telemetry';
@@ -187,7 +187,7 @@ export function startWebSocketServer(
       console.error('[node-backend]', `Client connected: ${connectionId}`);
 
       // 연결 준비 신호 전송
-      connections.sendTo(connectionId, 'BRIDGE_READY');
+      connections.sendTo(connectionId, MessageType.BRIDGE_READY);
 
       ws.on('message', (data: Buffer) => {
         let parsed: IPCMessage;

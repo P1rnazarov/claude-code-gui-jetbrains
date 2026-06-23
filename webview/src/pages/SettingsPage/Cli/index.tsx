@@ -9,6 +9,7 @@ import { ROUTE_META, Route } from '@/router/routes';
 import { isJetBrains } from '@/config/environment';
 import { useCliConfig } from '@/contexts/CliConfigContext';
 import { DEFAULT_MODEL_ALIAS, toModelAlias } from '@/types/models';
+import { MessageType } from '@/shared';
 
 interface TerminalInfo {
   id: string;
@@ -39,7 +40,7 @@ export function CliSettings() {
   const [detectedNodePath, setDetectedNodePath] = useState<string | null>(null);
 
   useEffect(() => {
-    send('GET_AVAILABLE_TERMINALS', {})
+    send(MessageType.GET_AVAILABLE_TERMINALS, {})
       .then((res) => {
         setTerminals((res?.terminals as TerminalInfo[]) ?? []);
         setLoading(false);
@@ -48,7 +49,7 @@ export function CliSettings() {
   }, [send]);
 
   useEffect(() => {
-    send('GET_DETECTED_CLI_PATH', {})
+    send(MessageType.GET_DETECTED_CLI_PATH, {})
       .then((res) => {
         setDetectedCliPath((res?.path as string | null) ?? null);
       })
@@ -56,7 +57,7 @@ export function CliSettings() {
   }, [send]);
 
   useEffect(() => {
-    send('GET_DETECTED_NODE_PATH', {})
+    send(MessageType.GET_DETECTED_NODE_PATH, {})
       .then((res) => {
         setDetectedNodePath((res?.path as string | null) ?? null);
       })

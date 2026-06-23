@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePendingPermissions } from '../usePendingPermissions';
+import { MessageType } from '@/shared';
 
 // ---------------------------------------------------------------------------
 // Mock bridge
@@ -76,7 +77,7 @@ function emitBashRequest(
     command = 'ls -la',
   } = opts;
 
-  emit('CLI_EVENT', {
+  emit(MessageType.CLI_EVENT, {
     type: 'control_request',
     request_id: controlRequestId,
     request: {
@@ -99,7 +100,7 @@ function emitPowerShellRequest(
     command = 'Get-ChildItem',
   } = opts;
 
-  emit('CLI_EVENT', {
+  emit(MessageType.CLI_EVENT, {
     type: 'control_request',
     request_id: controlRequestId,
     request: {

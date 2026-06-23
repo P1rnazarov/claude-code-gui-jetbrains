@@ -1,7 +1,7 @@
 import type { WebSocket } from 'ws';
 import type { ChildProcess } from 'child_process';
 import type { IPCMessage, NativeDropEntry } from '../core/types';
-import { ClientEnv } from '../shared';
+import { ClientEnv, MessageType } from '../shared';
 
 const SESSION_CLEANUP_GRACE_MS = 30_000;
 const IDLE_SHUTDOWN_GRACE_MS = 60_000;
@@ -15,7 +15,7 @@ const IDLE_SHUTDOWN_GRACE_MS = 60_000;
 const PENDING_EDITOR_CONTEXT_TTL_MS = 10_000;
 
 /** Push message type carrying the IDE editor selection to the webview. */
-export const EDITOR_CONTEXT_MESSAGE = 'EDITOR_CONTEXT';
+export const EDITOR_CONTEXT_MESSAGE = MessageType.EDITOR_CONTEXT;
 
 interface PendingEditorContext {
   payload: Record<string, unknown>;

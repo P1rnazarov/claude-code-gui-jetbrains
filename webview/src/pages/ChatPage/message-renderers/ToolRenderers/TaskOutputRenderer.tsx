@@ -3,6 +3,7 @@ import { ToolUseBlockDto } from '@/dto';
 import { Container, LabelValue, RendererProps, ToolHeader, ToolWrapper } from './common';
 import { useWorkingDir } from '@/contexts/WorkingDirContext';
 import { useBridgeContext } from '@/contexts/BridgeContext';
+import { MessageType } from '@/shared';
 
 class TaskOutputToolUseDto extends ToolUseBlockDto {
     declare input: {
@@ -88,7 +89,7 @@ export function TaskOutputRenderer(props: RendererProps) {
         let command: string;
         if (workingDirectory) {
             try {
-                const res = await send('FIND_BG_TASK_OUTPUT_PATH', {
+                const res = await send(MessageType.FIND_BG_TASK_OUTPUT_PATH, {
                     taskId,
                     workingDir: workingDirectory,
                 });

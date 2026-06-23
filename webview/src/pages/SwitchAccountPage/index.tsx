@@ -7,6 +7,7 @@ import { getAdapter } from '@/adapters';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useAuthContext } from '@/contexts';
 import { LoginUrlModal } from './LoginUrlModal';
+import { MessageType } from '@/shared';
 
 interface Props {
   className?: string;
@@ -37,14 +38,14 @@ export function SwitchAccountPage(props: Props) {
     // the URL via LOGIN_URL_AVAILABLE rather than opening it — opening it ourselves
     // would double-open on macOS/Windows. We show it in a modal and let the user
     // open it when needed (e.g. WSL, where claude can't). (#57)
-    const unsubscribeUrl = getBridge().subscribe('LOGIN_URL_AVAILABLE', (message) => {
+    const unsubscribeUrl = getBridge().subscribe(MessageType.LOGIN_URL_AVAILABLE, (message) => {
       const url = message.payload?.url as string | undefined;
       if (url) setLoginUrl(url);
     });
 
     try {
       const result = await getBridge().request<{ requestId: string; status: string; error?: string }>(
-        'LOGIN',
+        MessageType.LOGIN,
         { method },
         { timeout: LOGIN_REQUEST_TIMEOUT_MS },
       );
@@ -79,7 +80,7 @@ export function SwitchAccountPage(props: Props) {
 
   const handleSubmitCode = (code: string): void => {
     getBridge().sendRaw({
-      type: 'SUBMIT_LOGIN_CODE',
+      type: MessageType.SUBMIT_LOGIN_CODE,
       payload: { code },
       timestamp: Date.now(),
     });

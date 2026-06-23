@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import { useBridge } from '@/hooks/useBridge';
 import { useWorkingDir } from '@/contexts/WorkingDirContext';
 import type { CliConfigControlResponse } from '@/types/slashCommand';
+import { MessageType } from '@/shared';
 
 interface CliConfigContextValue {
   controlResponse: CliConfigControlResponse | null;
@@ -26,7 +27,7 @@ export function CliConfigProvider(props: Props) {
     if (!isConnected) return;
 
     try {
-      const response = await send('GET_CLI_CONFIG', {
+      const response = await send(MessageType.GET_CLI_CONFIG, {
         workingDir: workingDirectory ?? undefined,
         refresh,
       });

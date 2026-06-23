@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { handleEditorContextRequest } from '../editor-context-route';
 import { ConnectionManager } from '../connection-manager';
+import { MessageType } from '../../shared';
 
 function createMockWs(readyState = 1) {
   return {
@@ -63,7 +64,7 @@ describe('handleEditorContextRequest', () => {
     expect(result.body).toEqual({ success: true });
     expect(ws.send).toHaveBeenCalledTimes(1);
     const sent = JSON.parse((ws.send as ReturnType<typeof vi.fn>).mock.calls[0][0]);
-    expect(sent.type).toBe('EDITOR_CONTEXT');
+    expect(sent.type).toBe(MessageType.EDITOR_CONTEXT);
     expect(sent.payload).toEqual({
       absolutePath: '/abs/src/file.ts',
       relativePath: 'src/file.ts',

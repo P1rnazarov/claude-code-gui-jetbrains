@@ -1,6 +1,7 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { MessageType } from '../../shared';
 
 export function sessionChangeHandler(
   connectionId: string,
@@ -12,5 +13,5 @@ export function sessionChangeHandler(
   if (sessionId) {
     connections.subscribe(connectionId, sessionId);
   }
-  connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
 }

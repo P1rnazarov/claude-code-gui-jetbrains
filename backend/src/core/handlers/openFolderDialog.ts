@@ -2,6 +2,7 @@ import { execFile, exec } from 'child_process';
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { MessageType } from '../../shared';
 
 function openFolderDialogMac(): Promise<string | null> {
   return new Promise((resolve, reject) => {
@@ -96,15 +97,15 @@ export async function openFolderDialogHandler(
     } else if (process.platform === 'win32') {
       selectedPath = await openFolderDialogWindows();
     } else {
-      connections.sendTo(connectionId, 'ERROR', {
+      connections.sendTo(connectionId, MessageType.ERROR, {
         message: `Unsupported platform: ${process.platform}`,
       });
       return;
     }
 
-    connections.sendTo(connectionId, 'FOLDER_SELECTED', { path: selectedPath });
+    connections.sendTo(connectionId, MessageType.FOLDER_SELECTED, { path: selectedPath });
   } catch (err) {
-    connections.sendTo(connectionId, 'ERROR', {
+    connections.sendTo(connectionId, MessageType.ERROR, {
       message: err instanceof Error ? err.message : String(err),
     });
   }

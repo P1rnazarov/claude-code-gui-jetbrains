@@ -1,5 +1,6 @@
 import { BridgeClient } from '../bridge/BridgeClient';
 import { PermissionType, RiskLevel, FileOperation } from '../../dto/common';
+import { MessageType } from '@/shared';
 
 interface DiffAvailablePayload {
   toolUseId: string;
@@ -25,7 +26,7 @@ export class ToolsApi {
     controlRequestId?: string,
     updatedInput?: Record<string, unknown>,
   ): Promise<void> {
-    await this.bridge.request('TOOL_RESPONSE', {
+    await this.bridge.request(MessageType.TOOL_RESPONSE, {
       toolUseId,
       approved: true,
       ...(controlRequestId && { controlRequestId }),
@@ -37,7 +38,7 @@ export class ToolsApi {
    * Deny a tool use request
    */
   async deny(toolUseId: string, controlRequestId?: string, reason?: string): Promise<void> {
-    await this.bridge.request('TOOL_RESPONSE', {
+    await this.bridge.request(MessageType.TOOL_RESPONSE, {
       toolUseId,
       approved: false,
       ...(controlRequestId && { controlRequestId }),
@@ -56,7 +57,7 @@ export class ToolsApi {
       updatedInput?: Record<string, unknown>;
     },
   ): Promise<void> {
-    await this.bridge.request('TOOL_RESPONSE', {
+    await this.bridge.request(MessageType.TOOL_RESPONSE, {
       toolUseId,
       approved: true,
       result,
@@ -75,7 +76,7 @@ export class ToolsApi {
     oldContent: string,
     newContent: string
   ): Promise<void> {
-    await this.bridge.request('OPEN_DIFF', {
+    await this.bridge.request(MessageType.OPEN_DIFF, {
       filePath,
       oldContent,
       newContent,
@@ -93,7 +94,7 @@ export class ToolsApi {
       operation?: FileOperation;
     }
   ): Promise<void> {
-    await this.bridge.request('APPLY_DIFF', {
+    await this.bridge.request(MessageType.APPLY_DIFF, {
       toolUseId,
       ...options,
     });
@@ -103,7 +104,7 @@ export class ToolsApi {
    * Reject a diff (decline file changes)
    */
   async rejectDiff(toolUseId: string): Promise<void> {
-    await this.bridge.request('REJECT_DIFF', { toolUseId });
+    await this.bridge.request(MessageType.REJECT_DIFF, { toolUseId });
   }
 
   // Event subscriptions
@@ -114,7 +115,7 @@ export class ToolsApi {
   onDiffAvailable(
     callback: (diff: DiffAvailablePayload) => void
   ): () => void {
-    return this.bridge.subscribe('DIFF_AVAILABLE', (message) => {
+    return this.bridge.subscribe(MessageType.DIFF_AVAILABLE, (message) => {
       callback(message.payload as unknown as DiffAvailablePayload);
     });
   }
@@ -125,7 +126,7 @@ export class ToolsApi {
   onToolComplete(
     callback: (data: { toolUseId: string; result?: string; error?: string }) => void
   ): () => void {
-    return this.bridge.subscribe('TOOL_COMPLETE', (message) => {
+    return this.bridge.subscribe(MessageType.TOOL_COMPLETE, (message) => {
       callback({
         toolUseId: message.payload?.toolUseId as string,
         result: message.payload?.result as string | undefined,

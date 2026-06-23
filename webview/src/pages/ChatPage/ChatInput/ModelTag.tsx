@@ -8,6 +8,7 @@ import { SWITCH_MODEL_EVENT } from '@/pages/ChatPage/ModelSwitchOverlay';
 import { DEFAULT_MODEL_ALIAS } from '@/types/models';
 import { LoadedMessageType } from '@/types';
 import type { ModelInfo } from '@/types/slashCommand';
+import { MessageType } from '@/shared';
 
 /** Fired by the ⌘/Ctrl+Shift+. shortcut to rotate to the next model. */
 export const ROTATE_MODEL_EVENT = 'rotate-model';
@@ -58,7 +59,7 @@ export function ModelTag() {
         timestamp: new Date().toISOString(),
         summary: `Set model to ${resolveModelLabel(next)}`,
       });
-      if (currentSessionId) void send('SET_MODEL', { model: next.value });
+      if (currentSessionId) void send(MessageType.SET_MODEL, { model: next.value });
     };
 
     window.addEventListener(ROTATE_MODEL_EVENT, handleRotate);

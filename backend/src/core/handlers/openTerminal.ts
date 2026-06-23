@@ -1,6 +1,7 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { MessageType } from '../../shared';
 
 export async function openTerminalHandler(
   connectionId: string,
@@ -11,7 +12,7 @@ export async function openTerminalHandler(
   try {
     const workingDir = message.payload?.['workingDir'] as string | undefined;
     if (!workingDir) {
-      connections.sendTo(connectionId, 'ERROR', {
+      connections.sendTo(connectionId, MessageType.ERROR, {
         requestId: message.requestId,
         error: 'workingDir is required',
       });
@@ -21,5 +22,5 @@ export async function openTerminalHandler(
   } catch (err) {
     console.error('[node-backend]', 'bridge.openTerminal() failed:', err);
   }
-  connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
 }

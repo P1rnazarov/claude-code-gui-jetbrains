@@ -1,3 +1,5 @@
+import { MessageType } from '@/shared';
+
 enum LogLevel {
   LOG = 'log',
   INFO = 'info',
@@ -113,7 +115,7 @@ class LogForwarder {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
 
     const entries = this.buffer.splice(0);
-    this.ws.send(JSON.stringify({ type: 'LOG_BATCH', entries }));
+    this.ws.send(JSON.stringify({ type: MessageType.LOG_BATCH, entries }));
   }
 }
 

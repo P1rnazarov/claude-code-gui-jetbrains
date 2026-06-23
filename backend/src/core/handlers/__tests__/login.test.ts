@@ -10,6 +10,7 @@ import { Claude } from '../../claude';
 import type { ConnectionManager } from '../../../ws/connection-manager';
 import type { Bridge } from '../../../bridge/bridge-interface';
 import type { IPCMessage } from '../../types';
+import { MessageType } from '../../../shared';
 
 const mockSpawn = vi.mocked(Claude.spawn);
 
@@ -38,7 +39,7 @@ const mockBridge = { openUrl: vi.fn() } as unknown as Bridge;
 async function runLogin(method: unknown, exitCode: number, connections = createMockConnections()) {
   const child = fakeChild();
   mockSpawn.mockReturnValue(child as never);
-  const message: IPCMessage = { type: 'LOGIN', payload: method === undefined ? {} : { method }, requestId: 'r1', timestamp: 0 };
+  const message: IPCMessage = { type: MessageType.LOGIN, payload: method === undefined ? {} : { method }, requestId: 'r1', timestamp: 0 };
   const promise = loginHandler('c1', message, connections, mockBridge);
   child.emit('close', exitCode);
   await promise;
@@ -65,7 +66,7 @@ describe('loginHandler', () => {
 
   it('sends an ok ACK when the CLI exits 0', async () => {
     const connections = await runLogin('console', 0);
-    expect(connections.sendTo).toHaveBeenCalledWith('c1', 'ACK', expect.objectContaining({
+    expect(connections.sendTo).toHaveBeenCalledWith('c1', MessageType.ACK, expect.objectContaining({
       requestId: 'r1',
       status: 'ok',
     }));
@@ -73,7 +74,7 @@ describe('loginHandler', () => {
 
   it('sends an error ACK when the CLI exits non-zero', async () => {
     const connections = await runLogin('console', 1);
-    expect(connections.sendTo).toHaveBeenCalledWith('c1', 'ACK', expect.objectContaining({
+    expect(connections.sendTo).toHaveBeenCalledWith('c1', MessageType.ACK, expect.objectContaining({
       requestId: 'r1',
       status: 'error',
     }));
@@ -91,7 +92,7 @@ describe('loginHandler OAuth URL forwarding', () => {
   function startLogin(connections = createMockConnections()) {
     const child = fakeChild();
     mockSpawn.mockReturnValue(child as never);
-    const message: IPCMessage = { type: 'LOGIN', payload: { method: 'claude-ai' }, requestId: 'r1', timestamp: 0 };
+    const message: IPCMessage = { type: MessageType.LOGIN, payload: { method: 'claude-ai' }, requestId: 'r1', timestamp: 0 };
     const promise = loginHandler('c1', message, connections, mockBridge);
     return { child, connections, promise };
   }
@@ -103,7 +104,7 @@ describe('loginHandler OAuth URL forwarding', () => {
 
     child.stdout.emit('data', Buffer.from(`Opening browser to sign in…\nIf the browser didn't open, visit: ${URL}\n`));
 
-    expect(connections.sendTo).toHaveBeenCalledWith('c1', 'LOGIN_URL_AVAILABLE', expect.objectContaining({
+    expect(connections.sendTo).toHaveBeenCalledWith('c1', MessageType.LOGIN_URL_AVAILABLE, expect.objectContaining({
       requestId: 'r1',
       url: URL,
     }));
@@ -120,7 +121,7 @@ describe('loginHandler OAuth URL forwarding', () => {
     child.stdout.emit('data', Buffer.from('authorize?code=abc123&state=xyz\n'));
     child.stdout.emit('data', Buffer.from('still streaming more output...\n'));
 
-    const urlCalls = vi.mocked(connections.sendTo).mock.calls.filter(([, type]) => type === 'LOGIN_URL_AVAILABLE');
+    const urlCalls = vi.mocked(connections.sendTo).mock.calls.filter(([, type]) => type === MessageType.LOGIN_URL_AVAILABLE);
     expect(urlCalls).toHaveLength(1);
     expect(urlCalls[0][2]).toMatchObject({ url: URL });
 
@@ -136,7 +137,7 @@ describe('cancelLogin', () => {
     const child = fakeChild();
     mockSpawn.mockReturnValue(child as never);
     const connections = createMockConnections();
-    const message: IPCMessage = { type: 'LOGIN', payload: { method: 'claude-ai' }, requestId: 'r1', timestamp: 0 };
+    const message: IPCMessage = { type: MessageType.LOGIN, payload: { method: 'claude-ai' }, requestId: 'r1', timestamp: 0 };
     // Login is in flight: the child has NOT closed yet.
     void loginHandler('c1', message, connections, mockBridge);
 

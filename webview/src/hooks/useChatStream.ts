@@ -4,6 +4,7 @@ import type { TextBlockDto, ToolUseBlockDto, ThinkingBlockDto, ImageBlockDto, Im
 import { ContentBlockType } from '../dto/message/ContentBlockDto';
 import { toInstance, LoadedMessageType, MessageRole } from '../dto/common';
 import { parsePartialJson } from '../utils/parsePartialJson';
+import { MessageType } from '@/shared';
 
 /** Re-export for backwards compatibility */
 export type { LoadedMessageDto as LoadedMessage } from '../types';
@@ -516,7 +517,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
       const content = getTextContent(userMessage);
       addUserMessage(content, userMessage.context);
       // Also send via bridge
-      bridge.send('SEND_MESSAGE', {
+      bridge.send(MessageType.SEND_MESSAGE, {
         content,
         context: userMessage.context || [],
       }).catch((err) => {
@@ -566,7 +567,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
   // Subscribe to backend events
   useEffect(() => {
     // CLI_EVENT handler — 백엔드가 CLI 이벤트를 통합 전달
-    const unsubscribeCliEvent = bridge.subscribe('CLI_EVENT', (message) => {
+    const unsubscribeCliEvent = bridge.subscribe(MessageType.CLI_EVENT, (message) => {
       const cliEvent = message.payload as Record<string, unknown> | undefined;
       if (!cliEvent) return;
 
@@ -916,7 +917,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     });
 
     // SERVICE_ERROR handler — 프로세스 spawn/close 에러 (CLI 이벤트가 아닌 백엔드 자체 이벤트)
-    const unsubscribeServiceError = bridge.subscribe('SERVICE_ERROR', (message) => {
+    const unsubscribeServiceError = bridge.subscribe(MessageType.SERVICE_ERROR, (message) => {
       const payload = message.payload;
       const errorType = payload?.type as string | undefined;
       const reason = payload?.reason as string | undefined;
@@ -937,7 +938,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     });
 
     // AUTH_ERROR_DIAGNOSIS handler — 인증 에러 시 env API 키 진단 정보
-    const unsubscribeAuthDiagnosis = bridge.subscribe('AUTH_ERROR_DIAGNOSIS', (message) => {
+    const unsubscribeAuthDiagnosis = bridge.subscribe(MessageType.AUTH_ERROR_DIAGNOSIS, (message) => {
       const payload = message.payload as { envApiKeys: string[]; message: string } | undefined;
       if (payload?.envApiKeys?.length) {
         setAuthDiagnosis(payload);
@@ -945,7 +946,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     });
 
     // USER_MESSAGE_BROADCAST handler — 다른 탭에서 보낸 사용자 메시지 수신
-    const unsubscribeUserBroadcast = bridge.subscribe('USER_MESSAGE_BROADCAST', (message: IPCMessage) => {
+    const unsubscribeUserBroadcast = bridge.subscribe(MessageType.USER_MESSAGE_BROADCAST, (message: IPCMessage) => {
       const content = message.payload?.content as string;
       if (!content) return;
 
@@ -960,7 +961,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
 
     // STREAM_END handler — 스트림 종료 안전망
     // result나 SERVICE_ERROR가 도착하지 않은 경우에도 스트리밍 상태를 정리
-    const unsubscribeStreamEnd = bridge.subscribe('STREAM_END', () => {
+    const unsubscribeStreamEnd = bridge.subscribe(MessageType.STREAM_END, () => {
       if (streamingMessageIdRef.current) {
         console.warn('[useChatStream] STREAM_END received while still streaming — ending stream as safety net');
         endStreaming();

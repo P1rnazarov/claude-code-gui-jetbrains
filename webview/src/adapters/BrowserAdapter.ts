@@ -1,4 +1,4 @@
-import { ClientEnv } from '../shared';
+import { MessageType, ClientEnv } from '../shared';
 import type { IdeAdapter } from './IdeAdapter';
 import { getBridge } from '../api/bridge/Bridge';
 
@@ -57,7 +57,7 @@ export class BrowserAdapter implements IdeAdapter {
 
   async openFile(filePath: string): Promise<void> {
     try {
-      await getBridge().request('OPEN_FILE', { filePath });
+      await getBridge().request(MessageType.OPEN_FILE, { filePath });
       console.log('[BrowserAdapter] Sent OPEN_FILE request:', filePath);
     } catch (error) {
       console.error('[BrowserAdapter] Failed to open file:', filePath, error);
@@ -66,7 +66,7 @@ export class BrowserAdapter implements IdeAdapter {
 
   async openTerminal(workingDir: string): Promise<void> {
     try {
-      await getBridge().request('OPEN_TERMINAL', { workingDir });
+      await getBridge().request(MessageType.OPEN_TERMINAL, { workingDir });
       console.log('[BrowserAdapter] Sent OPEN_TERMINAL request:', workingDir);
     } catch (error) {
       console.error('[BrowserAdapter] Failed to open terminal:', error);
@@ -79,7 +79,7 @@ export class BrowserAdapter implements IdeAdapter {
   }
 
   async restartBackend(): Promise<void> {
-    await getBridge().request('RESTART_BACKEND');
+    await getBridge().request(MessageType.RESTART_BACKEND);
     console.log('[BrowserAdapter] Sent RESTART_BACKEND via WebSocket bridge');
   }
 }

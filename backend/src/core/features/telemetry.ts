@@ -2,6 +2,7 @@ import { readProfile, ConsentStatus } from './profile';
 import { homedir, release } from 'os';
 import { getPluginVersion, getCliVersion } from '../handlers/getVersion';
 import { basename } from 'path';
+import { MessageType } from '../../shared';
 import {
   CCG_RYBBIT_API_KEY as RYBBIT_API_KEY,
   RYBBIT_HOST,
@@ -269,30 +270,30 @@ export function trackEvent(
 // 부르는 read-only 조회는 노이즈로 제외하고, 사용자가 직접 일으킨 동작(SEND/SAVE/SET/OPEN
 // /CREATE/APPLY…)만 활동으로 남긴다. GET_PROJECTS·LOAD_SESSION은 화면 진입/세션 전환의
 // 약한 행동 신호라 의도적으로 유지한다.
-const ACTIVITY_EXCLUDED_TYPES = new Set([
+const ACTIVITY_EXCLUDED_TYPES = new Set<string>([
   // 시스템 / 에러 / 폴링성 자동 트래픽
-  'CLIENT_INFO',           // 순수 WS 연결 핸드셰이크
-  'CLIENT_ERROR',          // 에러 보고(reportBackendError 경로)
-  'GET_ACCOUNT',           // 창 포커스마다 자동 refetch
-  'GET_USAGE',             // 사용량 조회 폴링성
+  MessageType.CLIENT_INFO,           // 순수 WS 연결 핸드셰이크
+  MessageType.CLIENT_ERROR,          // 에러 보고(reportBackendError 경로)
+  MessageType.GET_ACCOUNT,           // 창 포커스마다 자동 refetch
+  MessageType.GET_USAGE,             // 사용량 조회 폴링성
   // 인프라 / 환경 / 버전 자동 조회 (마운트 시 버스트)
-  'GET_TELEMETRY_CONSENT', // 동의 상태 자동 조회
-  'GET_CLI_CONFIG',        // CLI 설정 자동 로드
-  'GET_IDE_ROOT',          // IDE 루트 자동 조회
-  'GET_VERSION',           // 버전 자동 표시(About 리로드 클릭만 능동)
-  'GET_PLUGIN_UPDATES',    // 업데이트 확인(폴링성)
-  'GET_TUNNEL_STATUS',     // 터널 상태(폴링성)
-  'GET_TUNNEL_PREREQS',    // 터널 사전조건 조회
-  'GET_WORKING_DIR',       // 작업 디렉토리 자동 조회
-  'GET_AVAILABLE_TERMINALS', // 터미널 탐지(설정 마운트)
-  'GET_DETECTED_CLI_PATH',   // CLI 경로 탐지
-  'GET_DETECTED_NODE_PATH',  // Node 경로 탐지
+  MessageType.GET_TELEMETRY_CONSENT, // 동의 상태 자동 조회
+  MessageType.GET_CLI_CONFIG,        // CLI 설정 자동 로드
+  MessageType.GET_IDE_ROOT,          // IDE 루트 자동 조회
+  MessageType.GET_VERSION,           // 버전 자동 표시(About 리로드 클릭만 능동)
+  MessageType.GET_PLUGIN_UPDATES,    // 업데이트 확인(폴링성)
+  MessageType.GET_TUNNEL_STATUS,     // 터널 상태(폴링성)
+  MessageType.GET_TUNNEL_PREREQS,    // 터널 사전조건 조회
+  MessageType.GET_WORKING_DIR,       // 작업 디렉토리 자동 조회
+  MessageType.GET_AVAILABLE_TERMINALS, // 터미널 탐지(설정 마운트)
+  MessageType.GET_DETECTED_CLI_PATH,   // CLI 경로 탐지
+  MessageType.GET_DETECTED_NODE_PATH,  // Node 경로 탐지
   // 콘텐츠 자동 로드 (마운트 버스트, 화면 진입은 OPEN_*/능동 행동으로 별도 포착)
-  'GET_SETTINGS',          // 설정 자동 로드
-  'GET_CLAUDE_SETTINGS',   // Claude 설정 자동 로드
-  'GET_SESSIONS',          // 세션 목록 자동 로드
-  'RECLAIM_SESSION',       // 탭 자동 복원
-  'LIST_PROJECT_FILES',    // @멘션 파일 검색(타이핑 중 자동 빈발)
+  MessageType.GET_SETTINGS,          // 설정 자동 로드
+  MessageType.GET_CLAUDE_SETTINGS,   // Claude 설정 자동 로드
+  MessageType.GET_SESSIONS,          // 세션 목록 자동 로드
+  MessageType.RECLAIM_SESSION,       // 탭 자동 복원
+  MessageType.LIST_PROJECT_FILES,    // @멘션 파일 검색(타이핑 중 자동 빈발)
 ]);
 
 /**

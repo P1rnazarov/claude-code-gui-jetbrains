@@ -4,6 +4,7 @@ import { restartBackendHandler } from '../restartBackend';
 import type { ConnectionManager } from '../../../ws/connection-manager';
 import type { Bridge } from '../../../bridge/bridge-interface';
 import type { IPCMessage } from '../../types';
+import { MessageType } from '../../../shared';
 
 function createMockConnections() {
   return {
@@ -30,7 +31,7 @@ describe('restartBackendHandler', () => {
   it('should send ACK with requestId before exiting', () => {
     const connections = createMockConnections();
     const message: IPCMessage = {
-      type: 'RESTART_BACKEND',
+      type: MessageType.RESTART_BACKEND,
       payload: {},
       timestamp: 0,
       requestId: 'req-restart-1',
@@ -38,7 +39,7 @@ describe('restartBackendHandler', () => {
 
     restartBackendHandler('conn-1', message, connections, mockBridge);
 
-    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', {
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, {
       requestId: 'req-restart-1',
     });
   });
@@ -46,7 +47,7 @@ describe('restartBackendHandler', () => {
   it('should call process.exit(75) after ~300ms', () => {
     const connections = createMockConnections();
     const message: IPCMessage = {
-      type: 'RESTART_BACKEND',
+      type: MessageType.RESTART_BACKEND,
       payload: {},
       timestamp: 0,
       requestId: 'req-restart-2',
@@ -66,7 +67,7 @@ describe('restartBackendHandler', () => {
   it('should send ACK before process.exit is scheduled', () => {
     const connections = createMockConnections();
     const message: IPCMessage = {
-      type: 'RESTART_BACKEND',
+      type: MessageType.RESTART_BACKEND,
       payload: {},
       timestamp: 0,
       requestId: 'req-restart-3',
@@ -87,7 +88,7 @@ describe('restartBackendHandler', () => {
   it('should not call process.exit before 300ms elapses', () => {
     const connections = createMockConnections();
     const message: IPCMessage = {
-      type: 'RESTART_BACKEND',
+      type: MessageType.RESTART_BACKEND,
       payload: {},
       timestamp: 0,
       requestId: 'req-restart-4',

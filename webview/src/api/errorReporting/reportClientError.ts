@@ -1,4 +1,5 @@
 import { getBridge } from '../bridge/Bridge';
+import { MessageType } from '@/shared';
 
 /**
  * Where in the frontend the error was caught. Sent verbatim to the backend so the
@@ -24,7 +25,7 @@ export function reportClientError(error: unknown, context: ClientErrorContext): 
   try {
     const err = error instanceof Error ? error : new Error(String(error));
     const message: IPCMessage = {
-      type: 'CLIENT_ERROR',
+      type: MessageType.CLIENT_ERROR,
       payload: {
         message: err.message,
         stack: err.stack ?? '',
