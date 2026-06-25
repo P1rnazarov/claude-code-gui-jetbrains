@@ -83,65 +83,99 @@
    Semantic Color Tokens — Light (default :root)
    ============================================ */
 :root {
-  /* Surface */
-  --surface-base:     #FFFFFF;
-  --surface-raised:   #FAFAFA;
-  --surface-overlay:  #FFFFFF;
-  --surface-sunken:   #F2F2F2;
-  --surface-hover:    #F5F5F5;
-  --surface-pressed:  #EBEBEB;
+  /* Surface
+     Solid tokens carry an `-rgb` channel source (space-separated R G B) so
+     Tailwind utilities can apply `/NN` opacity modifiers. The legacy hex name
+     is kept as an `rgb(...)` derivative — identical color, still valid for
+     direct `var(--surface-base)` use and `--ide-*` aliases. */
+  --surface-base-rgb:    255 255 255;
+  --surface-base:        rgb(var(--surface-base-rgb));
+  --surface-raised-rgb:  250 250 250;
+  --surface-raised:      rgb(var(--surface-raised-rgb));
+  --surface-overlay-rgb: 255 255 255;
+  --surface-overlay:     rgb(var(--surface-overlay-rgb));
+  --surface-sunken-rgb:  242 242 242;
+  --surface-sunken:      rgb(var(--surface-sunken-rgb));
+  --surface-hover-rgb:   245 245 245;
+  --surface-hover:       rgb(var(--surface-hover-rgb));
+  --surface-pressed-rgb: 235 235 235;
+  --surface-pressed:     rgb(var(--surface-pressed-rgb));
   --surface-selected: var(--ide-selection-bg, #E7F1FC);
-  --surface-tooltip:  #3A3A3A;
+  --surface-tooltip-rgb: 58 58 58;
+  --surface-tooltip:     rgb(var(--surface-tooltip-rgb));
   --text-on-selected: var(--ide-selection-fg, #1E1E1E);
 
   /* Text */
-  --text-primary:     #1E1E1E;
-  --text-secondary:   #5C5C5C;
-  --text-tertiary:    #787878;
-  --text-disabled:    #B5B5B5;
-  --text-inverse:     #FFFFFF;
-  --text-link:        #3574F0;
-  --text-on-tooltip:  #FFFFFF;
+  --text-primary-rgb:   30 30 30;
+  --text-primary:       rgb(var(--text-primary-rgb));
+  --text-secondary-rgb: 92 92 92;
+  --text-secondary:     rgb(var(--text-secondary-rgb));
+  --text-tertiary-rgb:  120 120 120;
+  --text-tertiary:      rgb(var(--text-tertiary-rgb));
+  --text-disabled-rgb:  181 181 181;
+  --text-disabled:      rgb(var(--text-disabled-rgb));
+  --text-inverse-rgb:   255 255 255;
+  --text-inverse:       rgb(var(--text-inverse-rgb));
+  --text-link-rgb:      53 116 240;
+  --text-link:          rgb(var(--text-link-rgb));
+  --text-on-tooltip-rgb: 255 255 255;
+  --text-on-tooltip:    rgb(var(--text-on-tooltip-rgb));
 
   /* Border */
-  --border-subtle:    #EDEDED;
-  --border-default:   #E0E0E0;
-  --border-strong:    #D1D1D1;
-  --border-focus:     #3574F0;
-  --border-divider:   #E5E5E5;
+  --border-subtle-rgb:  237 237 237;
+  --border-subtle:      rgb(var(--border-subtle-rgb));
+  --border-default-rgb: 224 224 224;
+  --border-default:     rgb(var(--border-default-rgb));
+  --border-strong-rgb:  209 209 209;
+  --border-strong:      rgb(var(--border-strong-rgb));
+  --border-focus-rgb:   53 116 240;
+  --border-focus:       rgb(var(--border-focus-rgb));
+  --border-divider-rgb: 229 229 229;
+  --border-divider:     rgb(var(--border-divider-rgb));
 
   /* Accent (IntelliJ Blue) */
-  --accent-primary:         #3574F0;
-  --accent-primary-hover:   #2F69D8;
-  --accent-primary-pressed: #265CC0;
-  --accent-primary-fg:      #FFFFFF;
+  --accent-primary-rgb:         53 116 240;
+  --accent-primary:             rgb(var(--accent-primary-rgb));
+  --accent-primary-hover-rgb:   47 105 216;
+  --accent-primary-hover:       rgb(var(--accent-primary-hover-rgb));
+  --accent-primary-pressed-rgb: 38 92 192;
+  --accent-primary-pressed:     rgb(var(--accent-primary-pressed-rgb));
+  --accent-primary-fg-rgb:      255 255 255;
+  --accent-primary-fg:          rgb(var(--accent-primary-fg-rgb));
   --accent-primary-subtle:  #E7F1FC;
-  --accent-claude:          #D97757;
-  --accent-claude-hover:    #c5684a;
+  --accent-claude-rgb:          217 119 87;
+  --accent-claude:              rgb(var(--accent-claude-rgb));
+  --accent-claude-hover-rgb:    197 104 74;
+  --accent-claude-hover:        rgb(var(--accent-claude-hover-rgb));
 
   /* State — Success */
   --state-success-bg:     #E8F5E9;
-  --state-success-fg:     #2E7D32;
+  --state-success-fg-rgb: 46 125 50;
+  --state-success-fg:     rgb(var(--state-success-fg-rgb));
   --state-success-border: #A5D6A7;
 
   /* State — Warning */
   --state-warning-bg:     #FFF8E1;
-  --state-warning-fg:     #B27300;
+  --state-warning-fg-rgb: 178 115 0;
+  --state-warning-fg:     rgb(var(--state-warning-fg-rgb));
   --state-warning-border: #FFE082;
 
   /* State — Error */
   --state-error-bg:     #FFEBEE;
-  --state-error-fg:     #C62828;
+  --state-error-fg-rgb: 198 40 40;
+  --state-error-fg:     rgb(var(--state-error-fg-rgb));
   --state-error-border: #EF9A9A;
 
   /* State — Info */
   --state-info-bg:     #E3F2FD;
-  --state-info-fg:     #1565C0;
+  --state-info-fg-rgb: 21 101 192;
+  --state-info-fg:     rgb(var(--state-info-fg-rgb));
   --state-info-border: #90CAF9;
 
   /* State — Pending */
   --state-pending-bg:     #FFF3E0;
-  --state-pending-fg:     #E65100;
+  --state-pending-fg-rgb: 230 81 0;
+  --state-pending-fg:     rgb(var(--state-pending-fg-rgb));
   --state-pending-border: #FFCC80;
 
   /* Overlay (always alpha, never opacity-modulated) */
@@ -185,56 +219,86 @@
    Semantic Color Tokens — Dark
    ============================================ */
 .dark {
-  --surface-base:     #1A1A1A;
-  --surface-raised:   #1E1E21;
-  --surface-overlay:  #252526;
-  --surface-sunken:   #141414;
-  --surface-hover:    #2A2A2D;
-  --surface-pressed:  #323236;
+  --surface-base-rgb:    26 26 26;
+  --surface-base:        rgb(var(--surface-base-rgb));
+  --surface-raised-rgb:  30 30 33;
+  --surface-raised:      rgb(var(--surface-raised-rgb));
+  --surface-overlay-rgb: 37 37 38;
+  --surface-overlay:     rgb(var(--surface-overlay-rgb));
+  --surface-sunken-rgb:  20 20 20;
+  --surface-sunken:      rgb(var(--surface-sunken-rgb));
+  --surface-hover-rgb:   42 42 45;
+  --surface-hover:       rgb(var(--surface-hover-rgb));
+  --surface-pressed-rgb: 50 50 54;
+  --surface-pressed:     rgb(var(--surface-pressed-rgb));
   --surface-selected: var(--ide-selection-bg, #2a3548);
-  --surface-tooltip:  #3A3A3A;
+  --surface-tooltip-rgb: 58 58 58;
+  --surface-tooltip:     rgb(var(--surface-tooltip-rgb));
   --text-on-selected: var(--ide-selection-fg, #FFFFFF);
 
-  --text-primary:     #FFFFFF;
-  --text-secondary:   #A1A1AA;
-  --text-tertiary:    #71717A;
-  --text-disabled:    #52525B;
-  --text-inverse:     #1E1E1E;
-  --text-link:        #5A8DEE;
-  --text-on-tooltip:  #FFFFFF;
+  --text-primary-rgb:   255 255 255;
+  --text-primary:       rgb(var(--text-primary-rgb));
+  --text-secondary-rgb: 161 161 170;
+  --text-secondary:     rgb(var(--text-secondary-rgb));
+  --text-tertiary-rgb:  113 113 122;
+  --text-tertiary:      rgb(var(--text-tertiary-rgb));
+  --text-disabled-rgb:  82 82 91;
+  --text-disabled:      rgb(var(--text-disabled-rgb));
+  --text-inverse-rgb:   30 30 30;
+  --text-inverse:       rgb(var(--text-inverse-rgb));
+  --text-link-rgb:      90 141 238;
+  --text-link:          rgb(var(--text-link-rgb));
+  --text-on-tooltip-rgb: 255 255 255;
+  --text-on-tooltip:    rgb(var(--text-on-tooltip-rgb));
 
-  --border-subtle:    #27272A;
-  --border-default:   #3F3F46;
-  --border-strong:    #52525B;
-  --border-focus:     #5A8DEE;
-  --border-divider:   #2A2A2D;
+  --border-subtle-rgb:  39 39 42;
+  --border-subtle:      rgb(var(--border-subtle-rgb));
+  --border-default-rgb: 63 63 70;
+  --border-default:     rgb(var(--border-default-rgb));
+  --border-strong-rgb:  82 82 91;
+  --border-strong:      rgb(var(--border-strong-rgb));
+  --border-focus-rgb:   90 141 238;
+  --border-focus:       rgb(var(--border-focus-rgb));
+  --border-divider-rgb: 42 42 45;
+  --border-divider:     rgb(var(--border-divider-rgb));
 
-  --accent-primary:         #3574F0;
-  --accent-primary-hover:   #4A82F2;
-  --accent-primary-pressed: #2D6BE0;
-  --accent-primary-fg:      #FFFFFF;
+  --accent-primary-rgb:         53 116 240;
+  --accent-primary:             rgb(var(--accent-primary-rgb));
+  --accent-primary-hover-rgb:   74 130 242;
+  --accent-primary-hover:       rgb(var(--accent-primary-hover-rgb));
+  --accent-primary-pressed-rgb: 45 107 224;
+  --accent-primary-pressed:     rgb(var(--accent-primary-pressed-rgb));
+  --accent-primary-fg-rgb:      255 255 255;
+  --accent-primary-fg:          rgb(var(--accent-primary-fg-rgb));
   --accent-primary-subtle:  rgba(53, 116, 240, 0.15);
-  --accent-claude:          #D97757;
-  --accent-claude-hover:    #c5684a;
+  --accent-claude-rgb:          217 119 87;
+  --accent-claude:              rgb(var(--accent-claude-rgb));
+  --accent-claude-hover-rgb:    197 104 74;
+  --accent-claude-hover:        rgb(var(--accent-claude-hover-rgb));
 
   --state-success-bg:     rgba(34, 197, 94, 0.15);
-  --state-success-fg:     #4ADE80;
+  --state-success-fg-rgb: 74 222 128;
+  --state-success-fg:     rgb(var(--state-success-fg-rgb));
   --state-success-border: rgba(34, 197, 94, 0.40);
 
   --state-warning-bg:     rgba(245, 158, 11, 0.15);
-  --state-warning-fg:     #FBBF24;
+  --state-warning-fg-rgb: 251 191 36;
+  --state-warning-fg:     rgb(var(--state-warning-fg-rgb));
   --state-warning-border: rgba(245, 158, 11, 0.40);
 
   --state-error-bg:     rgba(239, 68, 68, 0.15);
-  --state-error-fg:     #F87171;
+  --state-error-fg-rgb: 248 113 113;
+  --state-error-fg:     rgb(var(--state-error-fg-rgb));
   --state-error-border: rgba(239, 68, 68, 0.40);
 
   --state-info-bg:     rgba(59, 130, 246, 0.15);
-  --state-info-fg:     #60A5FA;
+  --state-info-fg-rgb: 96 165 250;
+  --state-info-fg:     rgb(var(--state-info-fg-rgb));
   --state-info-border: rgba(59, 130, 246, 0.40);
 
   --state-pending-bg:     rgba(245, 158, 11, 0.15);
-  --state-pending-fg:     #FBBF24;
+  --state-pending-fg-rgb: 251 191 36;
+  --state-pending-fg:     rgb(var(--state-pending-fg-rgb));
   --state-pending-border: rgba(245, 158, 11, 0.40);
 
   --overlay-scrim: rgba(0, 0, 0, 0.55);
