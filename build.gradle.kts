@@ -146,6 +146,13 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+            <h3>0.19.5 - Polished tool cards & richer thinking view</h3>
+            <ul>
+                <li>MCP tool calls (like Gmail) now render as clean, readable cards instead of raw JSON — with a graceful fallback layout for any MCP tool we haven't styled yet.</li>
+                <li>Thinking blocks now show a live token count as Claude thinks, and how long it took once finished.</li>
+                <li>Tool results are easier to scan at a glance — the status dot is now colored by success, error, or in-progress.</li>
+                <li>Your custom Claude data directory (CLAUDE_CONFIG_DIR) is now honored everywhere — usage, chat, sessions, and account. (#123)</li>
+            </ul>
             <h3>0.19.4 - Reliable model switching & one-click restart</h3>
             <ul>
                 <li>Your model choice now sticks: pick a model and it takes effect on your next message, and the model tag no longer disappears after a response.</li>
