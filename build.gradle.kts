@@ -146,31 +146,11 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
-            <h3>0.19.5 - Polished tool cards & richer thinking view</h3>
+            <h3>0.20.0 - Auto permission mode & Cursor-style Effort control</h3>
             <ul>
-                <li>MCP tool calls (like Gmail) now render as clean, readable cards instead of raw JSON — with a graceful fallback layout for any MCP tool we haven't styled yet.</li>
-                <li>Thinking blocks now show a live token count as Claude thinks, and how long it took once finished.</li>
-                <li>Tool results are easier to scan at a glance — the status dot is now colored by success, error, or in-progress.</li>
-                <li>Your custom Claude data directory (CLAUDE_CONFIG_DIR) is now honored everywhere — usage, chat, sessions, and account. (#123)</li>
-            </ul>
-            <h3>0.19.4 - Reliable model switching & one-click restart</h3>
-            <ul>
-                <li>Your model choice now sticks: pick a model and it takes effect on your next message, and the model tag no longer disappears after a response.</li>
-                <li>New "Restart plugin" command in the command palette — restart the backend without reopening the IDE tab. (#119)</li>
-                <li>Sessions now load even when you've pointed Claude Code at a custom data directory via CLAUDE_CONFIG_DIR. (#118)</li>
-            </ul>
-            <h3>0.19.2 - Faster session switching & smarter usage hints</h3>
-            <ul>
-                <li>Jump between conversations faster: open the session dropdown with the new /resume command, navigate it entirely from the keyboard, and search instantly by session ID.</li>
-                <li>Switch accounts in seconds with the new /login command in the command palette.</li>
-                <li>Optional, consent-based usage analytics to help improve the plugin — off by default, sent only if you opt in.</li>
-                <li>Fixed the usage hint not showing in some shell locales. (#116)</li>
-            </ul>
-            <h3>0.19.0 - Session panel & Sidebar chats now available!</h3>
-            <ul>
-                <li>New session list panel on the left: browse all your Claude sessions and click one to open it in a new tab — even when no editor tab is open.</li>
-                <li>Choose where chats open — a dedicated editor tab or the sidebar tool window — under Settings → General → Preferred Location.</li>
-                <li>Fixed a startup freeze — restoring Claude tabs no longer locks up the IDE for up to a minute. (#110)</li>
+                <li><b>Auto permission mode</b> — optionally auto-approve tool actions so the conversation keeps flowing without repeated permission prompts.</li>
+                <li><b>Effort slider</b> — a new Cursor-style Effort control (including an ultracode step) to tune how hard the model thinks, with the <code>/effort</code> command fixed. The Effort row is hidden automatically on models that don't support it.</li>
+                <li>The backend now cleans up its extracted temporary directories on exit, preventing temp-folder buildup.</li>
             </ul>
         """.trimIndent()
     }
