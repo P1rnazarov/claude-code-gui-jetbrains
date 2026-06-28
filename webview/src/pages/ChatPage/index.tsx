@@ -169,7 +169,7 @@ export function ChatPage() {
   return (
     <div className="flex flex-col w-full h-screen bg-surface-base text-text-primary fixed left-0 top-0" onMouseDown={handleContainerMouseDown}>
       {/* Header - Minimal */}
-      <div className="fixed w-full top-0 bg-blend-darken bg-surface-base z-10">
+      <div className="fixed w-full top-0 bg-blend-darken bg-surface-base z-30">
         <SessionHeader />
       </div>
 
