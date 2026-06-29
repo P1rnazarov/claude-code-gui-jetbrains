@@ -50,7 +50,7 @@ function SessionLoader({ children }: { children: ReactNode }) {
     loadSessions, sessions, currentSessionId, navigateToNewSession,
     isNewlyCreatedSession, setSessionState,
   } = useSessionContext();
-  const { loadMessages, resetForSessionSwitch } = useChatStreamContext();
+  const { loadMessages, appendLoadedEntries, isStreaming, resetForSessionSwitch } = useChatStreamContext();
 
   // Ref to track currentSessionId for SESSION_LOADED validation (avoids stale closure)
   const currentSessionIdRef = useRef<string | null>(currentSessionId);
@@ -131,6 +131,21 @@ function SessionLoader({ children }: { children: ReactNode }) {
       }
     });
   }, [subscribe, loadMessages, isNewlyCreatedSession]);
+
+  useEffect(() => {
+    return subscribe(MessageType.SESSION_APPEND, (message) => {
+      if (isStreaming) return;
+      if (message.payload?.messages) {
+        const rawMessages = message.payload.messages as LoadedMessageDto[];
+        const sid = message.payload?.sessionId as string | undefined;
+
+        if (sid && sid !== currentSessionIdRef.current) return;
+
+        console.log('[SessionLoader] Session append, injecting raw messages:', rawMessages);
+        appendLoadedEntries(rawMessages);
+      }
+    });
+  }, [subscribe, appendLoadedEntries, isStreaming]);
 
   // 4. Validate session exists in list — redirect bad URLs
   useEffect(() => {

@@ -12,6 +12,7 @@ import { getPluginVersion } from '../core/handlers/getVersion';
 import { cancelLogin } from '../core/handlers/login';
 import { reportBackendError, trackActivity } from '../core/features/telemetry';
 import { LogWebSocketServer } from '../logging/log-ws';
+import { getSessionJsonlWatcher } from '../core/features/session-jsonl-watcher';
 
 const ALLOWED_WS_ORIGINS = new Set([
   'http://localhost',
@@ -221,6 +222,7 @@ export function startWebSocketServer(
         // An interactive `claude auth login` waiting on stdin won't exit on its
         // own once the webview is gone — kill it so it can't linger as a zombie.
         cancelLogin(connectionId);
+        getSessionJsonlWatcher()?.unwatchConnection(connectionId);
         connections.removeConnection(connectionId);
       });
     });

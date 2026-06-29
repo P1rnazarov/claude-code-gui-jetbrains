@@ -5,6 +5,9 @@ import { loadSessionMessages } from '../features/loadSessionMessages';
 import { reconstructWorkflowTasks } from '../features/workflow-tracker';
 import { markSessionAsSpawned, isWorkflowRunning } from '../claude-process';
 import { MessageType } from '../../shared';
+import { getSessionJsonlWatcher } from '../features/session-jsonl-watcher';
+import { getProjectSessionsPath } from '../features/getProjectSessionsPath';
+import { join } from 'path';
 
 export async function loadSessionHandler(
   connectionId: string,
@@ -50,6 +53,20 @@ export async function loadSessionHandler(
       }
     } catch (err) {
       console.error('[node-backend]', 'workflow reconstruction failed:', err);
+    }
+
+    const session = connections.getSession(sessionId);
+    if (!session || !session.process) {
+      const watcher = getSessionJsonlWatcher();
+      if (watcher) {
+        try {
+          const sessionsPath = await getProjectSessionsPath(workingDir);
+          const sessionFile = join(sessionsPath, `${sessionId}.jsonl`);
+          await watcher.watch(connectionId, sessionId, sessionFile);
+        } catch (err) {
+          console.error('[node-backend]', 'Failed to start jsonl file watcher:', err);
+        }
+      }
     }
   }
   connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });

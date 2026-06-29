@@ -5,6 +5,7 @@ import { BrowserBridge } from './bridge/browser-bridge';
 import { JetBrainsBridge } from './bridge/jetbrains-bridge';
 import { handleMessage } from './core/handlers/index';
 import { initSettingsWatcher, stopSettingsWatcher } from './core/features/settings-watcher';
+import { initSessionJsonlWatcher, stopSessionJsonlWatcher } from './core/features/session-jsonl-watcher';
 import { ensureProfile } from './core/features/profile';
 import { trackEvent, reportBackendError } from './core/features/telemetry';
 import { restoreTunnelState } from './core/features/tunnel-manager';
@@ -14,7 +15,7 @@ import { isJetBrainsMode, serverPort, webviewDir } from './config/environment';
 import { initLogger, getLogger } from './logging';
 import { LogWebSocketServer } from './logging/log-ws';
 import { Claude } from './core/claude';
-import { ClientEnv } from './shared';
+import { ClientEnv, MessageType } from './shared';
 import type { NativeDropEntry } from './core/types';
 
 /**
@@ -248,9 +249,14 @@ async function main() {
   });
   settingsWatcher.startGlobalWatchers();
 
+  initSessionJsonlWatcher((connectionId, sessionId, messages) => {
+    connections.sendTo(connectionId, MessageType.SESSION_APPEND, { sessionId, messages });
+  });
+
   async function shutdown(signal: string) {
     console.error('[node-backend]', `${signal} received, shutting down...`);
     stopSettingsWatcher();
+    stopSessionJsonlWatcher();
     connections.shutdownAll();
     close();
 

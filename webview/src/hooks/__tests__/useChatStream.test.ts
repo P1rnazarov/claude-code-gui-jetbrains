@@ -858,4 +858,33 @@ describe('useChatStream', () => {
       expect(typeof block[0].durationMillis).toBe('number');
     });
   });
+
+  describe('appendLoadedEntries', () => {
+    it('appends and dedups messages, updating active chain', () => {
+      const { bridge } = createMockBridge();
+      const { result } = renderHook(() => useChatStream({ bridge }));
+
+      act(() => {
+        result.current.loadMessages([
+          { uuid: '1', type: 'user', parentUuid: null, message: { type: 'text', text: 'hello' }, timestamp: '2026-06-30T00:00:00.000Z' } as any
+        ]);
+      });
+
+      expect(result.current.messages).toHaveLength(1);
+      expect(result.current.messages[0].uuid).toBe('1');
+
+      // Append new message
+      act(() => {
+        result.current.appendLoadedEntries([
+          { uuid: '1', type: 'user', parentUuid: null, message: { type: 'text', text: 'hello updated' }, timestamp: '2026-06-30T00:00:00.000Z' } as any,
+          { uuid: '2', type: 'assistant', parentUuid: '1', message: { type: 'text', text: 'hi' }, timestamp: '2026-06-30T00:00:01.000Z' } as any
+        ]);
+      });
+
+      expect(result.current.messages).toHaveLength(2);
+      expect(result.current.messages[0].uuid).toBe('1');
+      expect((result.current.messages[0].message as any)?.text).toBe('hello updated'); // updated!
+      expect(result.current.messages[1].uuid).toBe('2');
+    });
+  });
 });

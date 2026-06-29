@@ -223,6 +223,8 @@ export enum MessageType {
   // -- Session push --
   /** Full session history payload in response to LOAD_SESSION. */
   SESSION_LOADED = 'SESSION_LOADED',
+  /** Incremental session history appended (external terminal tail). */
+  SESSION_APPEND = 'SESSION_APPEND',
   /** The session list changed and clients should refresh. */
   SESSIONS_UPDATED = 'SESSIONS_UPDATED',
   /** A user message was broadcast to all connections viewing the session. */

@@ -49,6 +49,7 @@ interface ChatStreamContextType {
   // From useChatStream (message manipulation)
   clearMessages: () => void;
   loadMessages: (msgs: LoadedMessageDto[]) => void;
+  appendLoadedEntries: (msgs: LoadedMessageDto[]) => void;
   appendMessage: (message: LoadedMessageDto) => void;
   updateMessage: (id: string, updates: Partial<LoadedMessageDto>) => void;
 
@@ -171,6 +172,7 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
     addUserMessage,
     clearMessages: chatStreamClearMessages,
     loadMessages: chatStreamLoadMessages,
+    appendLoadedEntries: chatStreamAppendLoadedEntries,
     appendMessage: chatStreamAppendMessage,
     updateMessage: chatStreamUpdateMessage,
     resetStreamState: chatStreamResetStreamState,
@@ -418,6 +420,7 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
     // Message manipulation
     clearMessages: chatStreamClearMessages,
     loadMessages: chatStreamLoadMessages,
+    appendLoadedEntries: chatStreamAppendLoadedEntries,
     appendMessage: chatStreamAppendMessage,
     updateMessage: chatStreamUpdateMessage,
 
@@ -448,6 +451,7 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
     chatStreamResetStreamState,
     chatStreamClearMessages,
     chatStreamLoadMessages,
+    chatStreamAppendLoadedEntries,
     chatStreamAppendMessage,
     chatStreamUpdateMessage,
     sendMessage,

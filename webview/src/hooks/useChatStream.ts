@@ -74,6 +74,7 @@ export interface UseChatStreamReturn {
   addUserMessage: (content: string, context?: Context[], attachments?: Attachment[]) => void;
   clearMessages: () => void;
   loadMessages: (msgs: LoadedMessageDto[]) => void;
+  appendLoadedEntries: (msgs: LoadedMessageDto[]) => void;
   appendMessage: (message: LoadedMessageDto) => void;
   updateMessage: (id: string, updates: Partial<LoadedMessageDto>) => void;
 
@@ -509,6 +510,76 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
         }
       }
     }
+  }, []);
+
+  const appendLoadedEntries = useCallback((msgs: LoadedMessageDto[]) => {
+    const incoming = msgs.map(raw => toInstance(LoadedMessageDto, raw));
+    setMessages(prev => {
+      const byUuid = new Map<string, LoadedMessageDto>();
+      for (const msg of prev) {
+        if (msg.uuid) {
+          byUuid.set(msg.uuid, msg);
+        }
+      }
+
+      for (const msg of incoming) {
+        if (msg.uuid) {
+          byUuid.set(msg.uuid, msg);
+        }
+      }
+
+      const orderedUuids = new Set<string>();
+      const combinedList: LoadedMessageDto[] = [];
+
+      for (const msg of prev) {
+        if (msg.uuid) {
+          if (!orderedUuids.has(msg.uuid)) {
+            combinedList.push(byUuid.get(msg.uuid)!);
+            orderedUuids.add(msg.uuid);
+          }
+        } else {
+          combinedList.push(msg);
+        }
+      }
+
+      for (const msg of incoming) {
+        if (msg.uuid) {
+          if (!orderedUuids.has(msg.uuid)) {
+            combinedList.push(msg);
+            orderedUuids.add(msg.uuid);
+          }
+        } else {
+          combinedList.push(msg);
+        }
+      }
+
+      const activeMessages = filterActiveChain(combinedList);
+
+      for (let i = activeMessages.length - 1; i >= 0; i--) {
+        const msg = activeMessages[i];
+        if (msg.type === LoadedMessageType.Assistant && msg.message?.usage) {
+          const usage = msg.message.usage as {
+            input_tokens?: number;
+            output_tokens?: number;
+            cache_creation_input_tokens?: number;
+            cache_read_input_tokens?: number;
+          };
+          if (typeof usage.input_tokens === 'number') {
+            setContextWindowUsage({
+              totalTokens: usage.input_tokens
+                + (usage.cache_creation_input_tokens ?? 0)
+                + (usage.cache_read_input_tokens ?? 0)
+                + (usage.output_tokens ?? 0),
+              contextWindow: 200_000,
+              maxOutputTokens: 0,
+            });
+            break;
+          }
+        }
+      }
+
+      return activeMessages;
+    });
   }, []);
 
   // Retry
@@ -1059,6 +1130,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     addUserMessage,
     clearMessages,
     loadMessages,
+    appendLoadedEntries,
     appendMessage,
     updateMessage,
     retry,

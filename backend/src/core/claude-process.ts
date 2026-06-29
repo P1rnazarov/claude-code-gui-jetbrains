@@ -8,6 +8,7 @@ import { WorkflowProgressTracker } from './features/workflow-tracker';
 import { isWslUncPath } from './wsl-path';
 import { reportBackendError } from './features/telemetry';
 import { MessageType } from '../shared';
+import { getSessionJsonlWatcher } from './features/session-jsonl-watcher';
 
 // Tracks files Claude edits so the IDE can be told to reload them once the
 // edit completes on disk. Shared across sessions — tool_use ids are unique.
@@ -221,6 +222,7 @@ export async function ensureClaudeProcess(
 
   // SessionRecord에 프로세스 저장
   connections.setProcess(targetSessionId, proc);
+  getSessionJsonlWatcher()?.promoteToOwned(targetSessionId);
   connections.setBuffer(targetSessionId, '');
 
   // 모든 구독자에게 스트림 시작 알림
