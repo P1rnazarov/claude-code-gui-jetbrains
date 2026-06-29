@@ -146,11 +146,11 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
-            <h3>0.20.0 - Auto permission mode & Cursor-style Effort control</h3>
+            <h3>0.21.0 - Editor context, at a glance</h3>
             <ul>
-                <li><b>Auto permission mode</b> — optionally auto-approve tool actions so the conversation keeps flowing without repeated permission prompts.</li>
-                <li><b>Effort slider</b> — a new Cursor-style Effort control (including an ultracode step) to tune how hard the model thinks, with the <code>/effort</code> command fixed. The Effort row is hidden automatically on models that don't support it.</li>
-                <li>The backend now cleans up its extracted temporary directories on exit, preventing temp-folder buildup.</li>
+                <li><b>Editor context tag</b> — the file you're viewing, or the lines you select, now appear as a toggleable tag above the chat input and travel with your message, so Claude always knows what you're looking at. Click the tag to include or exclude it. Brings the Cursor / VS Code experience to JetBrains.</li>
+                <li><b>Respect .gitignore</b> — an optional General setting (off by default) that keeps the contents of .gitignore'd files out of the editor context; only the file path is shared.</li>
+                <li><b>Background workflows</b> — run multi-agent workflows in the background with live progress, and reopen them anytime from the Background tasks panel via the /workflows command.</li>
             </ul>
         """.trimIndent()
     }
