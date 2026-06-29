@@ -21,6 +21,7 @@ import { getTelemetryConsentHandler } from './getTelemetryConsent';
 import { setTelemetryConsentHandler } from './setTelemetryConsent';
 import { getProjectsHandler } from './getProjects';
 import { getUsageHandler } from './getUsage';
+import { getAllUsageHandler } from './getAllUsage';
 import { openFileHandler } from './openFile';
 import { openDiffHandler } from './openDiff';
 import { applyDiffHandler } from './applyDiff';
@@ -139,6 +140,9 @@ export async function handleMessage(
       break;
     case MessageType.GET_USAGE:
       await getUsageHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.GET_ALL_USAGE:
+      await getAllUsageHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.OPEN_FILE:
       await openFileHandler(connectionId, message, connections, bridge);

@@ -87,6 +87,8 @@ export enum MessageType {
   DELETE_ACCOUNT = 'DELETE_ACCOUNT',
   /** Read usage/quota information. */
   GET_USAGE = 'GET_USAGE',
+  /** Read usage/quota information for all accounts. */
+  GET_ALL_USAGE = 'GET_ALL_USAGE',
   /** Read the plugin/backend version info. */
   GET_VERSION = 'GET_VERSION',
 

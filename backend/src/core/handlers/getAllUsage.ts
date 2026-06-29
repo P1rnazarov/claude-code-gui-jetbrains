@@ -1,0 +1,162 @@
+import type { ConnectionManager } from '../../ws/connection-manager';
+import type { Bridge } from '../../bridge/bridge-interface';
+import type { IPCMessage } from '../types';
+import { Claude } from '../claude';
+import { MessageType } from '../../shared';
+import { readRegistry, readSnapshot } from '../features/account-store';
+import type { StoredAccount } from '../../shared';
+import { usageForSnapshot } from '../features/account-usage';
+import { runCcbUsage, classifyError } from './getUsage';
+import type { AccountUsage, AccountUsageData } from '../../shared';
+
+interface CacheEntry {
+  data: AccountUsage;
+  timestamp: number;
+}
+
+const cache = new Map<string, CacheEntry>();
+
+export function resetAllUsageCache(): void {
+  cache.clear();
+}
+
+export async function getAllUsageHandler(
+  connectionId: string,
+  message: IPCMessage,
+  connections: ConnectionManager,
+  _bridge: Bridge,
+): Promise<void> {
+  const force = (message.payload as { force?: boolean })?.force === true;
+  const workingDir = (message.payload as { workingDir?: string })?.workingDir;
+
+  if (workingDir) {
+    await Claude.applyConfigDir(workingDir);
+  }
+
+  if (force) {
+    cache.clear();
+  }
+
+  try {
+    const registry = await readRegistry();
+    const savedAccounts = Object.values(registry.accounts);
+
+    // Resolve active email
+    let liveEmail: string | null = null;
+    try {
+      const { stdout } = await Claude.exec(['auth', 'status'], { timeout: 8000 });
+      if (stdout.trim()) {
+        const authStatus = JSON.parse(stdout.trim());
+        liveEmail = authStatus?.email || null;
+      }
+    } catch {
+      // ignore
+    }
+
+    // Synthesize if active account is not in the registry
+    const activeInRegistry = savedAccounts.some((a) => a.emailAddress === liveEmail);
+    if (liveEmail && !activeInRegistry) {
+      savedAccounts.push({
+        id: 'live',
+        emailAddress: liveEmail,
+        displayName: 'Live CLI Account',
+        organizationName: null,
+        subscriptionType: null,
+        authMethod: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    }
+
+    const accountsPromises = savedAccounts.map(async (account) => {
+      const active = liveEmail !== null && account.emailAddress === liveEmail;
+      const cacheKey = account.id;
+
+      if (!force) {
+        const cached = cache.get(cacheKey);
+        if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) {
+          return {
+            ...cached.data,
+            active,
+          };
+        }
+      }
+
+      let usage: AccountUsageData | null = null;
+      let error: string | null = null;
+      let errorKind: string | null = null;
+
+      if (active) {
+        try {
+          const rawUsage = await runCcbUsage();
+          usage = {
+            five_hour: rawUsage.five_hour || null,
+            seven_day: rawUsage.seven_day || null,
+            seven_day_sonnet: rawUsage.seven_day_sonnet || null,
+            seven_day_opus: rawUsage.seven_day_opus || null,
+          };
+        } catch (err: any) {
+          const code = err instanceof Error ? (err as any).code : undefined;
+          const info = classifyError(err instanceof Error ? err.message : String(err), code);
+          error = info.message;
+          errorKind = info.kind;
+        }
+      } else {
+        if (account.id === 'live') {
+          error = 'credentials are unavailable';
+          errorKind = 'auth';
+        } else {
+          const snapshot = await readSnapshot(account.id);
+          if (!snapshot) {
+            error = 'credentials are unavailable';
+            errorKind = 'auth';
+          } else {
+            const res = await usageForSnapshot(account.id, snapshot);
+            usage = res.usage;
+            error = res.error;
+            errorKind = res.errorKind;
+          }
+        }
+      }
+
+      const result: AccountUsage = {
+        id: account.id,
+        emailAddress: account.emailAddress,
+        displayName: account.displayName,
+        active,
+        usage,
+        error,
+        errorKind,
+      };
+
+      cache.set(cacheKey, {
+        data: result,
+        timestamp: Date.now(),
+      });
+
+      return result;
+    });
+
+    const accounts = await Promise.all(accountsPromises);
+
+    // Sort: active first, then lexicographically by emailAddress
+    accounts.sort((a, b) => {
+      if (a.active && !b.active) return -1;
+      if (!a.active && b.active) return 1;
+      return a.emailAddress.localeCompare(b.emailAddress);
+    });
+
+    connections.sendTo(connectionId, MessageType.ACK, {
+      requestId: message.requestId,
+      status: 'ok',
+      accounts,
+    });
+  } catch (err: any) {
+    connections.sendTo(connectionId, MessageType.ACK, {
+      requestId: message.requestId,
+      status: 'error',
+      accounts: [],
+      error: err.message || 'Failed to fetch all usage info',
+    });
+  }
+}

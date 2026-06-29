@@ -1,8 +1,7 @@
-import { SettingSection } from '../common';
 import { ROUTE_META, Route } from '@/router/routes';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
-import { useUsageData } from './useUsageData';
-import { UsageMeter } from './UsageMeter';
+import { useAllUsage } from '@/hooks/queries/useAllUsage';
+import { AccountUsageSection } from './AccountUsageSection';
 import { CcbNotInstalledNotice } from './CcbNotInstalledNotice';
 
 function formatRelativeTime(date: Date): string {
@@ -36,82 +35,39 @@ function UsageSkeleton() {
           </div>
         </div>
       </div>
-      <div>
-        <div className="h-3 w-20 bg-surface-overlay rounded mb-4 animate-pulse" />
-        <div className="bg-surface-raised rounded-lg border border-border-default p-4">
-          <div className="space-y-6">
-            {[1, 2].map((i) => (
-              <div key={i} className="space-y-3">
-                <div className="flex justify-between">
-                  <div className="h-4 w-24 bg-surface-overlay rounded animate-pulse" />
-                  <div className="h-4 w-10 bg-surface-overlay rounded animate-pulse" />
-                </div>
-                <div className="h-1 bg-surface-overlay rounded-full animate-pulse" />
-                <div className="h-3 w-40 bg-surface-overlay rounded animate-pulse" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
 
 export function UsageSettings() {
   const meta = ROUTE_META[Route.SETTINGS_USAGE];
-  const { data, isLoading, error, errorKind, lastUpdated, refresh } = useUsageData();
+  const { accounts, isLoading, error, lastUpdated, refresh } = useAllUsage();
+
+  const ccbMissing = accounts.some((a) => a.errorKind === 'ccb_missing');
 
   return (
     <div>
       <h2 className="text-xl font-semibold text-text-primary mb-6">{meta.label}</h2>
 
-      {error && errorKind === 'ccb_missing' ? (
-        <CcbNotInstalledNotice onRetry={refresh} isLoading={isLoading} />
+      {ccbMissing ? (
+        <CcbNotInstalledNotice onRetry={() => { refresh().catch(() => {}); }} isLoading={isLoading} />
       ) : error ? (
         <div className="mb-6 p-3 bg-state-error-bg border border-state-error-border rounded-lg text-sm text-state-error-fg">
           {error}
         </div>
       ) : null}
 
-      {isLoading && !data ? (
+      {isLoading && accounts.length === 0 ? (
         <UsageSkeleton />
-      ) : data ? (
+      ) : (
         <>
-          {data.five_hour && (
-            <SettingSection title="Current Session">
-              <UsageMeter
-                label="Current Session"
-                utilization={data.five_hour.utilization}
-                resetsAt={data.five_hour.resets_at}
-              />
-            </SettingSection>
-          )}
+          <div className="space-y-8">
+            {accounts.map((account) => (
+              <AccountUsageSection key={account.id} account={account} />
+            ))}
+          </div>
 
-          <SettingSection title="Weekly Limits">
-            {data.seven_day && (
-              <UsageMeter
-                label="All Models"
-                utilization={data.seven_day.utilization}
-                resetsAt={data.seven_day.resets_at}
-              />
-            )}
-            {data.seven_day_sonnet && (
-              <UsageMeter
-                label="Sonnet only"
-                utilization={data.seven_day_sonnet.utilization}
-                resetsAt={data.seven_day_sonnet.resets_at}
-              />
-            )}
-            {data.seven_day_opus && (
-              <UsageMeter
-                label="Opus only"
-                utilization={data.seven_day_opus.utilization}
-                resetsAt={data.seven_day_opus.resets_at}
-              />
-            )}
-          </SettingSection>
-
-          <div className="mb-8">
+          <div className="mt-6 mb-8">
             <a
               href="https://docs.anthropic.com/en/docs/about-claude/models"
               target="_blank"
@@ -122,14 +78,16 @@ export function UsageSettings() {
             </a>
           </div>
         </>
-      ) : null}
+      )}
 
       <div className="flex items-center gap-2 text-xs text-text-tertiary">
         {lastUpdated && (
           <span>Last updated: {formatRelativeTime(lastUpdated)}</span>
         )}
         <button
-          onClick={refresh}
+          onClick={() => {
+            refresh().catch(() => {});
+          }}
           disabled={isLoading}
           className="p-1 rounded hover:bg-surface-hover transition-colors disabled:opacity-50"
           title="Refresh"
