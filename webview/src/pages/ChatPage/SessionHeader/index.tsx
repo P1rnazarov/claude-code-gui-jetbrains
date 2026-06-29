@@ -30,9 +30,9 @@ export function SessionHeader() {
         <TokenBatteryButton />
         <BackgroundTasksButton />
         <TunnelButton />
-        <AccountSwitcher />
         <SettingsButton />
         <NewTabButton />
+        <AccountSwitcher />
       </div>
     </div>
   );
