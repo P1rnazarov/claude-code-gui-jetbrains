@@ -3,6 +3,7 @@ import { WorkingDirDropdown } from './WorkingDirDropdown';
 import { TokenBatteryButton } from './TokenBatteryButton';
 import { BackgroundTasksButton } from './BackgroundTasksButton';
 import { TunnelButton } from './TunnelButton';
+import { AccountSwitcher } from './AccountSwitcher';
 import { SettingsButton } from './SettingsButton';
 import { NewTabButton } from './NewTabButton';
 import { useDocumentTitle } from '@/hooks';
@@ -29,6 +30,7 @@ export function SessionHeader() {
         <TokenBatteryButton />
         <BackgroundTasksButton />
         <TunnelButton />
+        <AccountSwitcher />
         <SettingsButton />
         <NewTabButton />
       </div>
