@@ -7,3 +7,4 @@
 ## 색인
 
 - [Editor Context Tag](./001-editor_context_tag/en.md) — 에디터에서 연 파일이나 선택한 코드를 자동으로 채팅 컨텍스트로 첨부하는 토글 태그 ([#122](https://github.com/yhk1038/claude-code-gui-jetbrains/issues/122), [#133](https://github.com/yhk1038/claude-code-gui-jetbrains/pull/133))
+- [Multi-Account Management](./002-multi_account_management/en.md) — 여러 Claude 계정을 저장하고 전환하며, 계정별 사용량을 한 화면에서 비교하는 멀티 계정 기능 ([#134](https://github.com/yhk1038/claude-code-gui-jetbrains/pull/134))
