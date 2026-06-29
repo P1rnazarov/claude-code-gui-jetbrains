@@ -77,6 +77,14 @@ export enum MessageType {
   // -- Account / usage / version --
   /** Read the signed-in Claude account info. */
   GET_ACCOUNT = 'GET_ACCOUNT',
+  /** List the saved Claude accounts and which one is live now. inbound webview→backend */
+  GET_ACCOUNTS = 'GET_ACCOUNTS',
+  /** Capture the currently logged-in Claude account into the saved registry. inbound webview→backend */
+  SAVE_ACCOUNT = 'SAVE_ACCOUNT',
+  /** Switch the live CLI credentials to a saved account by id. inbound webview→backend */
+  SWITCH_ACCOUNT = 'SWITCH_ACCOUNT',
+  /** Remove a saved account (snapshot + registry entry) by id. inbound webview→backend */
+  DELETE_ACCOUNT = 'DELETE_ACCOUNT',
   /** Read usage/quota information. */
   GET_USAGE = 'GET_USAGE',
   /** Read the plugin/backend version info. */
@@ -245,6 +253,8 @@ export enum MessageType {
   // -- Auth push --
   /** The login URL became available during the LOGIN flow. */
   LOGIN_URL_AVAILABLE = 'LOGIN_URL_AVAILABLE',
+  /** The saved-account registry or live account changed; clients should refetch GET_ACCOUNT and GET_ACCOUNTS. outbound backend→webview */
+  ACCOUNTS_CHANGED = 'ACCOUNTS_CHANGED',
 
   // -- Tunnel push --
   /** Tunnel status changed. */

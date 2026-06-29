@@ -51,6 +51,14 @@ export function SwitchAccountPage(props: Props) {
       );
 
       if (result?.status === 'ok') {
+        // Auto-capture the just-logged-in account into the multi-account registry,
+        // so signing in here also makes it switchable from Settings → Account.
+        // Best-effort: a capture failure must not block navigation.
+        try {
+          await getBridge().request(MessageType.SAVE_ACCOUNT, {}, { timeout: LOGIN_REQUEST_TIMEOUT_MS });
+        } catch (err) {
+          console.error('[SwitchAccount] Failed to capture account:', err);
+        }
         // Re-query auth status before navigating so the chat login gate
         // (useLoginGate) sees the fresh logged-in state. Without this, navigate
         // happens while AuthContext.loggedIn is still the stale `false`, and the
