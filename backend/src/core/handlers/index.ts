@@ -33,6 +33,10 @@ import { restartBackendHandler } from './restartBackend';
 import { openTerminalHandler } from './openTerminal';
 import { getVersionHandler } from './getVersion';
 import { getAccountHandler } from './getAccount';
+import { getAccountsHandler } from './getAccounts';
+import { saveAccountHandler } from './saveAccount';
+import { switchAccountHandler } from './switchAccount';
+import { deleteAccountHandler } from './deleteAccount';
 import { reclaimSessionHandler } from './reclaimSession';
 import { loginHandler } from './login';
 import { submitLoginCodeHandler } from './submitLoginCode';
@@ -171,6 +175,18 @@ export async function handleMessage(
       break;
     case MessageType.GET_ACCOUNT:
       await getAccountHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.GET_ACCOUNTS:
+      await getAccountsHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.SAVE_ACCOUNT:
+      await saveAccountHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.SWITCH_ACCOUNT:
+      await switchAccountHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.DELETE_ACCOUNT:
+      await deleteAccountHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.RECLAIM_SESSION:
       await reclaimSessionHandler(connectionId, message, connections, bridge);

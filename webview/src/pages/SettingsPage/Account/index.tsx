@@ -2,6 +2,7 @@ import { SettingSection } from '../common';
 import { ROUTE_META, Route } from '@/router/routes';
 import { useAccountData } from '@/components/AccountUsageModal/useAccountData';
 import { InfoRow, InfoRowSkeleton } from '@/components/AccountUsageModal/InfoRow';
+import { AccountList } from './AccountList';
 
 export function AccountSettings() {
   const meta = ROUTE_META[Route.SETTINGS_ACCOUNT];
@@ -25,6 +26,10 @@ export function AccountSettings() {
             <InfoRow label="Plan" value={accountData?.plan ?? null} />
           </div>
         )}
+      </SettingSection>
+
+      <SettingSection title="Accounts">
+        <AccountList />
       </SettingSection>
     </div>
   );
