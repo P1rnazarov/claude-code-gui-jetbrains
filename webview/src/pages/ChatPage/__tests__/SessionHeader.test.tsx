@@ -60,6 +60,12 @@ vi.mock('../../../contexts/WorkingDirContext', () => ({
   }),
 }));
 
+// Mock AuthContext (AccountSwitcher uses useAuthContext). Logged-out → the
+// account switcher renders nothing, leaving these header tests unaffected.
+vi.mock('../../../contexts/AuthContext', () => ({
+  useAuthContext: () => ({ loggedIn: false, refetch: vi.fn() }),
+}));
+
 // Mock WorkflowStateContext (BackgroundTasksButton uses useWorkflowState)
 vi.mock('../../../contexts/WorkflowStateContext', () => ({
   useWorkflowState: () => ({

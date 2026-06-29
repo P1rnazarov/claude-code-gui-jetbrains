@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { UsageSettings } from '../index';
 
-vi.mock('../useUsageData', () => ({
-  useUsageData: vi.fn(),
+vi.mock('@/hooks/queries/useAllUsage', () => ({
+  useAllUsage: vi.fn(),
 }));
 
 vi.mock('@/router/routes', () => ({
@@ -11,43 +11,73 @@ vi.mock('@/router/routes', () => ({
   Route: { SETTINGS_USAGE: 'SETTINGS_USAGE' },
 }));
 
-import { useUsageData } from '../useUsageData';
+import { useAllUsage } from '@/hooks/queries/useAllUsage';
 
-const mockUsageData = {
-  five_hour: { utilization: 10, resets_at: '2026-12-01T00:00:00Z' },
-  seven_day: null,
-  seven_day_oauth_apps: null,
-  seven_day_sonnet: null,
-  seven_day_opus: null,
-  seven_day_cowork: null,
-  iguana_necktie: null,
-  extra_usage: null,
-};
+const mockAccounts = [
+  {
+    id: 'acc-1',
+    emailAddress: 'user1@example.com',
+    displayName: 'User 1',
+    subscriptionType: 'max',
+    active: true,
+    usage: {
+      five_hour: { utilization: 10, resets_at: '2026-12-01T00:00:00Z' },
+      seven_day: null,
+      seven_day_sonnet: null,
+      seven_day_opus: null,
+    },
+    error: null,
+    errorKind: null,
+  },
+  {
+    id: 'acc-2',
+    emailAddress: 'user2@example.com',
+    displayName: 'User 2',
+    subscriptionType: 'pro',
+    active: false,
+    usage: null,
+    error: 'credentials are unavailable',
+    errorKind: 'auth',
+  },
+];
 
 describe('UsageSettings', () => {
   it('renders neither notice nor error box when there is no error', () => {
-    vi.mocked(useUsageData).mockReturnValue({
-      data: mockUsageData,
+    vi.mocked(useAllUsage).mockReturnValue({
+      accounts: [mockAccounts[0]],
       isLoading: false,
       error: null,
-      errorKind: null,
       lastUpdated: new Date(),
+      refetch: vi.fn(),
       refresh: vi.fn(),
     });
 
     render(<UsageSettings />);
 
+    expect(screen.getByText('USER1@EXAMPLE.COM')).toBeInTheDocument();
+    expect(screen.getByText('Active')).toBeInTheDocument();
     expect(screen.queryByText(/A required dependency/i)).toBeNull();
-    expect(screen.queryByText(/Failed to fetch/i)).toBeNull();
+    expect(screen.queryByText(/Usage unavailable/i)).toBeNull();
   });
 
   it('renders CcbNotInstalledNotice when errorKind is ccb_missing', () => {
-    vi.mocked(useUsageData).mockReturnValue({
-      data: null,
+    vi.mocked(useAllUsage).mockReturnValue({
+      accounts: [
+        {
+          id: 'acc-1',
+          emailAddress: 'user1@example.com',
+          displayName: 'User 1',
+          subscriptionType: 'max',
+          active: true,
+          usage: null,
+          error: 'claude-code-battery CLI is not installed',
+          errorKind: 'ccb_missing',
+        },
+      ],
       isLoading: false,
-      error: 'claude-code-battery CLI is not installed',
-      errorKind: 'ccb_missing',
+      error: null,
       lastUpdated: null,
+      refetch: vi.fn(),
       refresh: vi.fn(),
     });
 
@@ -57,49 +87,34 @@ describe('UsageSettings', () => {
     expect(screen.getByText(/npm install -g claude-code-battery/)).toBeInTheDocument();
   });
 
-  it('renders red error box when errorKind is not ccb_missing', () => {
-    vi.mocked(useUsageData).mockReturnValue({
-      data: null,
+  it('renders per-account error box when errorKind is not ccb_missing', () => {
+    vi.mocked(useAllUsage).mockReturnValue({
+      accounts: mockAccounts,
       isLoading: false,
-      error: 'Network error reaching Anthropic API',
-      errorKind: 'network',
+      error: null,
       lastUpdated: null,
+      refetch: vi.fn(),
       refresh: vi.fn(),
     });
 
     render(<UsageSettings />);
 
-    expect(screen.getByText(/Network error reaching Anthropic API/i)).toBeInTheDocument();
-    expect(screen.queryByText(/A required dependency/i)).toBeNull();
+    expect(screen.getByText('USER2@EXAMPLE.COM')).toBeInTheDocument();
+    expect(screen.getByText('Usage unavailable: credentials are unavailable')).toBeInTheDocument();
   });
 
-  it('clears error/errorKind when usage-data-updated event fires (cross-instance sync)', () => {
-    const refresh = vi.fn();
-    // 초기 상태: ccb_missing 에러
-    vi.mocked(useUsageData).mockReturnValue({
-      data: null,
+  it('renders global query error when query fails', () => {
+    vi.mocked(useAllUsage).mockReturnValue({
+      accounts: [],
       isLoading: false,
-      error: 'claude-code-battery CLI is not installed',
-      errorKind: 'ccb_missing',
+      error: 'Failed to load usage info',
       lastUpdated: null,
-      refresh,
+      refetch: vi.fn(),
+      refresh: vi.fn(),
     });
-    const { rerender } = render(<UsageSettings />);
-    expect(screen.getByText(/A required dependency/i)).toBeInTheDocument();
 
-    // 다른 인스턴스가 데이터를 성공적으로 가져오고 error/errorKind를 클리어한 상태로 변경
-    vi.mocked(useUsageData).mockReturnValue({
-      data: mockUsageData,
-      isLoading: false,
-      error: null,
-      errorKind: null,
-      lastUpdated: new Date(),
-      refresh,
-    });
-    rerender(<UsageSettings />);
+    render(<UsageSettings />);
 
-    // 에러 UI가 사라지고 정상 데이터 화면이 나타남
-    expect(screen.queryByText(/A required dependency/i)).toBeNull();
-    expect(screen.queryByText(/Failed to fetch/i)).toBeNull();
+    expect(screen.getByText('Failed to load usage info')).toBeInTheDocument();
   });
 });

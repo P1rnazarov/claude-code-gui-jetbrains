@@ -21,6 +21,7 @@ import { getTelemetryConsentHandler } from './getTelemetryConsent';
 import { setTelemetryConsentHandler } from './setTelemetryConsent';
 import { getProjectsHandler } from './getProjects';
 import { getUsageHandler } from './getUsage';
+import { getAllUsageHandler } from './getAllUsage';
 import { openFileHandler } from './openFile';
 import { openDiffHandler } from './openDiff';
 import { applyDiffHandler } from './applyDiff';
@@ -33,6 +34,10 @@ import { restartBackendHandler } from './restartBackend';
 import { openTerminalHandler } from './openTerminal';
 import { getVersionHandler } from './getVersion';
 import { getAccountHandler } from './getAccount';
+import { getAccountsHandler } from './getAccounts';
+import { saveAccountHandler } from './saveAccount';
+import { switchAccountHandler } from './switchAccount';
+import { deleteAccountHandler } from './deleteAccount';
 import { reclaimSessionHandler } from './reclaimSession';
 import { loginHandler } from './login';
 import { submitLoginCodeHandler } from './submitLoginCode';
@@ -136,6 +141,9 @@ export async function handleMessage(
     case MessageType.GET_USAGE:
       await getUsageHandler(connectionId, message, connections, bridge);
       break;
+    case MessageType.GET_ALL_USAGE:
+      await getAllUsageHandler(connectionId, message, connections, bridge);
+      break;
     case MessageType.OPEN_FILE:
       await openFileHandler(connectionId, message, connections, bridge);
       break;
@@ -171,6 +179,18 @@ export async function handleMessage(
       break;
     case MessageType.GET_ACCOUNT:
       await getAccountHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.GET_ACCOUNTS:
+      await getAccountsHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.SAVE_ACCOUNT:
+      await saveAccountHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.SWITCH_ACCOUNT:
+      await switchAccountHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.DELETE_ACCOUNT:
+      await deleteAccountHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.RECLAIM_SESSION:
       await reclaimSessionHandler(connectionId, message, connections, bridge);

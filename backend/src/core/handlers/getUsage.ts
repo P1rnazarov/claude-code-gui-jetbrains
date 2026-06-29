@@ -4,6 +4,7 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { Claude } from '../claude';
 import { MessageType } from '../../shared';
+import { readRegistry, upsertAccount } from '../features/account-store';
 
 interface UsageBucket {
   utilization: number;
@@ -17,7 +18,7 @@ interface ExtraUsage {
   utilization: number | null;
 }
 
-interface CcbUsageResponse {
+export interface CcbUsageResponse {
   five_hour: UsageBucket | null;
   seven_day: UsageBucket | null;
   seven_day_oauth_apps: UsageBucket | null;
@@ -41,7 +42,7 @@ interface ExecFileError extends Error {
   code?: number | string;
 }
 
-function classifyError(raw: string, code?: number | string): UsageErrorInfo {
+export function classifyError(raw: string, code?: number | string): UsageErrorInfo {
   if (/npm[^a-z].*(?:command not found|not recognized)|(?:command not found|not recognized).*npm/i.test(raw)) {
     return { kind: 'npm_missing', message: 'Node.js / npm not found in PATH' };
   }
@@ -86,7 +87,7 @@ function classifyError(raw: string, code?: number | string): UsageErrorInfo {
   return { kind: 'unknown', message: cleaned || raw };
 }
 
-function execFileAsync(cmd: string, args: string[], opts: { timeout: number }): Promise<{ stdout: string; stderr: string }> {
+function execFileAsync(cmd: string, args: string[], opts: { timeout: number; env?: NodeJS.ProcessEnv }): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     execFile(cmd, args, opts, (err, stdout, stderr) => {
       if (err) return reject(err);
@@ -124,9 +125,33 @@ export function resetUsageCache(): void {
   lastErrorInfo = null;
 }
 
-async function runCcbUsage(): Promise<CcbUsageResponse> {
+async function persistUsageToRegistry(usage: CcbUsageResponse): Promise<void> {
+  try {
+    const registry = await readRegistry();
+    if (!registry.current) return;
+    const account = registry.accounts[registry.current];
+    if (!account) return;
+    await upsertAccount({
+      ...account,
+      usageCached: {
+        five_hour: usage.five_hour ?? null,
+        seven_day: usage.seven_day ?? null,
+        seven_day_sonnet: usage.seven_day_sonnet ?? null,
+        seven_day_opus: usage.seven_day_opus ?? null,
+      },
+      usageCachedAt: Date.now(),
+    });
+  } catch {
+    /* non-fatal: registry persist failure should never block the usage response */
+  }
+}
+
+export async function runCcbUsage(): Promise<CcbUsageResponse> {
   const { shell, args } = shellInvocation('ccb oauth usage --json');
-  const { stdout } = await execFileAsync(shell, args, { timeout: 15000 });
+  // Pass the augmented PATH (Claude.env) so ccb is discoverable on Windows
+  // even when the backend's original PATH does not include the npm global bin dir.
+  // Claude.exec already benefits from this; runCcbUsage must too. (issue: M3)
+  const { stdout } = await execFileAsync(shell, args, { timeout: 15000, env: Claude.env });
   // Interactive login shells (`-l -i`) source startup files like .bashrc, which on
   // Linux often emit control sequences such as printf "\e[?2004l" (disable bracketed
   // paste) to stdout before our output. trim() cannot strip the ESC char, so extract
@@ -203,6 +228,9 @@ export async function getUsageHandler(
       cachedUsage = usage;
       cachedAt = Date.now();
       lastErrorInfo = null;
+      // Persist to the account registry so GET_ALL_USAGE can show stale-but-correct data
+      // for this account when it becomes inactive (avoids direct HTTP to Anthropic).
+      void persistUsageToRegistry(usage);
       return usage;
     })();
 
