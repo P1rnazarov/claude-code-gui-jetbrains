@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react';
 import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import { ToolUseBlockDto } from '@/dto';
 import type { WorkflowNotification } from '@/dto/message/ContentBlockDto';
-import { ContextPills } from '@/pages/ChatPage/message-renderers';
 import { useWorkflowState } from '@/contexts/WorkflowStateContext';
 import type { WorkflowTask } from '@/shared';
 import { formatDuration, formatTokens, WORKFLOW_STATUS_COLOR } from '@/utils/workflowFormat';
 import { parseWorkflowName } from '@/utils/workflowName';
-import { RendererProps, toolResultText } from './common';
+import { RendererProps, ToolHeader, ToolWrapper, toolResultText } from './common';
 
 /** Workflow tool input — either an inline `script` or a `scriptPath` resume. */
 class WorkflowToolUseDto extends ToolUseBlockDto {
@@ -48,6 +47,8 @@ export function WorkflowRenderer(props: RendererProps) {
     const name = live?.name || parseWorkflowName(toolUse.input);
     const description = live?.description ?? toolUse.input?.description;
 
+    const phases = live?.phases ?? [];
+
     const agents = live?.agents ?? [];
     const agentCount =
         agents.length ||
@@ -72,8 +73,9 @@ export function WorkflowRenderer(props: RendererProps) {
     const summary = live?.summary ?? notification?.summary;
     const usage = live?.usage ?? notification?.usage;
 
+    // 'Workflow' now lives in the ToolHeader (consistent with other tools), so
+    // the meta line carries only the runtime stats.
     const metaParts = [
-        'Workflow',
         agentCount !== undefined ? `${agentCount} agents` : undefined,
         duration,
         tokens ? `${tokens} tokens` : undefined,
@@ -81,9 +83,16 @@ export function WorkflowRenderer(props: RendererProps) {
 
     const showDots = agentCount !== undefined && agentCount <= MAX_INLINE_DOTS && agents.length > 0;
 
+    // Header detail next to the "Workflow" title — only once we have a task id,
+    // so a not-yet-started run never renders "Task ID: undefined".
+    const phaseSuffix =
+        phases.length > 0 ? ` (${phases.length} phase${phases.length === 1 ? '' : 's'})` : '';
+    const headerDetail = live?.taskId ? `Task ID: ${live.taskId}${phaseSuffix}` : '';
+
     return (
-        <div className="group pt-2 pb-4 pl-6 pr-3">
-            <div className="max-w-[44rem]">
+        <ToolWrapper message={props.message}>
+            <ToolHeader name="Workflow" description={headerDetail} />
+            <div className="mt-4 max-w-[44rem]">
                 <div className="rounded-lg border border-border-default bg-surface-raised overflow-hidden">
                     {/* Header: workflow name + status + chevron (opens the panel) */}
                     <button
@@ -100,15 +109,17 @@ export function WorkflowRenderer(props: RendererProps) {
                         <ChevronRightIcon className="w-4 h-4 text-text-tertiary shrink-0" />
                     </button>
 
-                    {/* Meta line: Workflow · N agents · duration · tokens */}
-                    <div className="px-3 pb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8461rem] text-text-primary/60">
-                        {metaParts.map((part, i) => (
-                            <span key={i} className="flex items-center gap-2">
-                                {i > 0 && <span className="text-text-tertiary">·</span>}
-                                {part}
-                            </span>
-                        ))}
-                    </div>
+                    {/* Meta line: N agents · duration · tokens */}
+                    {metaParts.length > 0 && (
+                        <div className="px-3 pb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8461rem] text-text-primary/60">
+                            {metaParts.map((part, i) => (
+                                <span key={i} className="flex items-center gap-2">
+                                    {i > 0 && <span className="text-text-tertiary">·</span>}
+                                    {part}
+                                </span>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Per-agent progress dots */}
                     {showDots && (
@@ -154,9 +165,7 @@ export function WorkflowRenderer(props: RendererProps) {
                 {description && name !== description && (
                     <div className="mt-1 px-1 text-[0.8461rem] text-text-primary/50">{description}</div>
                 )}
-
-                {props.message?.context && <ContextPills context={props.message.context} />}
             </div>
-        </div>
+        </ToolWrapper>
     );
 }
