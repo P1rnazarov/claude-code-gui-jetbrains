@@ -40,3 +40,20 @@ export interface AccountsResult {
   /** Email of the live CLI account, or null when not logged in / unknown. */
   activeEmail: string | null;
 }
+
+export interface AccountUsageBucket { utilization: number; resets_at: string; }
+export interface AccountUsageData {
+  five_hour: AccountUsageBucket | null;
+  seven_day: AccountUsageBucket | null;
+  seven_day_sonnet: AccountUsageBucket | null;
+  seven_day_opus: AccountUsageBucket | null;
+}
+export interface AccountUsage {
+  id: string; emailAddress: string; displayName: string | null;
+  active: boolean;
+  usage: AccountUsageData | null;
+  error: string | null;
+  errorKind: string | null;
+}
+export interface AllUsageResult { accounts: AccountUsage[]; }
+

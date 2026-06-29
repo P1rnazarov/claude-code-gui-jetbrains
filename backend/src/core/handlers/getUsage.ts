@@ -17,7 +17,7 @@ interface ExtraUsage {
   utilization: number | null;
 }
 
-interface CcbUsageResponse {
+export interface CcbUsageResponse {
   five_hour: UsageBucket | null;
   seven_day: UsageBucket | null;
   seven_day_oauth_apps: UsageBucket | null;
@@ -41,7 +41,7 @@ interface ExecFileError extends Error {
   code?: number | string;
 }
 
-function classifyError(raw: string, code?: number | string): UsageErrorInfo {
+export function classifyError(raw: string, code?: number | string): UsageErrorInfo {
   if (/npm[^a-z].*(?:command not found|not recognized)|(?:command not found|not recognized).*npm/i.test(raw)) {
     return { kind: 'npm_missing', message: 'Node.js / npm not found in PATH' };
   }
@@ -124,7 +124,7 @@ export function resetUsageCache(): void {
   lastErrorInfo = null;
 }
 
-async function runCcbUsage(): Promise<CcbUsageResponse> {
+export async function runCcbUsage(): Promise<CcbUsageResponse> {
   const { shell, args } = shellInvocation('ccb oauth usage --json');
   const { stdout } = await execFileAsync(shell, args, { timeout: 15000 });
   // Interactive login shells (`-l -i`) source startup files like .bashrc, which on
