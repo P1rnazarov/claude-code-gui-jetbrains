@@ -69,6 +69,18 @@ import { listSystemSoundsHandler } from './listSystemSounds';
 import { playSystemSoundHandler } from './playSystemSound';
 import { clientInfoHandler } from './clientInfo';
 import { clientErrorHandler } from './clientError';
+import { getMcpServersHandler } from './getMcpServersHandler';
+import { getMcpServerToolsHandler } from './getMcpServerToolsHandler';
+import {
+  reconnectMcpServerHandler,
+  authenticateMcpServerHandler,
+  clearMcpServerAuthHandler,
+  setMcpServerEnabledHandler,
+  submitMcpOauthCallbackUrlHandler,
+  addMcpServerHandler,
+  removeMcpServerHandler,
+  searchMcpRegistryHandler,
+} from './mcpActionsHandler';
 
 export async function handleMessage(
   connectionId: string,
@@ -284,6 +296,36 @@ export async function handleMessage(
       break;
     case MessageType.CLIENT_ERROR:
       clientErrorHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.GET_MCP_SERVERS:
+      await getMcpServersHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.RECONNECT_MCP_SERVER:
+      await reconnectMcpServerHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.AUTHENTICATE_MCP_SERVER:
+      await authenticateMcpServerHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.CLEAR_MCP_SERVER_AUTH:
+      await clearMcpServerAuthHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.SET_MCP_SERVER_ENABLED:
+      await setMcpServerEnabledHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.SUBMIT_MCP_OAUTH_CALLBACK_URL:
+      await submitMcpOauthCallbackUrlHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.ADD_MCP_SERVER:
+      await addMcpServerHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.REMOVE_MCP_SERVER:
+      await removeMcpServerHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.SEARCH_MCP_REGISTRY:
+      await searchMcpRegistryHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.GET_MCP_SERVER_TOOLS:
+      await getMcpServerToolsHandler(connectionId, message, connections, bridge);
       break;
     default:
       console.error('[node-backend]', `Unknown message type: ${message.type}`);
