@@ -11,14 +11,16 @@ setup() {
   source "$CLI_LIB/runtime.sh"
 }
 
-# Build a fake runtime tarball at $1, with backend.mjs and webview/index.html
+# Build a fake runtime tarball at $1, with backend.mjs, account-cli.mjs and
+# webview/index.html (the trio that makes a runtime "valid").
 make_fake_runtime_tgz() {
   local out=$1
   local stage="$BATS_TEST_TMPDIR/stage-$$"
   mkdir -p "$stage/webview"
   printf 'fake backend\n' > "$stage/backend.mjs"
+  printf 'fake account-cli\n' > "$stage/account-cli.mjs"
   printf '<html>fake</html>\n' > "$stage/webview/index.html"
-  tar -czf "$out" -C "$stage" backend.mjs webview
+  tar -czf "$out" -C "$stage" account-cli.mjs backend.mjs webview
   rm -rf "$stage"
 }
 
@@ -48,9 +50,18 @@ make_fake_runtime_tgz() {
   [ "$status" -ne 0 ]
 }
 
-@test "runtime_is_cached: true when backend.mjs and webview/ both exist" {
+@test "runtime_is_cached: false when account-cli.mjs missing (pre-feature cache)" {
   mkdir -p "$CCG_HOME/runtimes/0.15.0/webview"
   printf 'fake\n' > "$CCG_HOME/runtimes/0.15.0/backend.mjs"
+  printf 'fake\n' > "$CCG_HOME/runtimes/0.15.0/webview/index.html"
+  run runtime_is_cached "0.15.0"
+  [ "$status" -ne 0 ]
+}
+
+@test "runtime_is_cached: true when backend.mjs, account-cli.mjs and webview/ all exist" {
+  mkdir -p "$CCG_HOME/runtimes/0.15.0/webview"
+  printf 'fake\n' > "$CCG_HOME/runtimes/0.15.0/backend.mjs"
+  printf 'fake\n' > "$CCG_HOME/runtimes/0.15.0/account-cli.mjs"
   printf 'fake\n' > "$CCG_HOME/runtimes/0.15.0/webview/index.html"
   run runtime_is_cached "0.15.0"
   [ "$status" -eq 0 ]
@@ -67,15 +78,32 @@ make_fake_runtime_tgz() {
 @test "runtime_list_cached: lists cached version directories" {
   mkdir -p "$CCG_HOME/runtimes/0.14.2/webview"
   printf '.' > "$CCG_HOME/runtimes/0.14.2/backend.mjs"
+  printf '.' > "$CCG_HOME/runtimes/0.14.2/account-cli.mjs"
   printf '.' > "$CCG_HOME/runtimes/0.14.2/webview/index.html"
   mkdir -p "$CCG_HOME/runtimes/0.15.0/webview"
   printf '.' > "$CCG_HOME/runtimes/0.15.0/backend.mjs"
+  printf '.' > "$CCG_HOME/runtimes/0.15.0/account-cli.mjs"
   printf '.' > "$CCG_HOME/runtimes/0.15.0/webview/index.html"
 
   run runtime_list_cached
   [ "$status" -eq 0 ]
   [[ "$output" == *"0.14.2"* ]]
   [[ "$output" == *"0.15.0"* ]]
+}
+
+@test "runtime_list_cached: sorts by semver, not lexicographically (0.10.0 after 0.9.0)" {
+  for v in 0.9.0 0.10.0 0.2.0; do
+    mkdir -p "$CCG_HOME/runtimes/$v/webview"
+    printf '.' > "$CCG_HOME/runtimes/$v/backend.mjs"
+    printf '.' > "$CCG_HOME/runtimes/$v/account-cli.mjs"
+    printf '.' > "$CCG_HOME/runtimes/$v/webview/index.html"
+  done
+
+  run runtime_list_cached
+  [ "$status" -eq 0 ]
+  # The last line is what callers treat as "newest" — must be 0.10.0, not 0.9.0.
+  [ "$(printf '%s\n' "$output" | tail -1)" = "0.10.0" ]
+  [ "$(printf '%s\n' "$output" | head -1)" = "0.2.0" ]
 }
 
 # ─── runtime_asset_url ────────────────────────────────────────
@@ -116,6 +144,7 @@ EOF
   run runtime_download "0.15.0"
   [ "$status" -eq 0 ]
   [ -f "$CCG_HOME/runtimes/0.15.0/backend.mjs" ]
+  [ -f "$CCG_HOME/runtimes/0.15.0/account-cli.mjs" ]
   [ -f "$CCG_HOME/runtimes/0.15.0/webview/index.html" ]
 
   run runtime_is_cached "0.15.0"

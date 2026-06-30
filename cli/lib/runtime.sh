@@ -6,7 +6,7 @@
 # Public API:
 #   runtime_cache_dir <version>   → echoes absolute cache path
 #   runtime_is_cached <version>   → 0 if valid runtime present, else 1
-#   runtime_list_cached           → echoes one version per line (sorted)
+#   runtime_list_cached           → echoes one version per line (semver-sorted)
 #   runtime_asset_url <version>   → echoes GitHub release download URL for
 #                                    claude-code-gui-standalone-v<ver>.tgz
 #   runtime_download <version>    → fetches + extracts (or cleans up on failure)
@@ -32,7 +32,9 @@ runtime_is_cached() {
   local v dir
   v=$(_strip_v "$1")
   dir=$(runtime_cache_dir "$v")
-  [[ -f "$dir/backend.mjs" && -d "$dir/webview" ]]
+  # account-cli.mjs (added alongside backend.mjs) is required so a runtime cached
+  # before the account feature shipped re-downloads instead of failing `ccg account`.
+  [[ -f "$dir/backend.mjs" && -f "$dir/account-cli.mjs" && -d "$dir/webview" ]]
 }
 
 runtime_list_cached() {
@@ -44,10 +46,12 @@ runtime_list_cached() {
     [[ -d "$entry" ]] || continue
     name=$(basename "$entry")
     # Only list entries that look properly cached
-    if [[ -f "$entry/backend.mjs" && -d "$entry/webview" ]]; then
+    if [[ -f "$entry/backend.mjs" && -f "$entry/account-cli.mjs" && -d "$entry/webview" ]]; then
       printf '%s\n' "$name"
     fi
-  done | sort
+  # Semver-aware sort (-V), so callers that take the last line as "newest"
+  # (e.g. `ccg account`'s helper lookup) get 0.10.0 after 0.9.0, not before it.
+  done | sort -V
 }
 
 runtime_asset_url() {
