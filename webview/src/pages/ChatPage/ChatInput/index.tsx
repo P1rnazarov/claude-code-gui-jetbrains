@@ -336,6 +336,10 @@ export function ChatInput() {
     }
   }, [currentSessionId, clearAttachments, initHistory]);
 
+  // NOTE: externalWorking is intentionally NOT part of isActive. An external /
+  // live-tailed terminal session is not owned by this backend, so there is no
+  // process to interrupt — surfacing a Stop button for it would do nothing and read
+  // as broken. The activity is shown purely informationally via the StreamingIndicator.
   const isActive = isStreaming
     || sessionState === SessionState.WaitingPermission
     || sessionState === SessionState.HasDiff;

@@ -34,6 +34,12 @@ interface ChatStreamContextType {
   // From useChatStream
   messages: LoadedMessageDto[];
   isStreaming: boolean;
+  externalWorking: boolean;
+  setExternalWorking: (working: boolean) => void;
+  externalWorkingStartedAt: number | null;
+  setExternalWorkingStartedAt: (startedAt: number | null) => void;
+  externalTokens: number;
+  setExternalTokens: (tokens: number) => void;
   streamingMessageId: string | null;
   error: Error | null;
   authDiagnosis: { envApiKeys: string[]; message: string } | null;
@@ -117,6 +123,20 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
   const toggleThinkingExpanded = useCallback(() => setIsThinkingExpanded(prev => !prev), []);
   const [sessionModel, setSessionModel] = useState<string | null>(null);
+  const [externalWorking, setExternalWorking] = useState(false);
+  const [externalWorkingStartedAt, setExternalWorkingStartedAt] = useState<number | null>(null);
+  const [externalTokens, setExternalTokens] = useState(0);
+
+  useEffect(() => {
+    if (externalWorking) {
+      if (externalWorkingStartedAt === null) {
+        setExternalWorkingStartedAt(Date.now());
+      }
+    } else {
+      setExternalWorkingStartedAt(null);
+      setExternalTokens(0);
+    }
+  }, [externalWorking, externalWorkingStartedAt]);
 
   // EnterPlanMode 진입 전의 모드를 저장 (ExitPlanMode 시 복원용)
   const prePlanModeRef = useRef<InputMode | null>(null);
@@ -220,6 +240,9 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
   const resetForSessionSwitch = useCallback(() => {
     chatStreamClearMessages();
     chatStreamResetStreamState();
+    setExternalWorking(false);
+    setExternalWorkingStartedAt(null);
+    setExternalTokens(0);
     // Restore draft input from cache (tab move/split restoration)
     let draft: string | null = null;
     try {
@@ -236,7 +259,17 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
     diffs.clearDiffs();
     queuedMessageRef.current = null;
     prePlanModeRef.current = null;
-  }, [chatStreamClearMessages, chatStreamResetStreamState, setInput, tools.clearToolUses, diffs.clearDiffs, session.currentSessionId]);
+  }, [
+    chatStreamClearMessages,
+    chatStreamResetStreamState,
+    setInput,
+    tools.clearToolUses,
+    diffs.clearDiffs,
+    session.currentSessionId,
+    setExternalWorking,
+    setExternalWorkingStartedAt,
+    setExternalTokens
+  ]);
 
   // resetForSessionSwitch is called directly by SessionLoader
   // when currentSessionId changes (URL-driven reactive pattern)
@@ -404,6 +437,12 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
     // From useChatStream
     messages: chatStream.messages,
     isStreaming: chatStream.isStreaming,
+    externalWorking,
+    setExternalWorking,
+    externalWorkingStartedAt,
+    setExternalWorkingStartedAt,
+    externalTokens,
+    setExternalTokens,
     streamingMessageId: chatStream.streamingMessageId,
     error: chatStream.error,
     authDiagnosis: chatStream.authDiagnosis,
@@ -443,6 +482,12 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
   }), [
     chatStream.messages,
     chatStream.isStreaming,
+    externalWorking,
+    setExternalWorking,
+    externalWorkingStartedAt,
+    setExternalWorkingStartedAt,
+    externalTokens,
+    setExternalTokens,
     chatStream.streamingMessageId,
     chatStream.error,
     chatStream.authDiagnosis,

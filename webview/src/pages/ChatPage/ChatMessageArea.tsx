@@ -17,7 +17,7 @@ interface Props {
 export function ChatMessageArea(props: Props) {
   const { isStreaming } = props;
   const { workingDirectory } = useSessionContext();
-  const { messages, retry: onRetry } = useChatStreamContext();
+  const { messages, retry: onRetry, externalWorking, externalWorkingStartedAt, externalTokens } = useChatStreamContext();
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll is driven entirely by ChatPage's single poll loop, which scrolls
@@ -41,11 +41,6 @@ export function ChatMessageArea(props: Props) {
     return <ProjectSelectorPage />;
   }
 
-  const log = () => {
-    // console.log('messages', messages);
-    // console.log('mergedMessages', mergedMessages)
-  }
-
   // Empty state: no messages yet
   if (isEmpty) {
     return <EmptyState />;
@@ -53,13 +48,21 @@ export function ChatMessageArea(props: Props) {
 
   // Render messages with widgets
   return (
-    <div ref={containerRef} className="flex-1 text-xs" onClick={log}>
+    <div ref={containerRef} className="flex-1 text-xs">
       {mergedMessages.map((message) => (
-        <div key={message.uuid} onClick={() => console.log('message', message.uuid, message)}>
+        <div key={message.uuid}>
           <MessageBubble message={message} onRetry={onRetry} />
         </div>
       ))}
-      {isStreaming && <StreamingIndicator />}
+      {(isStreaming || externalWorking) && (
+        <StreamingIndicator
+          meta={
+            !isStreaming && externalWorking
+              ? { startedAt: externalWorkingStartedAt, tokens: externalTokens }
+              : undefined
+          }
+        />
+      )}
       <StreamErrorBanner />
     </div>
   );

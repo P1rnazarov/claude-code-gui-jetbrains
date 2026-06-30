@@ -35,6 +35,8 @@ export enum MessageType {
   TOOL_RESPONSE = 'TOOL_RESPONSE',
   /** Re-attach this connection to an already-running session (e.g. after reconnect). */
   RECLAIM_SESSION = 'RECLAIM_SESSION',
+  /** Get all currently running sessions. inbound webview→backend */
+  GET_RUNNING_SESSIONS = 'GET_RUNNING_SESSIONS',
 
   // -- Sessions CRUD --
   /** Create a new session (optionally in a given working directory). */
@@ -227,6 +229,8 @@ export enum MessageType {
   SESSION_APPEND = 'SESSION_APPEND',
   /** The session list changed and clients should refresh. */
   SESSIONS_UPDATED = 'SESSIONS_UPDATED',
+  /** Broadcast the set of running sessions. outbound backend→webview */
+  RUNNING_SESSIONS = 'RUNNING_SESSIONS',
   /** A user message was broadcast to all connections viewing the session. */
   USER_MESSAGE_BROADCAST = 'USER_MESSAGE_BROADCAST',
 

@@ -1,6 +1,7 @@
 import { GroupedSessions, GROUP_ORDER, GROUP_LABELS } from './utils';
 import { SessionItem } from './SessionItem';
 import { useSessionListScale } from './scale';
+import { useRunningSessions } from '@/hooks/useRunningSessions';
 
 interface Props {
   groupedSessions: GroupedSessions;
@@ -17,6 +18,7 @@ interface Props {
 export function SessionList(props: Props) {
   const { groupedSessions, currentSessionId, highlightedSessionId = null, onSelectSession, onDeleteSession, onRenameSession, className = 'max-h-80' } = props;
   const scale = useSessionListScale();
+  const { running } = useRunningSessions();
 
   return (
     <div className={`${className} overflow-y-auto ${scale.listPad} flex flex-col gap-0.5`}>
@@ -35,6 +37,7 @@ export function SessionList(props: Props) {
                 session={session}
                 isSelected={session.id === currentSessionId}
                 isHighlighted={session.id === highlightedSessionId}
+                isRunning={running.has(session.id) && session.id !== currentSessionId}
                 onSelect={() => onSelectSession(session.id)}
                 onDelete={() => onDeleteSession(session.id)}
                 onRename={(title) => onRenameSession(session.id, title)}

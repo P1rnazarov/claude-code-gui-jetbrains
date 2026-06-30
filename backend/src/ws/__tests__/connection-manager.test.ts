@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ConnectionManager } from '../connection-manager';
+import {
+  ConnectionManager,
+  SESSION_ACTIVITY_WINDOW_MS,
+  SESSION_ACTIVITY_SWEEP_MS,
+} from '../connection-manager';
 import { ClientEnv } from '../../shared';
 import { MessageType } from '../../shared';
 
@@ -241,6 +245,129 @@ describe('ConnectionManager', () => {
       const ws = createMockWs();
       cm.addConnection(ws);
       expect(ws.send).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('running sessions tracking', () => {
+    it('should return running sessions and broadcast running sessions list on process changes', () => {
+      const ws = createMockWs();
+      const connId = cm.addConnection(ws);
+      const mockProc = {} as any;
+
+      cm.setProcess('sess-1', mockProc);
+      expect(cm.getRunningSessionIds()).toEqual(['sess-1']);
+
+      expect(ws.send).toHaveBeenCalled();
+      const lastCall = (ws.send as any).mock.calls[(ws.send as any).mock.calls.length - 1][0];
+      const payload = JSON.parse(lastCall);
+      expect(payload.type).toBe(MessageType.RUNNING_SESSIONS);
+      expect(payload.payload.sessionIds).toEqual(['sess-1']);
+
+      cm.setProcess('sess-1', null);
+      expect(cm.getRunningSessionIds()).toEqual([]);
+    });
+
+    it('should mark a session running from JSONL activity and expire it after the window', () => {
+      vi.useFakeTimers();
+      try {
+        const ws = createMockWs();
+        cm.addConnection(ws);
+
+        cm.markSessionActivity('sess-ext');
+        expect(cm.getRunningSessionIds()).toEqual(['sess-ext']);
+
+        // Broadcast fires on the idle→running transition.
+        const lastCall = (ws.send as any).mock.calls.at(-1)[0];
+        expect(JSON.parse(lastCall).payload.sessionIds).toEqual(['sess-ext']);
+
+        // Still running within the activity window.
+        vi.advanceTimersByTime(10_000);
+        expect(cm.getRunningSessionIds()).toEqual(['sess-ext']);
+
+        // Expires once the window elapses with no further appends.
+        vi.advanceTimersByTime(15_000);
+        expect(cm.getRunningSessionIds()).toEqual([]);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('should union process-owned and activity-based running sessions', () => {
+      vi.useFakeTimers();
+      try {
+        cm.addConnection(createMockWs());
+        cm.setProcess('sess-proc', {} as any);
+        cm.markSessionActivity('sess-ext');
+        expect(cm.getRunningSessionIds().sort()).toEqual(['sess-ext', 'sess-proc']);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('should NOT re-broadcast on repeated activity within the window (only on idle→running)', () => {
+      vi.useFakeTimers();
+      try {
+        const ws = createMockWs();
+        cm.addConnection(ws);
+        (ws.send as any).mockClear();
+
+        // First mark → idle→running transition → exactly one broadcast.
+        cm.markSessionActivity('sess-ext');
+        const broadcastsAfterFirst = (ws.send as any).mock.calls.length;
+        expect(broadcastsAfterFirst).toBe(1);
+
+        // Repeated appends within the window must NOT re-broadcast (no storm).
+        vi.advanceTimersByTime(2_000);
+        cm.markSessionActivity('sess-ext');
+        vi.advanceTimersByTime(2_000);
+        cm.markSessionActivity('sess-ext');
+        expect((ws.send as any).mock.calls.length).toBe(broadcastsAfterFirst);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('should broadcast exactly one running→idle update when activity expires', () => {
+      vi.useFakeTimers();
+      try {
+        const ws = createMockWs();
+        cm.addConnection(ws);
+
+        cm.markSessionActivity('sess-ext');
+        (ws.send as any).mockClear();
+
+        // Sweep past the window: exactly one expiry broadcast with an empty set.
+        vi.advanceTimersByTime(SESSION_ACTIVITY_WINDOW_MS + SESSION_ACTIVITY_SWEEP_MS);
+        const expiryBroadcasts = (ws.send as any).mock.calls
+          .map((c: any[]) => JSON.parse(c[0]))
+          .filter((m: any) => m.type === MessageType.RUNNING_SESSIONS);
+        expect(expiryBroadcasts).toHaveLength(1);
+        expect(expiryBroadcasts[0].payload.sessionIds).toEqual([]);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('should drop external activity tracking once a session is promoted to an owned process', () => {
+      vi.useFakeTimers();
+      try {
+        cm.addConnection(createMockWs());
+
+        // External activity marks it running.
+        cm.markSessionActivity('sess-x');
+        expect(cm.getRunningSessionIds()).toEqual(['sess-x']);
+
+        // Promote to an owned process — running follows the process now.
+        cm.setProcess('sess-x', {} as any);
+        expect(cm.getRunningSessionIds()).toEqual(['sess-x']);
+
+        // When the owned process ends, the session goes idle immediately — no stale
+        // activity timestamp keeps it running for the rest of the window.
+        cm.setProcess('sess-x', null);
+        expect(cm.getRunningSessionIds()).toEqual([]);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 });

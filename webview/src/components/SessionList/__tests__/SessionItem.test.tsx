@@ -156,4 +156,32 @@ describe('SessionItem', () => {
 
     expect(onRename).not.toHaveBeenCalled();
   });
+
+  it('renders a pulsing green dot when isRunning is true', () => {
+    const { container } = render(
+      <SessionItem
+        session={createMockSession()}
+        isSelected={false}
+        isRunning={true}
+        onSelect={onSelect}
+        onDelete={onDelete}
+        onRename={onRename}
+      />
+    );
+    expect(container.querySelector('.bg-state-success-fg')).not.toBeNull();
+  });
+
+  it('does not render a pulsing green dot when isRunning is false', () => {
+    const { container } = render(
+      <SessionItem
+        session={createMockSession()}
+        isSelected={false}
+        isRunning={false}
+        onSelect={onSelect}
+        onDelete={onDelete}
+        onRename={onRename}
+      />
+    );
+    expect(container.querySelector('.bg-state-success-fg')).toBeNull();
+  });
 });

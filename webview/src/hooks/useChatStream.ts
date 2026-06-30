@@ -475,6 +475,13 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
   // Load messages from raw JSONL entries.
   // LoadedMessageDto's @Type/@Transform decorators handle nested transformation automatically.
   const loadMessages = useCallback((msgs: LoadedMessageDto[]) => {
+    const sysInitMsg = msgs.find(
+      (m: any) => m && m.type === 'system' && m.subtype === 'init'
+    );
+    if (sysInitMsg) {
+      setSystemInit(sysInitMsg as any);
+    }
+
     const convertedMessages = msgs
       // .filter(raw => raw.type === LoadedMessageType.User || raw.type === LoadedMessageType.Assistant)
       .map(raw => toInstance(LoadedMessageDto, raw));
@@ -510,9 +517,16 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
         }
       }
     }
-  }, []);
+  }, [setSystemInit]);
 
   const appendLoadedEntries = useCallback((msgs: LoadedMessageDto[]) => {
+    const sysInitMsg = msgs.find(
+      (m: any) => m && m.type === 'system' && m.subtype === 'init'
+    );
+    if (sysInitMsg) {
+      setSystemInit(sysInitMsg as any);
+    }
+
     const incoming = msgs.map(raw => toInstance(LoadedMessageDto, raw));
     setMessages(prev => {
       const byUuid = new Map<string, LoadedMessageDto>();
@@ -580,7 +594,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
 
       return activeMessages;
     });
-  }, []);
+  }, [setSystemInit]);
 
   // Retry
   const retry = useCallback((messageId: string) => {

@@ -2,17 +2,38 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ICON_FRAMES, TEXT_CHANGE_DELAYS, VERBS } from './constants.ts';
 import { useScramble } from './useScramble.ts';
 import { randomPick } from './utils.ts';
+import { formatThinkingTokens } from '@/utils/formatThinkingTokens.ts';
 
-export const StreamingIndicator: React.FC = () => {
+export function formatElapsed(elapsedMs: number): string {
+    const seconds = Math.floor(elapsedMs / 1000);
+    if (seconds < 60) {
+        return `${seconds}s`;
+    }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
+}
+
+export interface StreamingIndicatorProps {
+    meta?: {
+        startedAt: number | null;
+        tokens: number;
+    };
+}
+
+export const StreamingIndicator: React.FC<StreamingIndicatorProps> = ({ meta }) => {
     // 아이콘 프레임 인덱스
     const [frameIdx, setFrameIdx] = useState(0);
 
     // 현재 동사
     const [verb, setVerb] = useState<string>(() => randomPick(VERBS));
 
-    // 텍스트 변경 카운트 (딜레이 스케줄 추적)
+    // 텍스트 변경 카운트 (딜лей 스케줄 추적)
     const changeCountRef = useRef<number>(0);
     const textTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // 경과 시간 (ms)
+    const [elapsed, setElapsed] = useState(0);
 
     // 다음 텍스트 변경 딜레이 계산
     const getNextDelay = useCallback(() => {
@@ -59,8 +80,29 @@ export const StreamingIndicator: React.FC = () => {
         };
     }, []);
 
+    // 경과 시간 타이머
+    useEffect(() => {
+        if (!meta?.startedAt) {
+            setElapsed(0);
+            return;
+        }
+
+        setElapsed(Date.now() - meta.startedAt);
+
+        const timer = setInterval(() => {
+            if (meta?.startedAt) {
+                setElapsed(Date.now() - meta.startedAt);
+            }
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [meta?.startedAt]);
+
     // 스크램블 디스플레이
     const displayText = useScramble(verb);
+
+    const tokenStr = meta ? formatThinkingTokens(meta.tokens) : null;
+    const elapsedStr = meta?.startedAt ? formatElapsed(elapsed) : null;
 
     return (
         <div>
@@ -75,6 +117,11 @@ export const StreamingIndicator: React.FC = () => {
                     <div className="flex-1 min-w-0">
                         <span className="text-text-tertiary text-base font-mono">
                             {displayText}...
+                            {elapsedStr && (
+                                <span className="text-text-tertiary ml-2 select-none opacity-60">
+                                    · {elapsedStr}{tokenStr ? ` · ${tokenStr}` : ''}
+                                </span>
+                            )}
                         </span>
                     </div>
                 </div>

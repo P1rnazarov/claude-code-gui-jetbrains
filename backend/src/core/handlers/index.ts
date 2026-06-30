@@ -10,6 +10,7 @@ import { startSessionHandler } from './startSession';
 import { sessionChangeHandler } from './sessionChange';
 import { toolResponseHandler } from './toolResponse';
 import { getSessionsHandler } from './getSessions';
+import { getRunningSessionsHandler } from './getRunningSessions';
 import { loadSessionHandler } from './loadSession';
 import { deleteSessionHandler } from './deleteSession';
 import { renameSessionHandler } from './renameSession';
@@ -107,6 +108,9 @@ export async function handleMessage(
       break;
     case MessageType.GET_SESSIONS:
       await getSessionsHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.GET_RUNNING_SESSIONS:
+      await getRunningSessionsHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.LOAD_SESSION:
       await loadSessionHandler(connectionId, message, connections, bridge);

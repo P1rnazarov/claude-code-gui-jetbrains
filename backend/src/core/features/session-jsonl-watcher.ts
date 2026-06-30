@@ -44,9 +44,14 @@ export async function readNewBytes(
 export class SessionJsonlWatcher {
   private entries = new Map<string, WatchEntry>();
   private onAppend: (connectionId: string, sessionId: string, messages: any[]) => void;
+  private onSessionUnwatched?: (sessionId: string) => void;
 
-  constructor(onAppend: (connectionId: string, sessionId: string, messages: any[]) => void) {
+  constructor(
+    onAppend: (connectionId: string, sessionId: string, messages: any[]) => void,
+    onSessionUnwatched?: (sessionId: string) => void,
+  ) {
     this.onAppend = onAppend;
+    this.onSessionUnwatched = onSessionUnwatched;
   }
 
   async watch(
@@ -164,6 +169,7 @@ export class SessionJsonlWatcher {
         clearTimeout(entry.debounceTimer);
       }
       this.entries.delete(sessionId);
+      this.onSessionUnwatched?.(sessionId);
     }
   }
 
@@ -186,6 +192,7 @@ export class SessionJsonlWatcher {
       clearTimeout(entry.debounceTimer);
     }
     this.entries.delete(sessionId);
+    this.onSessionUnwatched?.(sessionId);
   }
 
   stopAll(): void {
@@ -210,11 +217,12 @@ export function getSessionJsonlWatcher(): SessionJsonlWatcher | null {
 
 export function initSessionJsonlWatcher(
   onAppend: (connectionId: string, sessionId: string, messages: any[]) => void,
+  onSessionUnwatched?: (sessionId: string) => void,
 ): SessionJsonlWatcher {
   if (globalInstance) {
     globalInstance.stopAll();
   }
-  globalInstance = new SessionJsonlWatcher(onAppend);
+  globalInstance = new SessionJsonlWatcher(onAppend, onSessionUnwatched);
   return globalInstance;
 }
 

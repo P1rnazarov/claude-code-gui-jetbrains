@@ -6,6 +6,13 @@ import { ClientEnv, MessageType } from '../shared';
 const SESSION_CLEANUP_GRACE_MS = 30_000;
 const IDLE_SHUTDOWN_GRACE_MS = 60_000;
 /**
+ * How long after the last JSONL append a session is still considered "running".
+ * Generous enough to bridge pauses between streamed messages / tool calls so the
+ * indicator doesn't flicker, short enough to clear soon after a session goes idle.
+ */
+export const SESSION_ACTIVITY_WINDOW_MS = 20_000;
+export const SESSION_ACTIVITY_SWEEP_MS = 5_000;
+/**
  * How long an editor-context payload stays valid while waiting for a webview to
  * connect. The "Add to Claude" action can fire before the JCEF panel has opened
  * its /ws socket (cold start); we stash the payload and replay it to the first
@@ -63,6 +70,12 @@ export class ConnectionManager {
   // Editor context awaiting a webview connection. Replayed to the first
   // connection that arrives within PENDING_EDITOR_CONTEXT_TTL_MS, then cleared.
   private pendingEditorContext: PendingEditorContext | null = null;
+  // sessionId → last JSONL append timestamp. A session whose history file is
+  // being actively appended counts as "running" even when no process is owned
+  // here (external terminal sessions / live-tailed sessions). Marked by the
+  // jsonl watcher's onAppend; expired by activitySweepTimer.
+  private sessionActivity = new Map<string, number>();
+  private activitySweepTimer: NodeJS.Timeout | null = null;
   private nextId = 0;
 
   // ─── Connection lifecycle ───────────────────────────────────────────────────
@@ -327,9 +340,71 @@ export class ConnectionManager {
 
   // ─── Process accessors ─────────────────────────────────────────────────────
 
+  /**
+   * A session is "running" if either this backend owns a live process for it
+   * (GUI-started) or its JSONL was appended within the activity window (external
+   * / live-tailed sessions). Returns the union, deduplicated.
+   */
+  getRunningSessionIds(): string[] {
+    const ids = new Set<string>();
+    for (const s of this.sessionRegistry.values()) {
+      if (s.process) ids.add(s.sessionId);
+    }
+    const now = Date.now();
+    for (const [sessionId, ts] of this.sessionActivity) {
+      if (now - ts < SESSION_ACTIVITY_WINDOW_MS) ids.add(sessionId);
+    }
+    return [...ids];
+  }
+
+  broadcastRunningSessions(): void {
+    this.broadcastToAll(MessageType.RUNNING_SESSIONS, { sessionIds: this.getRunningSessionIds() });
+  }
+
   setProcess(sessionId: string, proc: ChildProcess | null): void {
     const session = this.getOrCreateSession(sessionId);
     session.process = proc;
+    if (proc) {
+      // Promoted to an owned process: drop any external JSONL-activity tracking so
+      // the running flag follows the process lifecycle. Otherwise a stale activity
+      // timestamp could keep the session "running" for up to the activity window
+      // after the owned process ends.
+      this.sessionActivity.delete(sessionId);
+    }
+    this.broadcastRunningSessions();
+  }
+
+  /**
+   * Record live JSONL append activity for a session (from the jsonl watcher).
+   * Marks the session running for SESSION_ACTIVITY_WINDOW_MS and broadcasts only
+   * on the idle→running transition; the sweep handles the running→idle edge.
+   */
+  markSessionActivity(sessionId: string): void {
+    const wasRunning = this.sessionActivity.has(sessionId)
+      && Date.now() - (this.sessionActivity.get(sessionId) ?? 0) < SESSION_ACTIVITY_WINDOW_MS;
+    this.sessionActivity.set(sessionId, Date.now());
+    this.ensureActivitySweep();
+    if (!wasRunning) this.broadcastRunningSessions();
+  }
+
+  private ensureActivitySweep(): void {
+    if (this.activitySweepTimer) return;
+    this.activitySweepTimer = setInterval(() => {
+      const now = Date.now();
+      let expired = false;
+      for (const [sessionId, ts] of this.sessionActivity) {
+        if (now - ts >= SESSION_ACTIVITY_WINDOW_MS) {
+          this.sessionActivity.delete(sessionId);
+          expired = true;
+        }
+      }
+      if (this.sessionActivity.size === 0 && this.activitySweepTimer) {
+        clearInterval(this.activitySweepTimer);
+        this.activitySweepTimer = null;
+      }
+      if (expired) this.broadcastRunningSessions();
+    }, SESSION_ACTIVITY_SWEEP_MS);
+    this.activitySweepTimer.unref?.();
   }
 
   getProcess(sessionId: string): ChildProcess | null {
@@ -357,6 +432,12 @@ export class ConnectionManager {
     this.cleanupTimers.clear();
 
     this.cancelIdleShutdown();
+
+    if (this.activitySweepTimer) {
+      clearInterval(this.activitySweepTimer);
+      this.activitySweepTimer = null;
+    }
+    this.sessionActivity.clear();
 
     let killedSessions = 0;
     let closedConnections = 0;
@@ -421,5 +502,6 @@ export class ConnectionManager {
 
     this.sessionRegistry.delete(sessionId);
     console.error('[node-backend]', `Session ${sessionId} cleaned up`);
+    this.broadcastRunningSessions();
   }
 }

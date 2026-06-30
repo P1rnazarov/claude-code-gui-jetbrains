@@ -23,6 +23,7 @@ import { SessionState } from '../types';
 import type { LoadedMessageDto } from '../types';
 import { MessageType } from '@/shared';
 import { useClaudeSettings } from './ClaudeSettingsContext';
+import { RunningSessionsProvider } from './RunningSessionsContext';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -50,7 +51,7 @@ function SessionLoader({ children }: { children: ReactNode }) {
     loadSessions, sessions, currentSessionId, navigateToNewSession,
     isNewlyCreatedSession, setSessionState,
   } = useSessionContext();
-  const { loadMessages, appendLoadedEntries, isStreaming, resetForSessionSwitch } = useChatStreamContext();
+  const { loadMessages, appendLoadedEntries, isStreaming, resetForSessionSwitch, setExternalWorking, setExternalTokens } = useChatStreamContext();
 
   // Ref to track currentSessionId for SESSION_LOADED validation (avoids stale closure)
   const currentSessionIdRef = useRef<string | null>(currentSessionId);
@@ -134,18 +135,26 @@ function SessionLoader({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     return subscribe(MessageType.SESSION_APPEND, (message) => {
+      const sid = message.payload?.sessionId as string | undefined;
+
+      // External working/tokens indicator. Processed BEFORE the isStreaming guard:
+      // a backend silence-timeout working:false can arrive while the GUI is mid-stream
+      // and must not be dropped, otherwise externalWorking stays stuck true.
+      if (sid && sid === currentSessionIdRef.current && message.payload && 'working' in message.payload) {
+        setExternalWorking(!!message.payload.working);
+        if (typeof message.payload.tokens === 'number') {
+          setExternalTokens(message.payload.tokens);
+        }
+      }
+
       if (isStreaming) return;
       if (message.payload?.messages) {
         const rawMessages = message.payload.messages as LoadedMessageDto[];
-        const sid = message.payload?.sessionId as string | undefined;
-
         if (sid && sid !== currentSessionIdRef.current) return;
-
-        console.log('[SessionLoader] Session append, injecting raw messages:', rawMessages);
         appendLoadedEntries(rawMessages);
       }
     });
-  }, [subscribe, appendLoadedEntries, isStreaming]);
+  }, [subscribe, appendLoadedEntries, isStreaming, setExternalWorking, setExternalTokens]);
 
   // 4. Validate session exists in list — redirect bad URLs
   useEffect(() => {
@@ -260,9 +269,11 @@ export function AppProviders({ children }: AppProvidersProps) {
                 <ClaudeSettingsProvider>
                   <AuthProvider>
                     <SessionProvider>
-                      <WorkflowStateProvider>
-                        <ChatProviderBridge>{children}</ChatProviderBridge>
-                      </WorkflowStateProvider>
+                      <RunningSessionsProvider>
+                        <WorkflowStateProvider>
+                          <ChatProviderBridge>{children}</ChatProviderBridge>
+                        </WorkflowStateProvider>
+                      </RunningSessionsProvider>
                     </SessionProvider>
                   </AuthProvider>
                 </ClaudeSettingsProvider>

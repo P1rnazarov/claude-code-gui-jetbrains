@@ -8,13 +8,14 @@ interface Props {
   isSelected: boolean;
   /** Keyboard-navigation highlight (distinct from isSelected = current session). */
   isHighlighted?: boolean;
+  isRunning?: boolean;
   onSelect: () => void;
   onDelete: () => void;
   onRename: (title: string) => void;
 }
 
 export function SessionItem(props: Props) {
-  const { session, isSelected, isHighlighted = false, onSelect, onDelete, onRename } = props;
+  const { session, isSelected, isHighlighted = false, isRunning = false, onSelect, onDelete, onRename } = props;
   const scale = useSessionListScale();
   const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -115,6 +116,9 @@ export function SessionItem(props: Props) {
       }`}
       title={session.title}
     >
+      {isRunning && (
+        <span className="flex-shrink-0 w-2 h-2 rounded-full bg-state-success-fg animate-pulse" />
+      )}
       <span className="truncate flex-1">{session.title}</span>
       {isHovered ? (
         <span className="flex-shrink-0 flex items-center gap-1.5">

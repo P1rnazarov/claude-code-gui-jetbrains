@@ -6,6 +6,7 @@ import { JetBrainsBridge } from './bridge/jetbrains-bridge';
 import { handleMessage } from './core/handlers/index';
 import { initSettingsWatcher, stopSettingsWatcher } from './core/features/settings-watcher';
 import { initSessionJsonlWatcher, stopSessionJsonlWatcher } from './core/features/session-jsonl-watcher';
+import { conversationalEntries, isTurnWorking, accumulateTurnTokens } from './core/features/external-turn';
 import { ensureProfile } from './core/features/profile';
 import { trackEvent, reportBackendError } from './core/features/telemetry';
 import { restoreTunnelState } from './core/features/tunnel-manager';
@@ -242,6 +243,27 @@ async function main() {
   restoreTunnelState();
   restoreSleepGuardState().catch(() => {});
 
+  // Silence timeout timers for external sessions
+  const externalSessionTimers = new Map<string, NodeJS.Timeout>();
+  // Per-session accumulator of the active turn's output tokens, keyed by assistant
+  // message id (de-duplicates content-block repeats and per-subscriber re-delivery).
+  const externalTurnTokens = new Map<string, Map<string, number>>();
+
+  const clearSessionTimer = (sessionId: string) => {
+    const timer = externalSessionTimers.get(sessionId);
+    if (timer) {
+      clearTimeout(timer);
+      externalSessionTimers.delete(sessionId);
+    }
+  };
+
+  // Drop all external-session bookkeeping for a session (no one is tailing it
+  // anymore, or it was promoted to an owned process).
+  const clearExternalSessionState = (sessionId: string) => {
+    clearSessionTimer(sessionId);
+    externalTurnTokens.delete(sessionId);
+  };
+
   // Start watching all settings files for external changes
   const settingsWatcher = initSettingsWatcher((event, data) => {
     console.error('[node-backend]', `Broadcasting ${event} event`);
@@ -249,12 +271,73 @@ async function main() {
   });
   settingsWatcher.startGlobalWatchers();
 
-  initSessionJsonlWatcher((connectionId, sessionId, messages) => {
-    connections.sendTo(connectionId, MessageType.SESSION_APPEND, { sessionId, messages });
-  });
+  initSessionJsonlWatcher(
+    (connectionId, sessionId, messages) => {
+      // Only conversational entries decide whether the session is mid-turn —
+      // trailing metadata lines (last-prompt / mode / pr-link / summary …) are
+      // written after a turn and must not be treated as "still working".
+      const convo = conversationalEntries(messages);
+      const working = isTurnWorking(convo);
+
+      // Accumulate the active turn's output tokens, keyed by assistant message id.
+      let tokensById = externalTurnTokens.get(sessionId);
+      if (!tokensById) {
+        tokensById = new Map<string, number>();
+        externalTurnTokens.set(sessionId, tokensById);
+      }
+      const currentTokens = accumulateTurnTokens(convo, tokensById);
+
+      connections.sendTo(connectionId, MessageType.SESSION_APPEND, {
+        sessionId,
+        messages,
+        working,
+        tokens: currentTokens,
+      });
+
+      if (working) {
+        clearSessionTimer(sessionId);
+        const timer = setTimeout(() => {
+          console.error(`[node-backend] Silence timeout for session ${sessionId}, setting working to false`);
+          externalSessionTimers.delete(sessionId);
+          const finalById = externalTurnTokens.get(sessionId);
+          const finalTokens = finalById ? [...finalById.values()].reduce((a, b) => a + b, 0) : 0;
+          externalTurnTokens.delete(sessionId);
+          connections.broadcastToSession(sessionId, MessageType.SESSION_APPEND, {
+            sessionId,
+            messages: [],
+            working: false,
+            tokens: finalTokens,
+          });
+        }, 15000); // 15 seconds of silence
+        externalSessionTimers.set(sessionId, timer);
+      } else {
+        clearSessionTimer(sessionId);
+        externalTurnTokens.delete(sessionId);
+      }
+
+      // A *conversational* append means the session is actively working — flag it
+      // running even though no process is owned here (external / live-tailed
+      // sessions). Metadata-only batches written after a turn must NOT re-extend
+      // the running window; the callback already computed working=false for them.
+      if (convo.length > 0) {
+        connections.markSessionActivity(sessionId);
+      }
+    },
+    // No connection is tailing this session anymore (or it was promoted to an owned
+    // process). Drop its silence timer + token state so a stale timer can't later
+    // broadcast working:false to a connection that has re-attached to the session.
+    (sessionId) => {
+      clearExternalSessionState(sessionId);
+    },
+  );
 
   async function shutdown(signal: string) {
     console.error('[node-backend]', `${signal} received, shutting down...`);
+    for (const timer of externalSessionTimers.values()) {
+      clearTimeout(timer);
+    }
+    externalSessionTimers.clear();
+    externalTurnTokens.clear();
     stopSettingsWatcher();
     stopSessionJsonlWatcher();
     connections.shutdownAll();
