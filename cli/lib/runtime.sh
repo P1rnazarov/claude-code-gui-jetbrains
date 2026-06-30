@@ -6,7 +6,7 @@
 # Public API:
 #   runtime_cache_dir <version>   → echoes absolute cache path
 #   runtime_is_cached <version>   → 0 if valid runtime present, else 1
-#   runtime_list_cached           → echoes one version per line (sorted)
+#   runtime_list_cached           → echoes one version per line (semver-sorted)
 #   runtime_asset_url <version>   → echoes GitHub release download URL for
 #                                    claude-code-gui-standalone-v<ver>.tgz
 #   runtime_download <version>    → fetches + extracts (or cleans up on failure)
@@ -49,7 +49,9 @@ runtime_list_cached() {
     if [[ -f "$entry/backend.mjs" && -f "$entry/account-cli.mjs" && -d "$entry/webview" ]]; then
       printf '%s\n' "$name"
     fi
-  done | sort
+  # Semver-aware sort (-V), so callers that take the last line as "newest"
+  # (e.g. `ccg account`'s helper lookup) get 0.10.0 after 0.9.0, not before it.
+  done | sort -V
 }
 
 runtime_asset_url() {

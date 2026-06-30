@@ -91,6 +91,21 @@ make_fake_runtime_tgz() {
   [[ "$output" == *"0.15.0"* ]]
 }
 
+@test "runtime_list_cached: sorts by semver, not lexicographically (0.10.0 after 0.9.0)" {
+  for v in 0.9.0 0.10.0 0.2.0; do
+    mkdir -p "$CCG_HOME/runtimes/$v/webview"
+    printf '.' > "$CCG_HOME/runtimes/$v/backend.mjs"
+    printf '.' > "$CCG_HOME/runtimes/$v/account-cli.mjs"
+    printf '.' > "$CCG_HOME/runtimes/$v/webview/index.html"
+  done
+
+  run runtime_list_cached
+  [ "$status" -eq 0 ]
+  # The last line is what callers treat as "newest" — must be 0.10.0, not 0.9.0.
+  [ "$(printf '%s\n' "$output" | tail -1)" = "0.10.0" ]
+  [ "$(printf '%s\n' "$output" | head -1)" = "0.2.0" ]
+}
+
 # ─── runtime_asset_url ────────────────────────────────────────
 
 @test "runtime_asset_url: builds GitHub release download URL" {
