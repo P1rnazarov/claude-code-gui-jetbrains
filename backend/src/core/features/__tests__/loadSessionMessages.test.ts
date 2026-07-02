@@ -96,4 +96,31 @@ describe('loadSessionMessages', () => {
     expect(result.messages[0].type).toBe('user');
     expect(result.messages[9_999].type).toBe('assistant');
   }, 15_000);
+
+  it('does not re-send uuid-less entries across a page boundary', async () => {
+    // Single active chain (linked by parentUuid) with a uuid-less summary entry
+    // sitting where the default page boundary would fall.
+    await writeSession('sess-pg', [
+      JSON.stringify({ type: 'user', uuid: 'u1' }),
+      JSON.stringify({ type: 'assistant', uuid: 'a1', parentUuid: 'u1' }),
+      JSON.stringify({ type: 'user', uuid: 'u2', parentUuid: 'a1' }),
+      JSON.stringify({ type: 'assistant', uuid: 'a2', parentUuid: 'u2' }),
+      JSON.stringify({ type: 'summary' }), // no uuid — always kept by filterActiveChain
+      JSON.stringify({ type: 'user', uuid: 'u3', parentUuid: 'a2' }),
+      JSON.stringify({ type: 'assistant', uuid: 'a3', parentUuid: 'u3' }),
+    ]);
+
+    // Latest page (size 3) snaps its start back to a2 so it begins on a uuid,
+    // pulling the summary into this page rather than leaving it at the boundary.
+    const first = await loadSessionMessages('/work', 'sess-pg', undefined, 3);
+    expect(first.messages.map((m) => m.uuid ?? m.type)).toEqual(['a2', 'summary', 'u3', 'a3']);
+    expect(first.oldestUuid).toBe('a2');
+    expect(first.hasMore).toBe(true);
+
+    // The older page starts exactly before the cursor — the summary is NOT repeated.
+    const older = await loadSessionMessages('/work', 'sess-pg', 'a2', 3);
+    expect(older.messages.map((m) => m.uuid ?? m.type)).toEqual(['u1', 'a1', 'u2']);
+    expect(older.messages.some((m) => m.type === 'summary')).toBe(false);
+    expect(older.hasMore).toBe(false);
+  });
 });

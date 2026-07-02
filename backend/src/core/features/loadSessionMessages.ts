@@ -118,6 +118,19 @@ async function loadSubagentProgress(
   return syntheticEntries;
 }
 
+// Move a page-start index toward older entries until it lands on a uuid-bearing
+// message (or index 0). Leading progress/summary entries (which have no uuid)
+// belong to this page, not the next older one: keeping them here makes the paging
+// cursor — the first entry's uuid — the exact page boundary, so the following
+// "load older" page starts right before it with no overlap. Otherwise those
+// uuid-less entries get re-sent on the next page and duplicate in the UI, since
+// the client can only dedupe by uuid.
+function snapStartToUuid(chain: SessionMessage[], start: number): number {
+  let i = start;
+  while (i > 0 && typeof chain[i].uuid !== 'string') i--;
+  return i;
+}
+
 export async function loadSessionMessages(
   workingDir: string,
   targetSessionId: string,
@@ -225,13 +238,13 @@ export async function loadSessionMessages(
     const index = activeChainMessages.findIndex(m => m.uuid === beforeUuid);
     if (index !== -1) {
       // Return older messages (indices before index)
-      const startIndex = Math.max(0, index - pageSize);
+      const startIndex = snapStartToUuid(activeChainMessages, Math.max(0, index - pageSize));
       slicedMessages = activeChainMessages.slice(startIndex, index);
       hasMore = startIndex > 0;
     }
   } else {
     // Return latest page
-    const startIndex = Math.max(0, total - pageSize);
+    const startIndex = snapStartToUuid(activeChainMessages, Math.max(0, total - pageSize));
     slicedMessages = activeChainMessages.slice(startIndex);
     hasMore = startIndex > 0;
   }
