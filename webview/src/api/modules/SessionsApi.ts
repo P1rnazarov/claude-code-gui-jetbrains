@@ -106,8 +106,8 @@ export class SessionsApi {
    * Kills the existing process and reloads session messages
    * POST /sessions/:id/reclaim
    */
-  async reclaim(sessionId: string, workingDir?: string): Promise<void> {
+  async reclaim(sessionId: string, workingDir?: string, limit?: number): Promise<void> {
     const dir = workingDir ?? this.getConfig().workingDir;
-    await this.bridge.request(MessageType.RECLAIM_SESSION, { sessionId, workingDir: dir });
+    await this.bridge.request(MessageType.RECLAIM_SESSION, { sessionId, workingDir: dir, limit });
   }
 }

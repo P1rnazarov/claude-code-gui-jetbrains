@@ -8,7 +8,7 @@ import { SessionProvider, useSessionContext } from './SessionContext';
 import { ChatStreamProvider, useChatStreamContext } from './ChatStreamContext';
 import { ThemeProvider } from './ThemeContext';
 import { SettingsProvider, useSettings } from './SettingsContext';
-import { SettingKey } from '@/types/settings';
+import { SettingKey, NO_PAGINATION_LIMIT } from '@/types/settings';
 import { ClaudeSettingsProvider } from './ClaudeSettingsContext';
 import { AuthProvider } from './AuthContext';
 import { CliConfigProvider } from './CliConfigContext';
@@ -115,7 +115,7 @@ function SessionLoader({ children }: { children: ReactNode }) {
     // Load session messages (skip for new/empty sessions and newly created sessions).
     // Paging off → request a huge page so the entire conversation loads at once.
     if (currentSessionId && !isNewlyCreatedSession(currentSessionId)) {
-      const limit = chatPagination ? undefined : 1_000_000;
+      const limit = chatPagination ? undefined : NO_PAGINATION_LIMIT;
       api.sessions.load(currentSessionId, undefined, limit);
     }
   }, [currentSessionId, isConnected, chatPagination, resetForSessionSwitch, setSessionState, api.sessions, isNewlyCreatedSession]);

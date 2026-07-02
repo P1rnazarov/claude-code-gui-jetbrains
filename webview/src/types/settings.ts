@@ -31,6 +31,13 @@ export enum SettingKey {
 }
 
 /**
+ * Page size sent when chat pagination is OFF: request the whole active chain in
+ * one shot so the backend returns everything (hasMore=false → no "load older"
+ * UI). Shared by every session-load path so they resolve the setting identically.
+ */
+export const NO_PAGINATION_LIMIT = 1_000_000;
+
+/**
  * How the Settings screen opens from the gear button:
  * - overlay: a modal over the current session (keeps a running session mounted)
  * - new-tab: a dedicated editor tab / browser tab (the legacy openSettings path)
