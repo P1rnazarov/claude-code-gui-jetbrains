@@ -12,6 +12,10 @@ export interface PaginatedSessionMessages {
   hasMore: boolean;
   oldestUuid?: string;
   total: number;
+  // The complete active chain (not just the returned page). Kept backend-side for
+  // whole-transcript work like workflow reconstruction, which must see tool_use /
+  // tool_result entries older than the page. Never forwarded to the webview.
+  activeChain: SessionMessage[];
 }
 
 // Extract Task tool_use id -> agentId mappings from main session messages
@@ -203,6 +207,7 @@ export async function loadSessionMessages(
       messages: [],
       hasMore: false,
       total: 0,
+      activeChain: [],
     };
   }
 
@@ -244,5 +249,6 @@ export async function loadSessionMessages(
     hasMore,
     oldestUuid,
     total,
+    activeChain: activeChainMessages,
   };
 }

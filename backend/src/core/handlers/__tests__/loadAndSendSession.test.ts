@@ -35,13 +35,22 @@ function makeConnections(): { conn: ConnectionManager; sent: SentMessage[] } {
 }
 
 describe('loadAndSendSession', () => {
+  // The returned page is the latest slice; activeChain is the full history that
+  // extends further back than the page.
+  const pageMessages = [{ type: 'user', uuid: 'u99' }];
+  const fullChain = [
+    { type: 'assistant', uuid: 'u1' },
+    { type: 'user', uuid: 'u99' },
+  ];
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockLoad.mockResolvedValue({
-      messages: [{ type: 'user', uuid: 'u1' }],
+      messages: pageMessages,
       hasMore: true,
-      oldestUuid: 'u1',
+      oldestUuid: 'u99',
       total: 100,
+      activeChain: fullChain,
     });
     mockReconstruct.mockResolvedValue([]);
   });
@@ -63,15 +72,20 @@ describe('loadAndSendSession', () => {
     expect(loaded?.payload).toMatchObject({
       sessionId: 'sess-1',
       hasMore: true,
-      oldestUuid: 'u1',
+      oldestUuid: 'u99',
       prepend: false,
     });
+    // The full active chain stays backend-side — never forwarded to the webview.
+    expect(loaded?.payload).not.toHaveProperty('activeChain');
   });
 
-  it('reconstructs workflows on initial load', async () => {
+  it('reconstructs workflows from the full active chain, not just the page', async () => {
     const { conn } = makeConnections();
     await loadAndSendSession('conn-1', conn, '/work', 'sess-1', {});
     expect(mockReconstruct).toHaveBeenCalledOnce();
+    // Must receive the whole chain (u1 + u99), not the latest page (u99 only) —
+    // otherwise workflows older than the page are dropped on reload.
+    expect(mockReconstruct.mock.calls[0][0]).toEqual(fullChain);
   });
 
   it('marks prepend=true and skips workflow reconstruction for an older page', async () => {

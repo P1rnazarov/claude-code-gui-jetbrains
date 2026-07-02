@@ -46,8 +46,11 @@ export async function loadAndSendSession(
   if (isOlderPage) return;
 
   try {
+    // Reconstruct from the whole active chain, not just the returned page: a
+    // workflow's Workflow tool_use (and its tool_result) can be older than the
+    // latest page, and would otherwise be lost from the cards/Background panel.
     const workflows = await reconstructWorkflowTasks(
-      result.messages as Array<Record<string, unknown>>,
+      result.activeChain as Array<Record<string, unknown>>,
       (toolUseId) => isWorkflowRunning(sessionId, toolUseId),
     );
     for (const task of workflows) {
